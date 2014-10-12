@@ -5,10 +5,10 @@ import java.util.List;
 
 import cloudatlas.ByteSerializator;
 import pl.edu.mimuw.cloudatlas.serialization.Serializator;
+import test.SerializatorTest;
 
 public class ByteSerializatorTest extends SerializatorTest<Byte> {
 
-	@Override
 	public List<Byte> getObjects() {
 		List<Byte> result = new ArrayList<Byte>();
 		result.add((byte) 3);
@@ -17,7 +17,6 @@ public class ByteSerializatorTest extends SerializatorTest<Byte> {
 		return result;
 	}
 
-	@Override
 	public Serializator<Byte> getSerializator() {
 		return new ByteSerializator();
 	}
