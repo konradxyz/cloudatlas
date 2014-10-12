@@ -18,6 +18,7 @@ public class SerializatorAtributeMap implements Serializator<AttributesMap> {
 		Output output = new Output(outputStream);
 		kryo.register(AttributesMap.class);
 		kryo.writeObject(output, object);
+		output.close();
 	}
 
 	@Override

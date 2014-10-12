@@ -11,7 +11,7 @@ public class SerializationStringTest extends SerializatorTest<String> {
 	@Override
 	public List<String> getObjects() {
 		List<String> result = new ArrayList<String>();
-		//result.add("a");
+		result.add("a");
 		return result;
 	}
 
