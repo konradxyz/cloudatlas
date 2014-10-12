@@ -18,9 +18,9 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 	public List<AttributesMap> getObjects() {
 		List<AttributesMap> result = new ArrayList<AttributesMap>();
 		AttributesMap attributesMap = new AttributesMap();
-		Attribute attribute = new Attribute("attribute1");
+		/*Attribute attribute = new Attribute("attribute1");
 		Value valueString = new ValueString("value1");
-		attributesMap.add(attribute, valueString);
+		attributesMap.add(attribute, valueString);*/
 		result.add(attributesMap);
 		return result;
 	}

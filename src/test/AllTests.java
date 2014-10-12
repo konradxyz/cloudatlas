@@ -7,7 +7,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import cloudatlas.ByteSerializatorTest;
 
 @RunWith(Suite.class)
-@SuiteClasses({ Success.class, ZMITest.class, ByteSerializatorTest.class, SerializationAttributesMapTest.class})
+@SuiteClasses({ Success.class, ZMITest.class, ByteSerializatorTest.class, SerializationAttributesMapTest.class, SerializationStringTest.class})
 public class AllTests {
 
 }
