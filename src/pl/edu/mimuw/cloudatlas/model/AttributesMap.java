@@ -279,4 +279,12 @@ public class AttributesMap implements Iterable<Entry<Attribute, Value>>, Cloneab
 	public String toString() {
 		return map.toString();
 	}
+	
+	@Override
+	public boolean equals(Object object) {
+		if(!(object instanceof AttributesMap))
+			return false;
+		AttributesMap other = (AttributesMap) object;
+		return this.map.equals(other.map);
+	}
 }

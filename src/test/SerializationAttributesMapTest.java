@@ -17,10 +17,14 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 	@Override
 	public List<AttributesMap> getObjects() {
 		List<AttributesMap> result = new ArrayList<AttributesMap>();
+		// Empty case:
 		AttributesMap attributesMap = new AttributesMap();
-		/*Attribute attribute = new Attribute("attribute1");
+		result.add(attributesMap);
+		
+		attributesMap = new AttributesMap();
+		Attribute attribute = new Attribute("attribute1");
 		Value valueString = new ValueString("value1");
-		attributesMap.add(attribute, valueString);*/
+		attributesMap.add(attribute, valueString);
 		result.add(attributesMap);
 		return result;
 	}

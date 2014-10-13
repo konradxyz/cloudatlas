@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.Test;
 
 import pl.edu.mimuw.cloudatlas.serialization.Serializator;
+import javax.xml.bind.DatatypeConverter;
 
 public abstract class SerializatorTest<T> {
 	public abstract List<T> getObjects();
@@ -27,6 +28,9 @@ public abstract class SerializatorTest<T> {
 			InputStream inputStream = new ByteArrayInputStream(
 					outputStream.toByteArray());
 			T deserialized = serializator.deserialize(inputStream);
+			System.out.println(object.toString());
+			System.out.println(DatatypeConverter.printHexBinary(outputStream
+					.toByteArray()));
 			assertEquals(object, deserialized);
 			assertEquals(deserialized, object);
 		}

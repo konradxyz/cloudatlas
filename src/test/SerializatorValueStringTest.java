@@ -13,7 +13,7 @@ public class SerializatorValueStringTest extends SerializatorTest<ValueString> {
 	@Override
 	public List<ValueString> getObjects() {
 		List<ValueString> result = new ArrayList<ValueString>();
-		//result.add("a");
+		result.add(new ValueString("a"));
 		return result;
 	}
 
