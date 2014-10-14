@@ -83,19 +83,14 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		List<Value> list = new ArrayList<Value>();
 		list.add(new ValueDouble(8.8));
 		addToList(result, attributesMapGlobal, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
-
-		//List<Value> list = new ArrayList<Value>();
-		//list.add(new ValueDouble(8.8));
-		//addToList(result, attributesMapGlobal, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
-
 		
 		//value null
 		addToList(result, attributesMapGlobal, "attributeNull", ValueNull.getInstance());
 		
 		//valueSet
-		//Set<Value> set = new HashSet<Value>();
-		//set.add(new ValueDouble(8.8));
-		//addToList(result, attributesMapGlobal, "attributeSet", new ValueSet(set, TypePrimitive.DOUBLE));
+		Set<Value> set = new HashSet<Value>();
+		set.add(new ValueDouble(8.8));
+		addToList(result, attributesMapGlobal, "attributeSet", new ValueSet(set, TypePrimitive.DOUBLE));
 		
 		//value Time
 		addToList(result, attributesMapGlobal, "attributeTime", new ValueTime(3L));
