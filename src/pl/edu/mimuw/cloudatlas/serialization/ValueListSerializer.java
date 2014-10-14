@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 
 
+
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
@@ -26,10 +27,11 @@ public class ValueListSerializer extends Serializer<ValueList> {
 	
 	@Override
 	public ValueList read(Kryo kryo, Input input, Class<ValueList>  type) {
-		Type collectionType = kryo.readObject(input, Type.class);
-		//List<Value> values = kryo.readObject(input, ArrayList<Value> .class);
-		//return new ValueList(collectionType, values);
-		return null;
+		TypeCollection collectionType = kryo.readObject(input, TypeCollection.class);
+		@SuppressWarnings("unchecked")
+		List<Value> values = kryo.readObject(input, ArrayList.class);
+		return new ValueList(values, collectionType.getElementType());
+		
 	}
 
 	@Override

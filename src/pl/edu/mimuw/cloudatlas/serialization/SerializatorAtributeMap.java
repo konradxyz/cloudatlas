@@ -12,6 +12,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.model.ValueList;
 
 public class SerializatorAtributeMap implements Serializator<AttributesMap> {
 	final Kryo kryo = new Kryo();
@@ -20,6 +21,7 @@ public class SerializatorAtributeMap implements Serializator<AttributesMap> {
 	public void Init() {
 		kryo.addDefaultSerializer(Inet4Address.class,
 				Inet4AddressSerializer.class);
+		kryo.addDefaultSerializer(ValueList.class, ValueListSerializer.class);
 	}
 
 	@Override

@@ -82,7 +82,7 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 
 		List<Value> list = new ArrayList<Value>();
 		list.add(new ValueDouble(8.8));
-	//	addToList(result, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
+		addToList(result, attributesMapGlobal, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
 
 		//List<Value> list = new ArrayList<Value>();
 		//list.add(new ValueDouble(8.8));
