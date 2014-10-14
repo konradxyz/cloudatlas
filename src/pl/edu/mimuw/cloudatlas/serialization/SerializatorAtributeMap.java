@@ -16,7 +16,6 @@ public class SerializatorAtributeMap implements Serializator<AttributesMap> {
 	@Override
 	public void serialize(AttributesMap object, OutputStream outputStream) throws IOException {;
 		Output output = new Output(outputStream);
-		kryo.register(AttributesMap.class);
 		kryo.writeObject(output, object);
 		output.close();
 	}

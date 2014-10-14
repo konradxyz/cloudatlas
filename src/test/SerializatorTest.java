@@ -21,13 +21,14 @@ public abstract class SerializatorTest<T> {
 
 	@Test
 	public void test() throws IOException {
-		Serializator<T> serializator = getSerializator();
+		Serializator<T> serializatorS = getSerializator();
+		Serializator<T> serializatorD = getSerializator();
 		for (T object : getObjects()) {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			serializator.serialize(object, outputStream);
+			serializatorS.serialize(object, outputStream);
 			InputStream inputStream = new ByteArrayInputStream(
 					outputStream.toByteArray());
-			T deserialized = serializator.deserialize(inputStream);
+			T deserialized = serializatorD.deserialize(inputStream);
 			System.out.println(object.toString());
 			System.out.println(DatatypeConverter.printHexBinary(outputStream
 					.toByteArray()));

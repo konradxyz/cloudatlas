@@ -41,14 +41,12 @@ public class ValueDuration extends ValueSimple<Long> {
 	
 	@Override
 	public Type getType() {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		return TypePrimitive.DURATION;
 	}
 	
 	@Override
 	public Value getDefaultValue() {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		return new ValueDuration(0L);
 	}
 	
 	/**
@@ -165,9 +163,16 @@ public class ValueDuration extends ValueSimple<Long> {
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 	
-	@Override
 	public Value convertTo(Type type) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		switch(type.getPrimaryType()) {
+		case DOUBLE:
+			return this;
+		case INT:
+			return new ValueInt(getValue() == null? null : getValue().longValue());
+		case STRING:
+			return getValue() == null? ValueString.NULL_STRING : new ValueString(getValue().toString());
+		default:
+			throw new UnsupportedConversionException(getType(), type);
 	}
-}
+	}
+	}
