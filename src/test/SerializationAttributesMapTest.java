@@ -5,19 +5,28 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.sun.org.apache.xerces.internal.dom.AttributeMap;
 
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 import pl.edu.mimuw.cloudatlas.model.ValueDouble;
 import pl.edu.mimuw.cloudatlas.model.ValueDuration;
+import pl.edu.mimuw.cloudatlas.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueNull;
+import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.model.ValueString;
+import pl.edu.mimuw.cloudatlas.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.serialization.Serializator;
 import pl.edu.mimuw.cloudatlas.serialization.SerializatorAtributeMap;
 import sun.net.InetAddressCachePolicy;
@@ -59,11 +68,29 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		
 		//value Double
 		
-		addToList(result, "attribute4", new ValueDouble(4.4));
+		addToList(result, "attributeDouble", new ValueDouble(4.4));
 		
 		//valueDuration
-		addToList(result, "attribute5", new ValueDuration(5L));
+		addToList(result, "attributeDuration", new ValueDuration(5L));
 		
+		//valueInt
+		addToList(result, "attributeInt", new ValueInt(14L));
+			
+		//valueList
+		//List<Value> list = new ArrayList<Value>();
+		//list.add(new ValueDouble(8.8));
+		//addToList(result, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
+		
+		//value null
+		addToList(result, "attributeNull", ValueNull.getInstance());
+		
+		//valueSet
+		//Set<Value> set = new HashSet<Value>();
+		//set.add(new ValueDouble(8.8));
+		//addToList(result, "attributeSet", new ValueSet(set, TypePrimitive.DOUBLE));
+		
+		//value Time
+		addToList(result, "attributeTime", new ValueTime(3L));
 		return result;
 	}
 
