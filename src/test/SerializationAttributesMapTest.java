@@ -33,10 +33,11 @@ import sun.net.InetAddressCachePolicy;
 
 public class SerializationAttributesMapTest extends SerializatorTest<AttributesMap> {
 
-	public void addToList(List<AttributesMap> list, String s, Value value){
+	public void addToList(List<AttributesMap> list, AttributesMap attributeMapGlobal, String s, Value value){
 		Attribute attribute = new Attribute(s);
 		AttributesMap attributesMap = new AttributesMap();
 		attributesMap.add(attribute, value);
+		attributeMapGlobal.add(attribute, value);
 		list.add(attributesMap);
 	}
 	
@@ -45,14 +46,15 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		List<AttributesMap> result = new ArrayList<AttributesMap>();
 		// Empty case:
 		AttributesMap attributesMap = new AttributesMap();
+		AttributesMap attributesMapGlobal = new AttributesMap();
 		result.add(attributesMap);
 		
 		
 		//value String
-		addToList(result, "attribute1", new ValueString("value1"));
+		addToList(result, attributesMapGlobal, "attribute1", new ValueString("value1"));
 		
 		//value Boolean
-		addToList(result, "attribute2", new ValueBoolean(true));
+		addToList(result, attributesMapGlobal, "attribute2", new ValueBoolean(true));
 				
 		//value Contact
 		PathName pathName = new PathName("/");
@@ -60,7 +62,7 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		try {
 			inetAddress = InetAddress.getByName("127.0.0.1");
 			Value valueContact = new ValueContact(pathName, inetAddress);
-			addToList(result, "attribute3", valueContact);
+			addToList(result, attributesMapGlobal, "attribute3", valueContact);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
@@ -68,29 +70,36 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		
 		//value Double
 		
-		addToList(result, "attributeDouble", new ValueDouble(4.4));
+		addToList(result, attributesMapGlobal, "attributeDouble", new ValueDouble(4.4));
 		
 		//valueDuration
-		addToList(result, "attributeDuration", new ValueDuration(5L));
+		addToList(result, attributesMapGlobal, "attributeDuration", new ValueDuration(5L));
 		
 		//valueInt
-		addToList(result, "attributeInt", new ValueInt(14L));
+		addToList(result, attributesMapGlobal, "attributeInt", new ValueInt(14L));
 			
 		//valueList
+
 		List<Value> list = new ArrayList<Value>();
 		list.add(new ValueDouble(8.8));
 	//	addToList(result, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
+
+		//List<Value> list = new ArrayList<Value>();
+		//list.add(new ValueDouble(8.8));
+		//addToList(result, attributesMapGlobal, "attributeList", new ValueList(list, TypePrimitive.DOUBLE));
+
 		
 		//value null
-		addToList(result, "attributeNull", ValueNull.getInstance());
+		addToList(result, attributesMapGlobal, "attributeNull", ValueNull.getInstance());
 		
 		//valueSet
 		//Set<Value> set = new HashSet<Value>();
 		//set.add(new ValueDouble(8.8));
-		//addToList(result, "attributeSet", new ValueSet(set, TypePrimitive.DOUBLE));
+		//addToList(result, attributesMapGlobal, "attributeSet", new ValueSet(set, TypePrimitive.DOUBLE));
 		
 		//value Time
-		addToList(result, "attributeTime", new ValueTime(3L));
+		addToList(result, attributesMapGlobal, "attributeTime", new ValueTime(3L));
+		result.add(attributesMapGlobal);
 		return result;
 	}
 
