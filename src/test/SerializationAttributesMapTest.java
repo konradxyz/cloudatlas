@@ -46,7 +46,7 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		addToList(result, "attribute2", new ValueBoolean(true));
 				
 		//value Contact
-		/* PathName pathName = new PathName("/");
+		PathName pathName = new PathName("/");
 		InetAddress inetAddress;
 		try {
 			inetAddress = InetAddress.getByName("127.0.0.1");
@@ -55,7 +55,7 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
-		} */
+		}
 		
 		//value Double
 		
@@ -70,6 +70,7 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 	@Override
 	public Serializator<AttributesMap> getSerializator() {
 		SerializatorAtributeMap serializatorAtributeMap = new SerializatorAtributeMap();
+		serializatorAtributeMap.Init();
 		return serializatorAtributeMap;
 	}
 
