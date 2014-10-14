@@ -31,31 +31,34 @@ import pl.edu.mimuw.cloudatlas.model.ValueContact;
 import pl.edu.mimuw.cloudatlas.model.Value.Operation;
 
 /**
- * A class that represents a contact to a node. The contact consists of a full path name of this node and its IP
- * address.
+ * A class that represents a contact to a node. The contact consists of a full
+ * path name of this node and its IP address.
  * <p>
  * This class is immutable.
  */
 public class ValueContact extends Value {
 	private final PathName name;
 	private final InetAddress address;
-	
+
 	/**
-	 * Constructs a new <code>ValueContact</code> with the specified path name and IP address.
+	 * Constructs a new <code>ValueContact</code> with the specified path name
+	 * and IP address.
 	 * 
-	 * @param name the full path name of a node
-	 * @param address the IP address of the node
+	 * @param name
+	 *            the full path name of a node
+	 * @param address
+	 *            the IP address of the node
 	 */
 	public ValueContact(PathName name, InetAddress address) {
 		this.name = name;
 		this.address = address;
 	}
-	
+
 	@Override
 	public Value getDefaultValue() {
 		return new ValueContact(null, null);
 	}
-	
+
 	/**
 	 * Returns a name stored in this object.
 	 * 
@@ -64,7 +67,7 @@ public class ValueContact extends Value {
 	public PathName getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Returns an IP address stored in this object.
 	 * 
@@ -73,47 +76,41 @@ public class ValueContact extends Value {
 	public InetAddress getAddress() {
 		return address;
 	}
-	
+
 	@Override
 	public Type getType() {
 		return TypePrimitive.CONTACT;
 	}
-	
+
 	@Override
 	public Value convertTo(Type type) {
-		switch(type.getPrimaryType()) {
-			case CONTACT:
-				return this;
-			case STRING:
-				if(isNull())
-					return ValueString.NULL_STRING;
-				else
-					return new ValueString("(" + name.toString() + ", " + address.toString() + ")");
-			default:
-				throw new UnsupportedConversionException(getType(), type);
+		switch (type.getPrimaryType()) {
+		case CONTACT:
+			return this;
+		case STRING:
+			if (isNull())
+				return ValueString.NULL_STRING;
+			else
+				return new ValueString("(" + name.toString() + ", "
+						+ address.toString() + ")");
+		default:
+			throw new UnsupportedConversionException(getType(), type);
 		}
 	}
-	
+
 	@Override
 	public boolean isNull() {
 		return name == null || address == null;
 	}
-	
-	/**
-	 * Checks whether this value is equal to the specified one (operator ==).
-	 * 
-	 * @param value the right side of the operator
-	 * @return a <code>ValueBoolean</code> representing true if and only if both values are equal
-	 * @throws UnsupportedValueOperationException if this operation is unsupported for these values
-	 */
-	public Value isEqual(Value value) {
+
+	public boolean equals(Object value) {
 		if (!(value instanceof ValueContact))
-			return new ValueBoolean(false);
+			return false;
 		ValueContact other = (ValueContact) value;
 		if (this.isNull() && other.isNull())
-			return new ValueBoolean(true);
+			return true;
 
-		return new ValueBoolean(this.name.equals(other.name)
-				&& this.address.equals(other.address));
+		return this.name.equals(other.name)
+				&& this.address.equals(other.address);
 	}
 }
