@@ -9,8 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.sun.org.apache.xerces.internal.dom.AttributeMap;
-
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.PathName;
@@ -29,7 +27,6 @@ import pl.edu.mimuw.cloudatlas.model.ValueString;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.serialization.Serializator;
 import pl.edu.mimuw.cloudatlas.serialization.SerializatorAtributeMap;
-import sun.net.InetAddressCachePolicy;
 
 public class SerializationAttributesMapTest extends SerializatorTest<AttributesMap> {
 
