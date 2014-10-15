@@ -1,0 +1,1 @@
+SELECT to_integer(2.0) AS two_plus_two
