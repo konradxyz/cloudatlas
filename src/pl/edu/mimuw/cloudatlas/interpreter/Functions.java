@@ -96,8 +96,12 @@ class Functions {
 	private static final AggregationOperation SUM = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			if ( values.size() == 0 )
+				return new ValueInt(0l);
+			Value result = values.get(0).getDefaultValue();
+			for ( Value v : values )
+				result = result.addValue(v);
+			return result;
 		}
 	};
 

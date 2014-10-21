@@ -134,6 +134,7 @@ abstract class Result {
 	};
 
 	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultSingle right);
+	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultColumn right);
 
 	public Result binaryOperation(BinaryOperation operation, Result right) {
 		return right.callMe(operation, this);
@@ -154,8 +155,10 @@ abstract class Result {
 	}
 
 	public Result transformOperation(TransformOperation operation) {
+		// TODO: this one seems risky - we should consider moving transformOperation to subclasses.
+		return new ResultColumn(operation.perform(getColumn()));
 		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		//throw new UnsupportedOperationException("Not yet implemented");
 	}
 
 	public Result isEqual(Result right) {
@@ -261,4 +264,5 @@ abstract class Result {
 	public abstract ResultSingle isNull();
 
 	public abstract Type getType();
+
 }

@@ -183,12 +183,14 @@ public class Interpreter {
 
 		public Table visit(WhereC where, Table table) {
 			Table result = new Table(table);
+		//	System.out.println(table);
 			for(TableRow row : table) {
 				Environment env = new Environment(row, table.getColumns());
 				Value value = where.condexpr_.accept(new CondExprInterpreter(), env).getValue();
 				if(getBoolean(value))
 					result.appendRow(row);
 			}
+		//	System.out.println(result);
 			return result;
 		}
 	}

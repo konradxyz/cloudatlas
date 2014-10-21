@@ -24,10 +24,16 @@
 
 package pl.edu.mimuw.cloudatlas.interpreter;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import pl.edu.mimuw.cloudatlas.interpreter.Result.BinaryOperation;
 import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 class ResultSingle extends Result {
 	private final Value value;
@@ -39,6 +45,21 @@ class ResultSingle extends Result {
 	@Override
 	protected ResultSingle binaryOperationTyped(BinaryOperation operation, ResultSingle right) {
 		return new ResultSingle(operation.perform(value, right.value));
+	}
+
+	@Override
+	protected Result binaryOperationTyped(BinaryOperation operation,
+			ResultColumn right) {
+		List<Value> result = new ArrayList<Value>();
+		for (Value v : right.getColumn()) {
+			result.add(operation.perform(this.value, v));
+		}
+
+		Type type = TypeCollection.computeElementType(result);
+
+		if (this.value.isNull())
+			return new ResultSingle(ValueNull.getInstance());
+		return new ResultColumn(new ValueList(result, type));
 	}
 
 	@Override

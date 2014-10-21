@@ -30,16 +30,34 @@ public class ResultColumn extends Result {
 			return new ResultSingle(ValueNull.getInstance());
 		return new ResultColumn(new ValueList(result, type));
 	}
+	
+	@Override
+	protected Result binaryOperationTyped(BinaryOperation operation,
+			ResultColumn right) {
+		if ( right.list.size() != this.list.size() )
+			throw new UnsupportedOperationException("Binary operation on columns of different sizes");
+		List<Value> result = new ArrayList<Value>();
+		for ( int i = 0; i < this.list.size(); ++i ) {
+			result.add(operation.perform(this.list.get(i), right.list.get(i)));
+		}
+		Type type = TypeCollection.computeElementType(result);
+		return new ResultColumn(new ValueList(result, type));
+		
+	}
 
 	@Override
 	public Result unaryOperation(UnaryOperation operation) {
-		return new ResultSingle(operation.perform(list));
+		List<Value> result = new ArrayList<Value>();
+		for ( Value v : list ) {
+			result.add(operation.perform(v));
+		}
+		Type type = TypeCollection.computeElementType(result);
+		return new ResultColumn(new ValueList(result, type));
 	}
 
 	@Override
 	protected Result callMe(BinaryOperation operation, Result left) {
-		// TODO Auto-generated method stub
-		return null;
+		return left.binaryOperationTyped(operation, this);
 	}
 
 	@Override
@@ -101,5 +119,4 @@ public class ResultColumn extends Result {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }
