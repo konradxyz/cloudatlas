@@ -129,4 +129,12 @@ public class Table implements Iterable<TableRow> {
 		}
 		return result;
 	}
+	
+	public TableRow aggregate() {
+		Value[] values = new Value[columns.size()];
+		for ( int i = 0; i < columns.size(); ++i ) {
+			values[i] = getColumn(columns.get(i));
+		}
+		return new TableRow(values);
+	}
 }
