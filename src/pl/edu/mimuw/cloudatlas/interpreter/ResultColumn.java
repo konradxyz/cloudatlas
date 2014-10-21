@@ -87,13 +87,12 @@ public class ResultColumn extends Result {
 		List<Value> result = Collections.unmodifiableList(list.subList(0,
 				Math.min(size, list.size())));
 		Type elementType = TypeCollection.computeElementType(result);
-		return new ResultColumn(new ValueList(result, elementType));
+		return new ResultSingle(new ValueList(result, elementType));
 	}
 
 	@Override
 	public Result last(int size) {
-		// TODO Auto-generated method stub
-		return null;
+		return new ResultSingle(Result.lastList(list, size));
 	}
 
 	@Override
