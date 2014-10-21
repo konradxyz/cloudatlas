@@ -120,4 +120,13 @@ public class Table implements Iterable<TableRow> {
 	public void sort(Comparator<TableRow> comparator) {
 		Collections.sort(rows, comparator);
 	}
+	
+	@Override
+	public String toString() {
+		String result = columns.toString() + "\n";
+		for ( TableRow row : rows ) {
+			result = result + row.toString() + "\n";
+		}
+		return result;
+	}
 }
