@@ -50,16 +50,14 @@ class ResultSingle extends Result {
 	@Override
 	protected Result binaryOperationTyped(BinaryOperation operation,
 			ResultColumn right) {
-		List<Value> result = new ArrayList<Value>();
-		for (Value v : right.getColumn()) {
-			result.add(operation.perform(this.value, v));
-		}
-
-		Type type = TypeCollection.computeElementType(result);
-
-		if (this.value.isNull())
-			return new ResultSingle(ValueNull.getInstance());
-		return new ResultColumn(new ValueList(result, type));
+		return new ResultColumn(binaryOperationTyped(this, operation, right.getColumn()));
+	}
+	
+	@Override
+	public Result binaryOperationTyped(BinaryOperation operation,
+			ResultList right) {
+		return new ResultList(binaryOperationTyped(this, operation, right.getList()));
+		
 	}
 
 	@Override
@@ -76,7 +74,7 @@ class ResultSingle extends Result {
 	public Value getValue() {
 		return value;
 	}
-
+/*
 	@Override
 	public ValueList getList() {
 		throw new UnsupportedOperationException("Not a ResultList.");
@@ -86,7 +84,7 @@ class ResultSingle extends Result {
 	public ValueList getColumn() {
 		throw new UnsupportedOperationException("Not a ResultColumn.");
 	}
-
+*/
 	@Override
 	public Result filterNulls() {
 		throw new UnsupportedOperationException("Operation filterNulls not supported on ResultSingle.");
@@ -121,4 +119,10 @@ class ResultSingle extends Result {
 	public Type getType() {
 		return value.getType();
 	}
+
+	@Override
+	public ValueList getValues() {
+		throw new UnsupportedOperationException("Cannot aggregate on ResultSingle.");
+	}
+
 }

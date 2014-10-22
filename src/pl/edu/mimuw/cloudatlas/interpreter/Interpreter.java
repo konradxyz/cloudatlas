@@ -185,7 +185,7 @@ public class Interpreter {
 			Table result = new Table(table);
 		//	System.out.println(table);
 			for(TableRow row : table) {
-				Environment env = new Environment(row, table.getColumns());
+				Environment env = new EnvironmentRow(row, table.getColumns());
 				Value value = where.condexpr_.accept(new CondExprInterpreter(), env).getValue();
 				if(getBoolean(value))
 					result.appendRow(row);
@@ -217,9 +217,9 @@ public class Interpreter {
 			Comparator<TableRow> comparator = new Comparator<TableRow>() {
 				@Override
 				public int compare(TableRow row1, TableRow row2) {
-					Environment env1 = new Environment(row1, table.getColumns());
+					Environment env1 = new EnvironmentRow(row1, table.getColumns());
 					Result expr1 = orderItem.condexpr_.accept(new CondExprInterpreter(), env1);
-					Environment env2 = new Environment(row2, table.getColumns());
+					Environment env2 = new EnvironmentRow(row2, table.getColumns());
 					Result expr2 = orderItem.condexpr_.accept(new CondExprInterpreter(), env2);
 					ValuesPair pair = new ValuesPair(expr1, expr2);
 					int result = orderItem.nulls_.accept(new NullsInterpreter(), pair);
@@ -282,14 +282,14 @@ public class Interpreter {
 
 	public class SelItemInterpreter implements SelItem.Visitor<QueryResult, Table> {
 		public QueryResult visit(SelItemC selItem, Table table) {
-			Environment env = new Environment(table);
+			Environment env = new EnvironmentTable(table);
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
 			return new QueryResult(result.getValue());
 		}
 
 		public QueryResult visit(AliasedSelItemC selItem, Table table) {
 		//	System.out.println(table.toString());
-			Environment env = new Environment(table);
+			Environment env = new EnvironmentTable(table);
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
 			return new QueryResult(new Attribute(selItem.qident_), result.getValue());
 		}
@@ -332,8 +332,13 @@ public class Interpreter {
 		}
 
 		public Result visit(CondExprAndC expr, Environment env) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			try {
+				Result left = expr.condexpr_1.accept(new CondExprInterpreter(), env);
+				Result right = expr.condexpr_2.accept(new CondExprInterpreter(), env);
+				return left.and(right);
+			} catch(Exception exception) {
+				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
+			}
 		}
 
 		public Result visit(CondExprNotC expr, Environment env) {

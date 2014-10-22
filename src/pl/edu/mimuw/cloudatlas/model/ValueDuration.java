@@ -24,6 +24,8 @@
 
 package pl.edu.mimuw.cloudatlas.model;
 
+import pl.edu.mimuw.cloudatlas.model.Value.Operation;
+
 
 /**
  * A class representing duration in milliseconds. The duration can be negative. This is a simple wrapper of a Java
@@ -129,8 +131,10 @@ public class ValueDuration extends ValueSimple<Long> {
 	
 	@Override
 	public ValueDuration addValue(Value value) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		sameTypesOrThrow(value, Operation.ADD);
+		if(isNull() || value.isNull())
+			return new ValueDuration((Long)null);
+		return new ValueDuration(getValue() + ((ValueInt)value).getValue());
 	}
 	
 	@Override
@@ -147,8 +151,14 @@ public class ValueDuration extends ValueSimple<Long> {
 	
 	@Override
 	public Value divide(Value value) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		sameTypesOrThrow(value, Operation.DIVIDE);
+		if(value.isNull())
+			return new ValueDuration((Long)null);
+		if(((ValueInt)value).getValue() == 0l)
+			throw new ArithmeticException("Division by zero.");
+		if(isNull())
+			return new ValueDuration((Long)null);
+		return new ValueDuration((Long)getValue() / ((ValueInt)value).getValue());
 	}
 	
 	@Override

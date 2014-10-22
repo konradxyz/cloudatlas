@@ -67,7 +67,13 @@ public abstract class Type {
 	 * @see ValueNull
 	 */
 	public boolean isCompatible(Type type) {
-		return getPrimaryType() == PrimaryType.NULL || type.getPrimaryType() == PrimaryType.NULL;
+		System.out.println(getPrimaryType());
+		System.out.println(getPrimaryType() == PrimaryType.NULL);
+		System.out.println(type.getPrimaryType());
+		System.out.println(type.getPrimaryType() == PrimaryType.NULL);
+		System.out.println("isCompatibile");
+		System.out.println(getPrimaryType() == PrimaryType.NULL || type.getPrimaryType() == PrimaryType.NULL);
+		return (getPrimaryType() == PrimaryType.NULL || type.getPrimaryType() == PrimaryType.NULL);
 	}
 	
 	/**

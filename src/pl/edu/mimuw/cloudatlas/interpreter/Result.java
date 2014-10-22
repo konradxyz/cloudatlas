@@ -27,10 +27,12 @@ package pl.edu.mimuw.cloudatlas.interpreter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 abstract class Result {
 	public interface BinaryOperation {
@@ -135,7 +137,8 @@ abstract class Result {
 
 	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultSingle right);
 	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultColumn right);
-
+	protected abstract Result binaryOperationTyped(BinaryOperation operation,
+			ResultList right);
 	public Result binaryOperation(BinaryOperation operation, Result right) {
 		return right.callMe(operation, this);
 	}
@@ -145,20 +148,20 @@ abstract class Result {
 	protected abstract Result callMe(BinaryOperation operation, Result left);
 
 	public abstract Value getValue();
+	public abstract ValueList getValues();
 
-	public abstract ValueList getList();
+//	public abstract ValueList getList();
 
-	public abstract ValueList getColumn();
+///	public abstract ValueList getColumn();
 
-	public ResultSingle aggregationOperation(AggregationOperation operation) {
-		return new ResultSingle(operation.perform(getColumn()));
+
+	public Result aggregationOperation(AggregationOperation operation) {
+		return new ResultSingle(operation.perform(getValues()));
 	}
 
+
 	public Result transformOperation(TransformOperation operation) {
-		// TODO: this one seems risky - we should consider moving transformOperation to subclasses.
-		return new ResultColumn(operation.perform(getColumn()));
-		// TODO
-		//throw new UnsupportedOperationException("Not yet implemented");
+		return new ResultList(operation.perform(getValues()));
 	}
 
 	public Result isEqual(Result right) {
@@ -235,7 +238,9 @@ abstract class Result {
 		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
 	}
 
-	public abstract Result first(int size);
+	public Result first(int size) {
+		return new ResultSingle(firstList(getValues(), size));
+	}
 
 	protected static ValueList lastList(ValueList list, int size) {
 		ValueList nlist = filterNullsList(list);
@@ -247,7 +252,9 @@ abstract class Result {
 		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
 	}
 
-	public abstract Result last(int size);
+	public Result last(int size) {
+		return new ResultSingle(lastList(getValues(), size));
+	}
 
 	protected static ValueList randomList(ValueList list, int size) {
 		ValueList nlist = filterNullsList(list);
@@ -257,6 +264,45 @@ abstract class Result {
 		return new ValueList(nlist.getValue().subList(0, size), ((TypeCollection)list.getType()).getElementType());
 	}
 
+	protected static ValueList binaryOperationTypedValueList(ValueList left, BinaryOperation operation,
+			ResultSingle right) {
+		List<Value> result = new ArrayList<Value>();
+		for ( Value v : left ) {
+			result.add(operation.perform(v, right.getValue()));
+		}
+		Type type = TypeCollection.computeElementType(result);
+		// Not sure whether it is correct place to catch NULL.
+		return new ValueList(result, type);
+	}
+	
+	protected static ValueList binaryOperationTyped(ResultSingle left, BinaryOperation operation,
+			ValueList right) {
+		List<Value> result = new ArrayList<Value>();
+		for (Value v : right) {
+			result.add(operation.perform(left.getValue(), v));
+		}
+
+		Type type = TypeCollection.computeElementType(result);
+		return new ValueList(result, type);
+	}
+	
+	public static ValueList unaryOperation(ValueList list, UnaryOperation operation) {
+		List<Value> result = new ArrayList<Value>();
+		for ( Value v : list ) {
+			result.add(operation.perform(v));
+		}
+		Type type = TypeCollection.computeElementType(result);
+		return new ValueList(result, type);
+	}
+	
+	public static ValueList convertTo(ValueList list, Type to) {
+		List<Value> result = new ArrayList<Value>();
+		for ( Value v : list ) {
+			result.add(v.convertTo(to));
+		}
+		return new ValueList(result, to);
+	}
+	
 	public abstract Result random(int size);
 
 	public abstract Result convertTo(Type to);
@@ -264,5 +310,6 @@ abstract class Result {
 	public abstract ResultSingle isNull();
 
 	public abstract Type getType();
+
 
 }

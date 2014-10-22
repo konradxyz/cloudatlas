@@ -53,8 +53,15 @@ public abstract class Value {
 	public abstract boolean isNull();
 	
 	protected final void sameTypesOrThrow(Value value, Operation operation) {
-		if(!getType().isCompatible(value.getType()))
+		System.out.println("basd");
+		boolean res = !getType().isCompatible(value.getType());
+		System.out.println("result");
+		System.out.println(res);
+		if(res) {
+			System.out.println("throwing");
 			throw new IncompatibleTypesException(getType(), value.getType(), operation);
+		}
+		System.out.println("not throwing");
 	}
 	
 	/**
