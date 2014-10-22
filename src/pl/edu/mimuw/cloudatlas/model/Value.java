@@ -24,6 +24,7 @@
 
 package pl.edu.mimuw.cloudatlas.model;
 
+import pl.edu.mimuw.cloudatlas.model.Type.PrimaryType;
 import pl.edu.mimuw.cloudatlas.model.Value;
 
 /**
@@ -53,15 +54,15 @@ public abstract class Value {
 	public abstract boolean isNull();
 	
 	protected final void sameTypesOrThrow(Value value, Operation operation) {
-		System.out.println("basd");
-		boolean res = !getType().isCompatible(value.getType());
-		System.out.println("result");
-		System.out.println(res);
-		if(res) {
-			System.out.println("throwing");
+		if (getType().getPrimaryType()==PrimaryType.DURATION && value.getType().getPrimaryType()==PrimaryType.INT ){
+			return;
+		}
+		if (getType().getPrimaryType()==PrimaryType.INT && value.getType().getPrimaryType()==PrimaryType.DURATION ){
+			return;
+		}
+		if(!getType().isCompatible(value.getType())) {
 			throw new IncompatibleTypesException(getType(), value.getType(), operation);
 		}
-		System.out.println("not throwing");
 	}
 	
 	/**
