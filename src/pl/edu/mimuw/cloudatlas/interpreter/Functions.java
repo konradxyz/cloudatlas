@@ -354,14 +354,15 @@ class Functions {
 				if(arguments.size() == 1)
 					return arguments.get(0).transformOperation(DISTINCT);
 				break;
-			case "sort":
+			// TODO: check whether sort and filterNulls are in language.
+			/*case "sort":
 				if(arguments.size() == 1)
 					return arguments.get(0).transformOperation(SORT);
 				break;
 			case "filterNulls":
 				if(arguments.size() == 1)
 					return arguments.get(0).filterNulls();
-				break;
+				break;*/
 			case "first":
 				if(arguments.size() == 2) {
 					Value size = arguments.get(0).getValue();

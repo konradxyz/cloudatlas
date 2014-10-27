@@ -109,15 +109,6 @@ public class Interpreter {
 		this.zmi = zmi;
 	}
 
-	private static Boolean getBoolean(Value value) {
-		if(value.getType().isCompatible(TypePrimitive.BOOLEAN)) {
-			Boolean b = ((ValueBoolean)value).getValue();
-			return b == null? false : b.booleanValue();
-		}
-		throw new InvalidTypeException(TypePrimitive.BOOLEAN, value.getType());
-	}
-	
-
 	private static Boolean getBoolean(Result result) {
 		Value value = result.getValue();
 		if(value.getType().isCompatible(TypePrimitive.BOOLEAN)) {
@@ -202,14 +193,12 @@ public class Interpreter {
 
 		public Table visit(WhereC where, Table table) {
 			Table result = new Table(table);
-		//	System.out.println(table);
 			for(TableRow row : table) {
 				Environment env = new EnvironmentRow(row, table.getColumns());
-				Value value = where.condexpr_.accept(new CondExprInterpreter(), env).getValue();
-				if(getBoolean(value))
+				Result condition = where.condexpr_.accept(new CondExprInterpreter(), env);
+				if(getBoolean(condition))
 					result.appendRow(row);
 			}
-		//	System.out.println(result);
 			return result;
 		}
 	}
@@ -307,7 +296,6 @@ public class Interpreter {
 		}
 
 		public QueryResult visit(AliasedSelItemC selItem, Table table) {
-		//	System.out.println(table.toString());
 			Environment env = new EnvironmentTable(table);
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
 			return new QueryResult(new Attribute(selItem.qident_), result.getValue());
@@ -329,7 +317,6 @@ public class Interpreter {
 			try {
 				Result left = expr.basicexpr_.accept(new BasicExprInterpreter(), env);
 				Result right = new ResultSingle(new ValueString(expr.string_));
-				//TODO: change it to unary operation
 				return left.binaryOperation(BinaryOperation.REG_EXPR, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);

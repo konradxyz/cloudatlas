@@ -10,7 +10,7 @@ import cloudatlas.ByteSerializatorTest;
 @RunWith(Suite.class)
 @SuiteClasses({ Success.class, ZMITest.class, ByteSerializatorTest.class,
 		SerializationAttributesMapTest.class, SerializationStringTest.class,
-		SerializatorValueStringTest.class })
+		SerializatorValueStringTest.class, BinaryInterpreterTest.class })
 public class AllTests {
 
 }
