@@ -90,6 +90,9 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 		t("true OR false");
 		f("false OR false");
 		
+		t("\"abcccdee\" REGEXP \"[a-z]*ccc[a-z]*\"");
+		f("\"abccdee\" REGEXP \"[a-z]*ccc[a-z]*\"");
+
 		
 		return tests;
 	}
