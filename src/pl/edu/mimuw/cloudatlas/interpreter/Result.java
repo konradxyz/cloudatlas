@@ -35,10 +35,7 @@ import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 abstract class Result {
-	public interface BinaryOperation {
-		public Value perform(Value v1, Value v2);
-	}
-
+	
 	public interface UnaryOperation {
 		public Value perform(Value v);
 	}
@@ -51,75 +48,6 @@ abstract class Result {
 		public ValueList perform(ValueList values);
 	}
 
-	private static final BinaryOperation IS_EQUAL = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.isEqual(v2);
-		}
-	};
-
-	private static final BinaryOperation IS_LOWER_THAN = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.isLowerThan(v2);
-		}
-	};
-
-	private static final BinaryOperation ADD_VALUE = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.addValue(v2);
-		}
-	};
-
-	private static final BinaryOperation SUBTRACT = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.subtract(v2);
-		}
-	};
-
-	private static final BinaryOperation MULTIPLY = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.multiply(v2);
-		}
-	};
-
-	private static final BinaryOperation DIVIDE = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.divide(v2);
-		}
-	};
-
-	private static final BinaryOperation MODULO = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.modulo(v2);
-		}
-	};
-
-	private static final BinaryOperation AND = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.and(v2);
-		}
-	};
-
-	private static final BinaryOperation OR = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.or(v2);
-		}
-	};
-
-	private static final BinaryOperation REG_EXPR = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.regExpr(v2);
-		}
-	};
 
 	private static final UnaryOperation NEGATE = new UnaryOperation() {
 		@Override
@@ -162,46 +90,6 @@ abstract class Result {
 
 	public Result transformOperation(TransformOperation operation) {
 		return new ResultList(operation.perform(getValues()));
-	}
-
-	public Result isEqual(Result right) {
-		return right.callMe(IS_EQUAL, this);
-	}
-
-	public Result isLowerThan(Result right) {
-		return right.callMe(IS_LOWER_THAN, this);
-	}
-
-	public Result addValue(Result right) {
-		return right.callMe(ADD_VALUE, this);
-	}
-
-	public Result subtract(Result right) {
-		return right.callMe(SUBTRACT, this);
-	}
-
-	public Result multiply(Result right) {
-		return right.callMe(MULTIPLY, this);
-	}
-
-	public Result divide(Result right) {
-		return right.callMe(DIVIDE, this);
-	}
-
-	public Result modulo(Result right) {
-		return right.callMe(MODULO, this);
-	}
-
-	public Result and(Result right) {
-		return right.callMe(AND, this);
-	}
-
-	public Result or(Result right) {
-		return right.callMe(OR, this);
-	}
-
-	public Result regExpr(Result right) {
-		return right.callMe(REG_EXPR, this);
 	}
 
 	public Result negate() {
