@@ -58,30 +58,6 @@ public class ResultList extends Result {
 	}
 
 	@Override
-	public Result filterNulls() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Result first(int size) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Result last(int size) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Result random(int size) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Result convertTo(Type to) {
 		return new ResultList(convertTo(list, to));
 	}

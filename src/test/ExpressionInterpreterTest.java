@@ -3,10 +3,12 @@ package test;
 import java.util.ArrayList;
 import java.util.List;
 
+import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueDouble;
 import pl.edu.mimuw.cloudatlas.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueString;
 
 public class ExpressionInterpreterTest extends InterpreterTest {
@@ -42,6 +44,15 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 
 	private void s(String expression, String result) {
 		r(expression, new ValueString(result));
+	}
+
+
+	private void ls(String expression, String[] results) {
+		List<Value> expected = new ArrayList<Value>();
+		for ( String str : results ) {
+			expected.add(new ValueString(str));
+		}
+		r(expression, new ValueList(expected, TypeCollection.computeElementType(expected)));
 	}
 
 	
@@ -93,6 +104,21 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 		t("\"abcccdee\" REGEXP \"[a-z]*ccc[a-z]*\"");
 		f("\"abccdee\" REGEXP \"[a-z]*ccc[a-z]*\"");
 
+		i("count(members)", 3);
+		
+		String[] firsts = {"tola", "tosia", "agatka"};
+		ls("first(3, unfold(some_names))", firsts);
+		
+
+		String[] lasts = {"agatka", "beatka", "celina"};
+		ls("last(3, unfold(some_names))", lasts);
+		
+		String[] colFirsts = {"3", "3"};
+		ls("first(2, (to_string(num_cores)))", colFirsts);
+	
+		String[] colLasts = {"3", "NULL"};
+		ls("last(2, (to_string(num_cores)))", colLasts);
+	
 		
 		return tests;
 	}

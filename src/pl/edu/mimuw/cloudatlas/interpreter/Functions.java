@@ -46,6 +46,7 @@ import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
 
 class Functions {
 	private static Functions instance = null;
@@ -274,7 +275,66 @@ class Functions {
 			return new ValueList(ret, ((TypeCollection)values.getType()).getElementType());
 		}
 	};
+	
+	private static abstract class ListAggregation implements AggregationOperation {
+		protected int count;
+		
+		public ListAggregation(Value count) {
+			if (count.getType().getPrimaryType() != PrimaryType.INT) {
+				throw new InternalInterpreterException(
+						"First argument to first, last and random functions should be INT");
+			}
+			this.count = ((ValueInt) count).getValue().intValue();
+			if (this.count < 0) {
+				throw new InternalInterpreterException(
+						"First argument to first, last and random functions should be greater or equal 0");
+			}
+		}
+		
+	}
+	
+	private static class FirstAggregation extends ListAggregation {
+		public FirstAggregation(Value count) {
+			super(count);
+		}
 
+		@Override
+		public Value perform(ValueList values) {
+			List<Value> res = values.subList(0, Math.min(count, values.size()));
+			return new ValueList(res, TypeCollection.computeElementType(res));
+		}
+	}
+	
+	
+	private static class LastAggregation extends ListAggregation {
+		public LastAggregation(Value count) {
+			super(count);
+		}
+
+		@Override
+		public Value perform(ValueList values) {
+			List<Value> res = values.subList(Math.max(0, values.size() - count), values.size());
+			return new ValueList(res, TypeCollection.computeElementType(res));
+		}
+	}
+
+	
+
+	private static class RandomAggregation extends ListAggregation {
+		public RandomAggregation(Value count) {
+			super(count);
+		}
+
+		@Override
+		public Value perform(ValueList values) {
+			List<Value> tmp = new ArrayList<Value>(values);
+			Collections.shuffle(tmp);
+			List<Value> res = tmp.subList(0, Math.min(count, tmp.size()));
+			return new ValueList(res, TypeCollection.computeElementType(res));
+		}
+	}
+
+	
 	private final ValueTime EPOCH;
 
 	private Functions() {
@@ -365,29 +425,17 @@ class Functions {
 				break;*/
 			case "first":
 				if(arguments.size() == 2) {
-					Value size = arguments.get(0).getValue();
-					if(size.getType().isCompatible(TypePrimitive.INTEGER) && ((ValueInt)size).getValue().intValue() >= 0)
-						return arguments.get(1).first(((ValueInt)size).getValue().intValue());
-					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
-							+ " and be >= 0.");
+					return arguments.get(1).aggregationOperation(new FirstAggregation(arguments.get(0).getValue()));
 				}
 				break;
 			case "last":
 				if(arguments.size() == 2) {
-					Value size = arguments.get(0).getValue();
-					if(size.getType().isCompatible(TypePrimitive.INTEGER) && ((ValueInt)size).getValue().intValue() >= 0)
-						return arguments.get(1).last(((ValueInt)size).getValue().intValue());
-					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
-							+ " and be >= 0.");
+					return arguments.get(1).aggregationOperation(new LastAggregation(arguments.get(0).getValue()));
 				}
 				break;
 			case "random":
 				if(arguments.size() == 2) {
-					Value size = arguments.get(0).getValue();
-					if(size.getType().isCompatible(TypePrimitive.INTEGER) && ((ValueInt)size).getValue().intValue() >= 0)
-						return arguments.get(1).random(((ValueInt)size).getValue().intValue());
-					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
-							+ " and be >= 0.");
+					return arguments.get(1).aggregationOperation(new RandomAggregation(arguments.get(0).getValue()));
 				}
 				break;
 			case "to_boolean":

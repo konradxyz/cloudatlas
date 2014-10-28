@@ -230,7 +230,7 @@ public abstract class InterpreterTest {
 		whatever02.getAttributes().add("php_modules",
 				new ValueList(list, TypePrimitive.STRING));
 
-		return root;
+		return uw;
 	}
 
 	public static class TestCase {

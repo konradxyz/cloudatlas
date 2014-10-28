@@ -78,13 +78,8 @@ abstract class Result {
 	public abstract Value getValue();
 	public abstract ValueList getValues();
 
-//	public abstract ValueList getList();
-
-///	public abstract ValueList getColumn();
-
-
 	public Result aggregationOperation(AggregationOperation operation) {
-		return new ResultSingle(operation.perform(getValues()));
+		return new ResultSingle(operation.perform(filterNullsList(getValues())));
 	}
 
 
@@ -110,47 +105,7 @@ abstract class Result {
 		return new ValueList(result.isEmpty()? null : result, ((TypeCollection)list.getType()).getElementType());
 	}
 
-	public abstract Result filterNulls();
-
-	protected static ValueList firstList(ValueList list, int size) {
-		ValueList nlist = filterNullsList(list);
-		if(nlist.getValue() == null)
-			return nlist;
-		List<Value> result = new ArrayList<Value>(size);
-		int i = 0;
-		for(Value v : nlist) {
-			result.add(v);
-			if(++i == size)
-				break;
-		}
-		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
-	}
-
-	public Result first(int size) {
-		return new ResultSingle(firstList(getValues(), size));
-	}
-
-	protected static ValueList lastList(ValueList list, int size) {
-		ValueList nlist = filterNullsList(list);
-		if(nlist.getValue() == null)
-			return nlist;
-		List<Value> result = new ArrayList<Value>(size);
-		for(int i = Math.max(0, list.size() - size); i < list.size(); ++i)
-			result.add(list.get(i));
-		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
-	}
-
-	public Result last(int size) {
-		return new ResultSingle(lastList(getValues(), size));
-	}
-
-	protected static ValueList randomList(ValueList list, int size) {
-		ValueList nlist = filterNullsList(list);
-		if(nlist.getValue() == null || list.size() <= size)
-			return nlist;
-		Collections.shuffle(nlist);
-		return new ValueList(nlist.getValue().subList(0, size), ((TypeCollection)list.getType()).getElementType());
-	}
+	//public abstract Result filterNulls();
 
 	protected static ValueList binaryOperationTypedValueList(ValueList left, BinaryOperation operation,
 			ResultSingle right) {
@@ -159,7 +114,6 @@ abstract class Result {
 			result.add(operation.perform(v, right.getValue()));
 		}
 		Type type = TypeCollection.computeElementType(result);
-		// Not sure whether it is correct place to catch NULL.
 		return new ValueList(result, type);
 	}
 	
@@ -169,7 +123,6 @@ abstract class Result {
 		for (Value v : right) {
 			result.add(operation.perform(left.getValue(), v));
 		}
-
 		Type type = TypeCollection.computeElementType(result);
 		return new ValueList(result, type);
 	}
@@ -190,8 +143,6 @@ abstract class Result {
 		}
 		return new ValueList(result, to);
 	}
-	
-	public abstract Result random(int size);
 
 	public abstract Result convertTo(Type to);
 
