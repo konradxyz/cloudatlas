@@ -35,10 +35,7 @@ import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 abstract class Result {
-	public interface BinaryOperation {
-		public Value perform(Value v1, Value v2);
-	}
-
+	
 	public interface UnaryOperation {
 		public Value perform(Value v);
 	}
@@ -51,75 +48,6 @@ abstract class Result {
 		public ValueList perform(ValueList values);
 	}
 
-	private static final BinaryOperation IS_EQUAL = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.isEqual(v2);
-		}
-	};
-
-	private static final BinaryOperation IS_LOWER_THAN = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.isLowerThan(v2);
-		}
-	};
-
-	private static final BinaryOperation ADD_VALUE = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.addValue(v2);
-		}
-	};
-
-	private static final BinaryOperation SUBTRACT = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.subtract(v2);
-		}
-	};
-
-	private static final BinaryOperation MULTIPLY = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.multiply(v2);
-		}
-	};
-
-	private static final BinaryOperation DIVIDE = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.divide(v2);
-		}
-	};
-
-	private static final BinaryOperation MODULO = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.modulo(v2);
-		}
-	};
-
-	private static final BinaryOperation AND = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.and(v2);
-		}
-	};
-
-	private static final BinaryOperation OR = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.or(v2);
-		}
-	};
-
-	private static final BinaryOperation REG_EXPR = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.regExpr(v2);
-		}
-	};
 
 	private static final UnaryOperation NEGATE = new UnaryOperation() {
 		@Override
@@ -150,58 +78,13 @@ abstract class Result {
 	public abstract Value getValue();
 	public abstract ValueList getValues();
 
-//	public abstract ValueList getList();
-
-///	public abstract ValueList getColumn();
-
-
 	public Result aggregationOperation(AggregationOperation operation) {
-		return new ResultSingle(operation.perform(getValues()));
+		return new ResultSingle(operation.perform(filterNullsList(getValues())));
 	}
 
 
 	public Result transformOperation(TransformOperation operation) {
 		return new ResultList(operation.perform(getValues()));
-	}
-
-	public Result isEqual(Result right) {
-		return right.callMe(IS_EQUAL, this);
-	}
-
-	public Result isLowerThan(Result right) {
-		return right.callMe(IS_LOWER_THAN, this);
-	}
-
-	public Result addValue(Result right) {
-		return right.callMe(ADD_VALUE, this);
-	}
-
-	public Result subtract(Result right) {
-		return right.callMe(SUBTRACT, this);
-	}
-
-	public Result multiply(Result right) {
-		return right.callMe(MULTIPLY, this);
-	}
-
-	public Result divide(Result right) {
-		return right.callMe(DIVIDE, this);
-	}
-
-	public Result modulo(Result right) {
-		return right.callMe(MODULO, this);
-	}
-
-	public Result and(Result right) {
-		return right.callMe(AND, this);
-	}
-
-	public Result or(Result right) {
-		return right.callMe(OR, this);
-	}
-
-	public Result regExpr(Result right) {
-		return right.callMe(REG_EXPR, this);
 	}
 
 	public Result negate() {
@@ -222,47 +105,7 @@ abstract class Result {
 		return new ValueList(result.isEmpty()? null : result, ((TypeCollection)list.getType()).getElementType());
 	}
 
-	public abstract Result filterNulls();
-
-	protected static ValueList firstList(ValueList list, int size) {
-		ValueList nlist = filterNullsList(list);
-		if(nlist.getValue() == null)
-			return nlist;
-		List<Value> result = new ArrayList<Value>(size);
-		int i = 0;
-		for(Value v : nlist) {
-			result.add(v);
-			if(++i == size)
-				break;
-		}
-		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
-	}
-
-	public Result first(int size) {
-		return new ResultSingle(firstList(getValues(), size));
-	}
-
-	protected static ValueList lastList(ValueList list, int size) {
-		ValueList nlist = filterNullsList(list);
-		if(nlist.getValue() == null)
-			return nlist;
-		List<Value> result = new ArrayList<Value>(size);
-		for(int i = Math.max(0, list.size() - size); i < list.size(); ++i)
-			result.add(list.get(i));
-		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
-	}
-
-	public Result last(int size) {
-		return new ResultSingle(lastList(getValues(), size));
-	}
-
-	protected static ValueList randomList(ValueList list, int size) {
-		ValueList nlist = filterNullsList(list);
-		if(nlist.getValue() == null || list.size() <= size)
-			return nlist;
-		Collections.shuffle(nlist);
-		return new ValueList(nlist.getValue().subList(0, size), ((TypeCollection)list.getType()).getElementType());
-	}
+	//public abstract Result filterNulls();
 
 	protected static ValueList binaryOperationTypedValueList(ValueList left, BinaryOperation operation,
 			ResultSingle right) {
@@ -271,7 +114,6 @@ abstract class Result {
 			result.add(operation.perform(v, right.getValue()));
 		}
 		Type type = TypeCollection.computeElementType(result);
-		// Not sure whether it is correct place to catch NULL.
 		return new ValueList(result, type);
 	}
 	
@@ -281,7 +123,6 @@ abstract class Result {
 		for (Value v : right) {
 			result.add(operation.perform(left.getValue(), v));
 		}
-
 		Type type = TypeCollection.computeElementType(result);
 		return new ValueList(result, type);
 	}
@@ -302,8 +143,6 @@ abstract class Result {
 		}
 		return new ValueList(result, to);
 	}
-	
-	public abstract Result random(int size);
 
 	public abstract Result convertTo(Type to);
 

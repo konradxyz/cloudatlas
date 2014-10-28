@@ -24,16 +24,10 @@
 
 package pl.edu.mimuw.cloudatlas.interpreter;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import pl.edu.mimuw.cloudatlas.interpreter.Result.BinaryOperation;
 import pl.edu.mimuw.cloudatlas.model.Type;
-import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 class ResultSingle extends Result {
 	private final Value value;
@@ -41,23 +35,26 @@ class ResultSingle extends Result {
 	public ResultSingle(Value value) {
 		this.value = value;
 	}
-	
+
 	@Override
-	protected ResultSingle binaryOperationTyped(BinaryOperation operation, ResultSingle right) {
+	protected ResultSingle binaryOperationTyped(BinaryOperation operation,
+			ResultSingle right) {
 		return new ResultSingle(operation.perform(value, right.value));
 	}
 
 	@Override
 	protected Result binaryOperationTyped(BinaryOperation operation,
 			ResultColumn right) {
-		return new ResultColumn(binaryOperationTyped(this, operation, right.getColumn()));
+		return new ResultColumn(binaryOperationTyped(this, operation,
+				right.getColumn()));
 	}
-	
+
 	@Override
 	public Result binaryOperationTyped(BinaryOperation operation,
 			ResultList right) {
-		return new ResultList(binaryOperationTyped(this, operation, right.getList()));
-		
+		return new ResultList(binaryOperationTyped(this, operation,
+				right.getList()));
+
 	}
 
 	@Override
@@ -74,36 +71,14 @@ class ResultSingle extends Result {
 	public Value getValue() {
 		return value;
 	}
-/*
-	@Override
-	public ValueList getList() {
-		throw new UnsupportedOperationException("Not a ResultList.");
-	}
 
-	@Override
-	public ValueList getColumn() {
-		throw new UnsupportedOperationException("Not a ResultColumn.");
-	}
-*/
-	@Override
-	public Result filterNulls() {
-		throw new UnsupportedOperationException("Operation filterNulls not supported on ResultSingle.");
-	}
-
-	@Override
-	public Result first(int size) {
-		throw new UnsupportedOperationException("Operation first not supported on ResultSingle.");
-	}
-
-	@Override
-	public Result last(int size) {
-		throw new UnsupportedOperationException("Operation last not supported on ResultSingle.");
-	}
-
-	@Override
-	public Result random(int size) {
-		throw new UnsupportedOperationException("Operation random not supported on ResultSingle.");
-	}
+	/*
+	 * @Override public ValueList getList() { throw new
+	 * UnsupportedOperationException("Not a ResultList."); }
+	 * 
+	 * @Override public ValueList getColumn() { throw new
+	 * UnsupportedOperationException("Not a ResultColumn."); }
+	 */
 
 	@Override
 	public ResultSingle convertTo(Type to) {
@@ -122,7 +97,8 @@ class ResultSingle extends Result {
 
 	@Override
 	public ValueList getValues() {
-		throw new UnsupportedOperationException("Cannot aggregate on ResultSingle.");
+		throw new UnsupportedOperationException(
+				"Cannot aggregate on ResultSingle.");
 	}
 
 }
