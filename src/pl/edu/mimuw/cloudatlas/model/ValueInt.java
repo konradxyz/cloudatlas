@@ -109,6 +109,7 @@ public class ValueInt extends ValueSimple<Long> {
 		return new ValueInt(getValue() % ((ValueInt)value).getValue());
 	}
 	
+	//TODO separate negation and reversal functions
 	@Override
 	public ValueInt negate() {
 		return new ValueInt(isNull()? null : -getValue());

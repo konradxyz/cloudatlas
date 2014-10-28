@@ -54,12 +54,6 @@ public abstract class Value {
 	public abstract boolean isNull();
 	
 	protected final void sameTypesOrThrow(Value value, Operation operation) {
-		if (getType().getPrimaryType()==PrimaryType.DURATION && value.getType().getPrimaryType()==PrimaryType.INT ){
-			return;
-		}
-		if (getType().getPrimaryType()==PrimaryType.INT && value.getType().getPrimaryType()==PrimaryType.DURATION ){
-			return;
-		}
 		if(!getType().isCompatible(value.getType())) {
 			throw new IncompatibleTypesException(getType(), value.getType(), operation);
 		}

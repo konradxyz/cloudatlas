@@ -9,6 +9,7 @@ import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueDouble;
+import pl.edu.mimuw.cloudatlas.model.ValueDuration;
 import pl.edu.mimuw.cloudatlas.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
@@ -70,6 +71,7 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 				new ValueList(expectedSingletonList, TypeCollection
 						.computeElementType(expectedSingletonList)));
 	}
+	
 	
 	@Override
 	public List<TestCase> getTests() {
@@ -143,7 +145,10 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 		
 		ss("first(1, to_set(to_list(to_set(unfold(some_names_sets)))))", setFirst);
 
-		
+		s("to_string(to_duration(60000))", "+0 00:01:00.000" );
+		s("to_string(to_duration(934782378235786))", "+10819240 11:43:55.786" );
+		s("to_string(to_duration(-934782378235786))", "-10819240 11:43:55.786" );
+		s("to_string(to_duration(0))", "+0" );
 		return tests;
 	}
 
