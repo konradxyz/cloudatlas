@@ -14,6 +14,7 @@ public class ResultColumn extends Result {
 	private final ValueList list;
 
 	public ResultColumn(ValueList list) {
+		assert(list != null);
 		this.list = list;
 	}
 
@@ -82,8 +83,7 @@ public class ResultColumn extends Result {
 
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
+		return list.getElementType();
 	}
 
 }

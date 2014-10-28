@@ -1,7 +1,9 @@
 package test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
@@ -9,6 +11,7 @@ import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueDouble;
 import pl.edu.mimuw.cloudatlas.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.model.ValueString;
 
 public class ExpressionInterpreterTest extends InterpreterTest {
@@ -55,6 +58,18 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 		r(expression, new ValueList(expected, TypeCollection.computeElementType(expected)));
 	}
 
+	private void ss(String expression, String[] results) {
+		Set<Value> expected = new HashSet<Value>();
+		for (String str : results) {
+			expected.add(new ValueString(str));
+		}
+		List<Value> expectedSingletonList = new ArrayList<Value>();
+		expectedSingletonList.add(new ValueSet(expected, TypeCollection
+				.computeElementType(expected)));
+		r(expression,
+				new ValueList(expectedSingletonList, TypeCollection
+						.computeElementType(expectedSingletonList)));
+	}
 	
 	@Override
 	public List<TestCase> getTests() {
@@ -119,6 +134,15 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 		String[] colLasts = {"3", "NULL"};
 		ls("last(2, (to_string(num_cores)))", colLasts);
 	
+		String[] setFirst = {"tola", "tosia"};
+		ss("first(1, to_set(some_names))", setFirst);
+		
+		ss("first(1, to_set(unfold(some_names_sets)))", setFirst);
+		
+		ss("first(1, to_set(to_list(to_set(some_names))))", setFirst);
+		
+		ss("first(1, to_set(to_list(to_set(unfold(some_names_sets)))))", setFirst);
+
 		
 		return tests;
 	}

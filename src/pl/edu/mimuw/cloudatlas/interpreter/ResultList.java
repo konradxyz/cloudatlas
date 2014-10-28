@@ -10,6 +10,7 @@ public class ResultList extends Result {
 	private final ValueList list;
 	
 	public ResultList(ValueList list) {
+		assert(list != null);
 		this.list = list;
 	}
 
@@ -69,8 +70,7 @@ public class ResultList extends Result {
 
 	@Override
 	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
+		return list.getElementType();
 	}
 
 

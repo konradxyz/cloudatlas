@@ -14,6 +14,7 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -24,6 +25,7 @@ import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.interpreter.query.Yylex;
 import pl.edu.mimuw.cloudatlas.interpreter.query.parser;
 import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
@@ -129,6 +131,10 @@ public abstract class InterpreterTest {
 				new ValueString("tosia"), });
 		violet07.getAttributes().add("some_names",
 				new ValueList(list, TypePrimitive.STRING));
+		Set<Value> set = new HashSet<Value>();
+		set.add(new ValueList(list, TypePrimitive.STRING));
+		violet07.getAttributes().add("some_names_sets",
+				new ValueSet(set, TypeCollection.computeElementType(set)));
 		violet07.getAttributes().add("expiry",
 				new ValueDuration(13l, 12l, 0l, 0l, 0l));
 
@@ -156,6 +162,10 @@ public abstract class InterpreterTest {
 				new ValueString("beatka"), new ValueString("celina"), });
 		khaki31.getAttributes().add("some_names",
 				new ValueList(list, TypePrimitive.STRING));
+		set = new HashSet<Value>();
+		set.add(new ValueList(list, TypePrimitive.STRING));
+		khaki31.getAttributes().add("some_names_sets",
+				new ValueSet(set, TypeCollection.computeElementType(set)));
 		khaki31.getAttributes().add("expiry",
 				new ValueDuration(-13l, -11l, 0l, 0l, 0l));
 

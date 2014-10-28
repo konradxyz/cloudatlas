@@ -6,6 +6,7 @@ import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 public class EnvironmentRow extends Environment {
+	
 	private final TableRow row;
 
 	public EnvironmentRow(TableRow row, List<String> columns) {
