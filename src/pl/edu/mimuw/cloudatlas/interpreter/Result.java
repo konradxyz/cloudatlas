@@ -105,26 +105,25 @@ abstract class Result {
 		return new ValueList(result.isEmpty()? null : result, ((TypeCollection)list.getType()).getElementType());
 	}
 
-	//public abstract Result filterNulls();
 
 	protected static ValueList binaryOperationTypedValueList(ValueList left, BinaryOperation operation,
 			ResultSingle right) {
+		Type resultType = operation.getResultType(left.getElementType(), right.getValue().getType());
 		List<Value> result = new ArrayList<Value>();
 		for ( Value v : left ) {
 			result.add(operation.perform(v, right.getValue()));
 		}
-		Type type = TypeCollection.computeElementType(result);
-		return new ValueList(result, type);
+		return new ValueList(result, resultType);
 	}
 	
 	protected static ValueList binaryOperationTyped(ResultSingle left, BinaryOperation operation,
 			ValueList right) {
+		Type resultType = operation.getResultType(left.getValue().getType(), right.getElementType());
 		List<Value> result = new ArrayList<Value>();
 		for (Value v : right) {
 			result.add(operation.perform(left.getValue(), v));
 		}
-		Type type = TypeCollection.computeElementType(result);
-		return new ValueList(result, type);
+		return new ValueList(result, resultType);
 	}
 	
 	public static ValueList unaryOperation(ValueList list, UnaryOperation operation) {

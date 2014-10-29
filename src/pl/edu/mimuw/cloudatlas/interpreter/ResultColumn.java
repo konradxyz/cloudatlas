@@ -28,6 +28,7 @@ public class ResultColumn extends Result {
 	@Override
 	protected Result binaryOperationTyped(BinaryOperation operation,
 			ResultColumn right) {
+		Type type = operation.getResultType(this.list.getElementType(), right.getColumn().getElementType());
 		if (right.list.size() != this.list.size())
 			throw new UnsupportedOperationException(
 					"Binary operation on columns of different sizes");
@@ -35,7 +36,6 @@ public class ResultColumn extends Result {
 		for (int i = 0; i < this.list.size(); ++i) {
 			result.add(operation.perform(this.list.get(i), right.list.get(i)));
 		}
-		Type type = TypeCollection.computeElementType(result);
 		return new ResultColumn(new ValueList(result, type));
 
 	}

@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,7 @@ import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
 import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.interpreter.query.Yylex;
 import pl.edu.mimuw.cloudatlas.interpreter.query.parser;
+import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
@@ -168,6 +170,8 @@ public abstract class InterpreterTest {
 				new ValueSet(set, TypeCollection.computeElementType(set)));
 		khaki31.getAttributes().add("expiry",
 				new ValueDuration(-13l, -11l, 0l, 0l, 0l));
+		
+		khaki31.getAttributes().add("int_set", new ValueSet(TypePrimitive.INTEGER));
 
 		ZMI khaki13 = new ZMI(uw);
 		uw.addSon(khaki13);
@@ -246,41 +250,124 @@ public abstract class InterpreterTest {
 	public static class TestCase {
 		public final String query;
 		public final Value result;
+		public final boolean expectException;
 
 		public TestCase(String query, Value result) {
 			this.query = query;
 			this.result = result;
+			expectException = false;
+		}
+
+		public TestCase(String query, Value result, boolean exceptionExpected) {
+			this.query = query;
+			this.result = result;
+			expectException = exceptionExpected;
 		}
 	}
 
-	public abstract List<TestCase> getTests();
+	public abstract void fillTests();
 
 	@Test
-	public void test() throws IOException {
+	public void test() throws Exception {
 		Interpreter interpreter = getInstance();
-		for (TestCase c : getTests()) {
+		fillTests();
+		for (TestCase c : tests) {
+			System.err.println("In query: " + c.query);
 			String query = c.query;
 			Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
+			Exception exception = null;
+
+			List<QueryResult> result = null;
+			Program program = new parser(lex).pProgram();
 			try {
-				List<QueryResult> result;
-				try {
-					result = interpreter.interpretProgram((new parser(lex))
-							.pProgram());
-					assertEquals(1, result.size());
-					if (!c.result.equals(result.get(0).getValue())) {
-						throw new AssertionFailedError(String.format(
-								"In query %s: expected %s, got %s", query,
-								c.result, result.get(0).getValue()));
-					}
-				} catch (Exception e) {
-					fail(e.getMessage() + "\n" + query);
+				result = interpreter.interpretProgram(program);
+			} catch (Exception e) {
+				exception = e;
+			}
+			if (c.expectException) {
+				if (exception == null) {
+					fail("In query '" + c.query + "': exception expected, got " + result.toString());
 				}
-			} catch (InterpreterException exception) {
-				System.err.println(exception.getMessage());
-				fail(exception.getMessage());
+				System.err.println("OK, expected exception and received excpetion: " + exception.getMessage());
+				continue; // I feel bad about this particular line.
+			} else {
+				if (exception != null) {
+					fail(exception.getStackTrace() + "\n" + query);
+				}
+			}
+			assertEquals(1, result.size());
+			if (!c.result.equals(result.get(0).getValue())) {
+				throw new AssertionFailedError(String.format(
+						"In query %s: expected %s, got %s", query, c.result,
+						result.get(0).getValue()));
 			}
 
 		}
 	}
+	
+	
+	private List<TestCase> tests = new ArrayList<TestCase>();
+	
+	
+	// Named r just because...
+	// Note that it takes expression, not query
+	protected void r(String expression, Value v, boolean exceptionExpected) {
+		tests.add(new TestCase("SELECT " + expression + " AS result", v, exceptionExpected));
+	}
+
+	protected void r(String expression, Value v) {
+		r(expression, v, false);
+	}
+	
+	protected void e(String expression) {
+		r(expression, null, true);
+	}
+	
+	// Expects that expression will evaluate to false
+	protected void f(String expression) {
+		r(expression, new ValueBoolean(false));
+	}
+	
+	// Expects that expression will evaluate to false
+	protected void t(String expression) {
+		r(expression, new ValueBoolean(true));
+	}
+	
+	protected void i(String expression, long result) {
+		r(expression, new ValueInt(result));
+	}
+	
+
+	protected void d(String expression, double result) {
+		r(expression, new ValueDouble(result));
+	}
+	
+
+	protected void s(String expression, String result) {
+		r(expression, new ValueString(result));
+	}
+
+
+	protected void ls(String expression, String[] results) {
+		List<Value> expected = new ArrayList<Value>();
+		for ( String str : results ) {
+			expected.add(new ValueString(str));
+		}
+		r(expression, new ValueList(expected, TypeCollection.computeElementType(expected)));
+	}
+
+	protected void ss(String expression, String[] results) {
+		Set<Value> expected = new HashSet<Value>();
+		for (String str : results) {
+			expected.add(new ValueString(str));
+		}
+		List<Value> expectedSingletonList = new ArrayList<Value>();
+		expectedSingletonList.add(new ValueSet(expected, TypeCollection
+				.computeElementType(expected)));
+		r(expression,
+				new ValueList(expectedSingletonList, TypeCollection
+						.computeElementType(expectedSingletonList)));
+	}
+
 
 }
