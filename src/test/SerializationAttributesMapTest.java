@@ -1,18 +1,18 @@
 package test;
 
-import java.net.Inet4Address;
+import static org.junit.Assert.assertEquals;
+
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.PathName;
-import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
@@ -93,6 +93,13 @@ public class SerializationAttributesMapTest extends SerializatorTest<AttributesM
 		addToList(result, attributesMapGlobal, "attributeTime", new ValueTime(3L));
 		result.add(attributesMapGlobal);
 		return result;
+	}
+	
+	@Override
+	public void customCompare(AttributesMap object, AttributesMap deserialized) {
+		for ( Entry<Attribute, Value> entry : object ){
+			assertEquals(entry.getValue().getType(), deserialized.get(entry.getKey()).getType());
+		}
 	}
 
 	@Override

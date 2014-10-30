@@ -113,4 +113,22 @@ public class TypeCollection extends Type {
 		
 		return mainType == null? TypePrimitive.NULL : mainType;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this )
+			return true;
+		if ( o == null )
+			return false;
+		if ( o instanceof TypeCollection ) {
+			TypeCollection other = (TypeCollection) o;
+			return getPrimaryType().equals(other.getPrimaryType()) && getElementType().equals(other.getElementType());
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		return getPrimaryType().ordinal() + getElementType().hashCode();
+	}
 }
