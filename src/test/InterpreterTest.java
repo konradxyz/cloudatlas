@@ -288,7 +288,7 @@ public abstract class InterpreterTest {
 				if (exception == null) {
 					fail("In query '" + c.query + "': exception expected, got " + result.toString());
 				}
-				System.err.println("OK, expected exception and received excpetion: " + exception.getMessage());
+				System.err.println("OK, expected exception and received exception: " + exception.getMessage());
 				continue; // I feel bad about this particular line.
 			} else {
 				if (exception != null) {
@@ -309,10 +309,14 @@ public abstract class InterpreterTest {
 	private List<TestCase> tests = new ArrayList<TestCase>();
 	
 	
+	protected void q(String query, Value v, boolean exceptionExpected) {
+		tests.add(new TestCase(query, v, exceptionExpected));
+	}
+	
 	// Named r just because...
 	// Note that it takes expression, not query
 	protected void r(String expression, Value v, boolean exceptionExpected) {
-		tests.add(new TestCase("SELECT " + expression + " AS result", v, exceptionExpected));
+		q("SELECT " + expression + " AS result", v, exceptionExpected);
 	}
 
 	protected void r(String expression, Value v) {

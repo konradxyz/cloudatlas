@@ -125,6 +125,10 @@ public class Interpreter {
 	private static Boolean lower(ValuesPair pair) {
 		return getBoolean(pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right));
 	}
+	
+	private static Result not(Result result) {
+		return result.unaryOperation(UnaryOperation.NOT);
+	}
 
 
 	public List<QueryResult> interpretProgram(Program program) {
@@ -316,8 +320,7 @@ public class Interpreter {
 		public Result visit(BoolExprRegExpC expr, Environment env) {
 			try {
 				Result left = expr.basicexpr_.accept(new BasicExprInterpreter(), env);
-				Result right = new ResultSingle(new ValueString(expr.string_));
-				return left.binaryOperation(BinaryOperation.REG_EXPR, right);
+				return left.unaryOperation(new UnaryOperation.RegexpOperation(expr.string_));
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -351,7 +354,7 @@ public class Interpreter {
 
 		public Result visit(CondExprNotC expr, Environment env) {
 			try {
-				return expr.condexpr_.accept(new CondExprInterpreter(), env).negate();
+				return not(expr.condexpr_.accept(new CondExprInterpreter(), env));
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -486,8 +489,8 @@ public class Interpreter {
 
 	public class RelOpInterpreter implements RelOp.Visitor<Result, ValuesPair> {
 		public Result visit(RelOpGtC op, ValuesPair pair) {
-			Result greaterEqual = pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right).negate();
-			Result notEqual = pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right).negate();
+			Result greaterEqual = not(pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right));
+			Result notEqual = not(pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right));
 			return greaterEqual.binaryOperation(BinaryOperation.AND, notEqual);
 		}
 
@@ -496,7 +499,7 @@ public class Interpreter {
 		}
 
 		public Result visit(RelOpNeC op, ValuesPair pair) {
-			return pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right).negate();
+			return not(pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right));
 		}
 
 		public Result visit(RelOpLtC op, ValuesPair pair) {
@@ -510,7 +513,7 @@ public class Interpreter {
 		}
 
 		public Result visit(RelOpGeC op, ValuesPair pair) {
-			return pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right).negate();
+			return not(pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right));
 		}
 	}
 }

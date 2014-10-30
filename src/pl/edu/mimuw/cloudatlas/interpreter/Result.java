@@ -35,10 +35,6 @@ import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 abstract class Result {
-	
-	public interface UnaryOperation {
-		public Value perform(Value v);
-	}
 
 	public interface AggregationOperation {
 		public Value perform(ValueList values);
@@ -47,21 +43,6 @@ abstract class Result {
 	public interface TransformOperation {
 		public ValueList perform(ValueList values);
 	}
-
-
-	private static final UnaryOperation NEGATE = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			return v.negate();
-		}
-	};
-
-	private static final UnaryOperation VALUE_SIZE = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			return v.valueSize();
-		}
-	};
 
 	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultSingle right);
 	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultColumn right);
@@ -88,11 +69,11 @@ abstract class Result {
 	}
 
 	public Result negate() {
-		return unaryOperation(NEGATE);
+		return unaryOperation(UnaryOperation.NEGATE);
 	}
 
 	public Result valueSize() {
-		return unaryOperation(VALUE_SIZE);
+		return unaryOperation(UnaryOperation.VALUE_SIZE);
 	}
 
 	protected static ValueList filterNullsList(ValueList list) {
@@ -127,11 +108,11 @@ abstract class Result {
 	}
 	
 	public static ValueList unaryOperation(ValueList list, UnaryOperation operation) {
+		Type type = operation.getResultType(list.getElementType());
 		List<Value> result = new ArrayList<Value>();
 		for ( Value v : list ) {
 			result.add(operation.perform(v));
 		}
-		Type type = TypeCollection.computeElementType(result);
 		return new ValueList(result, type);
 	}
 	

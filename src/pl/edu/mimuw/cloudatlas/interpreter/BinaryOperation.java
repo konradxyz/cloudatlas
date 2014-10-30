@@ -22,8 +22,8 @@ public abstract class BinaryOperation {
 	public abstract Type getResultType(Type left, Type right);
 	
 	protected abstract String getName();
-	protected  InvalidBinaryOperationException generateException(Type left, Type right) {
-		return new InvalidBinaryOperationException(getName(), left, right);	
+	protected  InvalidTypeOperationException generateException(Type left, Type right) {
+		return new InvalidTypeOperationException(getName(), left, right);	
 	}
 	
 	protected Type throwIfNull(Type result, Type left, Type right) {
@@ -57,6 +57,13 @@ public abstract class BinaryOperation {
 	private static Type getResultType(
 			Map<TypePrimitive, Map<TypePrimitive, TypePrimitive>> supportedPrimitives,
 			Type left, Type right) {
+
+		// If one of types is untyped null it might be possible that we will
+		// have multiple types that could be used in place of this null.
+		// Consider 2 * x, where x is untyped NULL.
+		// x might be either INTEGER or DURATION.
+		// Following function chooses somehow arbitrary proper result type.
+		// Global, untyped NULL is terrible idea but it is necessary.
 		if ( left.equals(TypePrimitive.NULL)) {
 			if ( right.equals(TypePrimitive.NULL))
 				return TypePrimitive.NULL;
@@ -334,27 +341,4 @@ public abstract class BinaryOperation {
 			return "or";
 		}
 	};
-
-	// TODO: move it to unary operators.
-	public static final BinaryOperation REG_EXPR = new BinaryOperation() {
-		@Override
-		public Value perform(Value v1, Value v2) {
-			return v1.regExpr(v2);
-		}
-
-		@Override
-		public Type getResultType(Type left, Type right) {
-			if (left.isCompatible(right)
-					&& left.isCompatible(TypePrimitive.STRING)) {
-				return TypePrimitive.BOOLEAN;
-			}
-			throw generateException(left, right);
-		}
-
-		@Override
-		public String getName() {
-			return "regexpr";
-		}
-	};
-
 }

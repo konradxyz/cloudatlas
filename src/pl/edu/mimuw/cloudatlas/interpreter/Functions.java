@@ -33,7 +33,6 @@ import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.interpreter.Result.AggregationOperation;
 import pl.edu.mimuw.cloudatlas.interpreter.Result.TransformOperation;
-import pl.edu.mimuw.cloudatlas.interpreter.Result.UnaryOperation;
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.Type.PrimaryType;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
@@ -46,46 +45,9 @@ import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
-import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
 
 class Functions {
 	private static Functions instance = null;
-
-	private static final UnaryOperation ROUND = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			if(v.getType().isCompatible(TypePrimitive.DOUBLE)) {
-				if(v.isNull())
-					return new ValueDouble(null);
-				return new ValueDouble((double)Math.round(((ValueDouble)v).getValue()));
-			}
-			throw new IllegalArgumentException("Value must have type " + TypePrimitive.DOUBLE + ".");
-		}
-	};
-
-	private static final UnaryOperation FLOOR = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			if(v.getType().isCompatible(TypePrimitive.DOUBLE)) {
-				if(v.isNull())
-					return new ValueDouble(null);
-				return new ValueDouble((double)Math.floor(((ValueDouble)v).getValue()));
-			}
-			throw new IllegalArgumentException("Value must have type " + TypePrimitive.DOUBLE + ".");
-		}
-	};
-
-	private static final UnaryOperation CEIL = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			if(v.getType().isCompatible(TypePrimitive.DOUBLE)) {
-				if(v.isNull())
-					return new ValueDouble(null);
-				return new ValueDouble((double)Math.ceil(((ValueDouble)v).getValue()));
-			}
-			throw new IllegalArgumentException("Value must have type " + TypePrimitive.DOUBLE + ".");
-		}
-	};
 
 	private static final AggregationOperation COUNT = new AggregationOperation() {
 		@Override
@@ -356,15 +318,15 @@ class Functions {
 		switch(name) {
 			case "round":
 				if(arguments.size() == 1)
-					return arguments.get(0).unaryOperation(ROUND);
+					return arguments.get(0).unaryOperation(UnaryOperation.ROUND);
 				break;
 			case "floor":
 				if(arguments.size() == 1)
-					return arguments.get(0).unaryOperation(FLOOR);
+					return arguments.get(0).unaryOperation(UnaryOperation.FLOOR);
 				break;
 			case "ceil":
 				if(arguments.size() == 1)
-					return arguments.get(0).unaryOperation(CEIL);
+					return arguments.get(0).unaryOperation(UnaryOperation.CEIL);
 				break;
 			case "now":
 				if(arguments.size() == 0)

@@ -59,6 +59,7 @@ class ResultSingle extends Result {
 
 	@Override
 	public ResultSingle unaryOperation(UnaryOperation operation) {
+		operation.getResultType(value.getType());
 		return new ResultSingle(operation.perform(value));
 	}
 

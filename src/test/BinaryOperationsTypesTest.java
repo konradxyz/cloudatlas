@@ -1,5 +1,6 @@
 package test;
 
+
 public class BinaryOperationsTypesTest extends InterpreterTest {
 
 	@Override
@@ -16,8 +17,19 @@ public class BinaryOperationsTypesTest extends InterpreterTest {
 		ls("(first(2, to_string(num_cores + num_cores)))", new String[]{"6", "6"});
 		
 		ls("(first(2, to_string(num_cores + num_cores)))", new String[]{"6", "6"});
-
-
+		
+		e("ceil(unfold(int_set))");
+		
+		
+		// With this condition int_set is empty column.
+		q("SELECT (-int_set) + \"sasa\" AS sth WHERE size(int_set) > 0", null, true);
+		
+		
+		e("NOT 1");
+		e("- true");
+		f("NOT true");
+		i("- ( 1 + 1)", -2);
+	
 	}
 
 }
