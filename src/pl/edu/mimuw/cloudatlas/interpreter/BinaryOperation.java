@@ -1,9 +1,13 @@
 package pl.edu.mimuw.cloudatlas.interpreter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import pl.edu.mimuw.cloudatlas.model.Type;
@@ -50,9 +54,35 @@ public abstract class BinaryOperation {
 		return result;
 	}
 
-	private static TypePrimitive getResultType(
+	private static Type getResultType(
 			Map<TypePrimitive, Map<TypePrimitive, TypePrimitive>> supportedPrimitives,
 			Type left, Type right) {
+		if ( left.equals(TypePrimitive.NULL)) {
+			if ( right.equals(TypePrimitive.NULL))
+				return TypePrimitive.NULL;
+			List<Type> possibleTypes = new ArrayList<Type>();
+			for ( Entry<TypePrimitive, Map<TypePrimitive, TypePrimitive>> entry : supportedPrimitives.entrySet() ) {
+				if ( entry.getValue().containsKey(right))
+					possibleTypes.add(entry.getValue().get(right));
+			}
+			if ( possibleTypes.contains(right))
+				return right;
+			if ( possibleTypes.size() == 0 )
+				return null;
+			return possibleTypes.get(0);
+			
+		}
+		if ( right.equals(TypePrimitive.NULL)) {
+			if ( supportedPrimitives.containsKey(left) ){
+				Collection<TypePrimitive> possibleTypes = supportedPrimitives.get(left).values();
+				if ( possibleTypes.contains(left) )
+					return left;
+				if ( possibleTypes.size() == 0 )
+					return null;
+				return possibleTypes.iterator().next();
+			}
+			return null;
+		}
 		if (supportedPrimitives.containsKey(left)
 				&& supportedPrimitives.get(left).containsKey(right)) {
 			return supportedPrimitives.get(left).get(right);
@@ -250,9 +280,9 @@ public abstract class BinaryOperation {
 
 		@Override
 		public Type getResultType(Type left, Type right) {
-			if (left.isCompatible(right)
+			if (left.isCompatible(TypePrimitive.INTEGER)
 					&& left.isCompatible(TypePrimitive.INTEGER)) {
-				return TypePrimitive.BOOLEAN;
+				return TypePrimitive.INTEGER;
 			}
 			throw generateException(left, right);
 		}
@@ -271,7 +301,7 @@ public abstract class BinaryOperation {
 
 		@Override
 		public Type getResultType(Type left, Type right) {
-			if (left.isCompatible(right)
+			if (left.isCompatible(TypePrimitive.BOOLEAN)
 					&& left.isCompatible(TypePrimitive.BOOLEAN)) {
 				return TypePrimitive.BOOLEAN;
 			}
@@ -292,7 +322,7 @@ public abstract class BinaryOperation {
 
 		@Override
 		public Type getResultType(Type left, Type right) {
-			if (left.isCompatible(right)
+			if (left.isCompatible(TypePrimitive.BOOLEAN)
 					&& left.isCompatible(TypePrimitive.BOOLEAN)) {
 				return TypePrimitive.BOOLEAN;
 			}
@@ -305,6 +335,7 @@ public abstract class BinaryOperation {
 		}
 	};
 
+	// TODO: move it to unary operators.
 	public static final BinaryOperation REG_EXPR = new BinaryOperation() {
 		@Override
 		public Value perform(Value v1, Value v2) {
@@ -314,7 +345,7 @@ public abstract class BinaryOperation {
 		@Override
 		public Type getResultType(Type left, Type right) {
 			if (left.isCompatible(right)
-					&& left.isCompatible(TypePrimitive.INTEGER)) {
+					&& left.isCompatible(TypePrimitive.STRING)) {
 				return TypePrimitive.BOOLEAN;
 			}
 			throw generateException(left, right);
