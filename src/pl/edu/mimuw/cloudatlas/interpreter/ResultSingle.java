@@ -35,14 +35,31 @@ class ResultSingle extends Result {
 	public ResultSingle(Value value) {
 		this.value = value;
 	}
-	
+
 	@Override
-	protected ResultSingle binaryOperationTyped(BinaryOperation operation, ResultSingle right) {
+	protected ResultSingle binaryOperationTyped(BinaryOperation operation,
+			ResultSingle right) {
 		return new ResultSingle(operation.perform(value, right.value));
 	}
 
 	@Override
+	protected Result binaryOperationTyped(BinaryOperation operation,
+			ResultColumn right) {
+		return new ResultColumn(binaryOperationTyped(this, operation,
+				right.getValues()));
+	}
+
+	@Override
+	public Result binaryOperationTyped(BinaryOperation operation,
+			ResultList right) {
+		return new ResultList(binaryOperationTyped(this, operation,
+				right.getValues()));
+
+	}
+
+	@Override
 	public ResultSingle unaryOperation(UnaryOperation operation) {
+		operation.getResultType(value.getType());
 		return new ResultSingle(operation.perform(value));
 	}
 
@@ -57,47 +74,14 @@ class ResultSingle extends Result {
 	}
 
 	@Override
-	public ValueList getList() {
-		throw new UnsupportedOperationException("Not a ResultList.");
-	}
-
-	@Override
-	public ValueList getColumn() {
-		throw new UnsupportedOperationException("Not a ResultColumn.");
-	}
-
-	@Override
-	public Result filterNulls() {
-		throw new UnsupportedOperationException("Operation filterNulls not supported on ResultSingle.");
-	}
-
-	@Override
-	public Result first(int size) {
-		throw new UnsupportedOperationException("Operation first not supported on ResultSingle.");
-	}
-
-	@Override
-	public Result last(int size) {
-		throw new UnsupportedOperationException("Operation last not supported on ResultSingle.");
-	}
-
-	@Override
-	public Result random(int size) {
-		throw new UnsupportedOperationException("Operation random not supported on ResultSingle.");
-	}
-
-	@Override
-	public ResultSingle convertTo(Type to) {
-		return new ResultSingle(value.convertTo(to));
-	}
-
-	@Override
-	public ResultSingle isNull() {
-		return new ResultSingle(new ValueBoolean(value.isNull()));
-	}
-
-	@Override
 	public Type getType() {
 		return value.getType();
 	}
+
+	@Override
+	public ValueList getValues() {
+		throw new UnsupportedOperationException(
+				"Cannot aggregate on OneResult.");
+	}
+
 }

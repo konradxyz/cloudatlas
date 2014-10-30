@@ -1,10 +1,12 @@
 #!/bin/sh
 
+set -eax
+
 NUM_TESTS=19
 
 for i in `seq $NUM_TESTS`; do
 	echo "Running test $i..."
-	./run < tests/$i.in > tmp.out
+	./run < tests/$i.in > tmp.out 2> /dev/null
 	diff tmp.out tests/$i.out
 	echo
 	rm tmp.out

@@ -102,20 +102,34 @@ public class Interpreter {
 			this.right = right;
 		}
 	}
-
+	
 	private final ZMI zmi;
 
 	public Interpreter(ZMI zmi) {
 		this.zmi = zmi;
 	}
 
-	private static Boolean getBoolean(Value value) {
+	private static Boolean getBoolean(Result result) {
+		Value value = result.getValue();
 		if(value.getType().isCompatible(TypePrimitive.BOOLEAN)) {
 			Boolean b = ((ValueBoolean)value).getValue();
 			return b == null? false : b.booleanValue();
 		}
 		throw new InvalidTypeException(TypePrimitive.BOOLEAN, value.getType());
 	}
+	
+	private static Boolean equal(ValuesPair pair) {
+		return getBoolean(pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right));
+	}
+	
+	private static Boolean lower(ValuesPair pair) {
+		return getBoolean(pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right));
+	}
+	
+	private static Result not(Result result) {
+		return result.unaryOperation(UnaryOperation.NOT);
+	}
+
 
 	public List<QueryResult> interpretProgram(Program program) {
 		return program.accept(new ProgramInterpreter(), zmi);
@@ -184,9 +198,9 @@ public class Interpreter {
 		public Table visit(WhereC where, Table table) {
 			Table result = new Table(table);
 			for(TableRow row : table) {
-				Environment env = new Environment(row, table.getColumns());
-				Value value = where.condexpr_.accept(new CondExprInterpreter(), env).getValue();
-				if(getBoolean(value))
+				Environment env = new EnvironmentRow(row, table.getColumns());
+				Result condition = where.condexpr_.accept(new CondExprInterpreter(), env);
+				if(getBoolean(condition))
 					result.appendRow(row);
 			}
 			return result;
@@ -215,9 +229,9 @@ public class Interpreter {
 			Comparator<TableRow> comparator = new Comparator<TableRow>() {
 				@Override
 				public int compare(TableRow row1, TableRow row2) {
-					Environment env1 = new Environment(row1, table.getColumns());
+					Environment env1 = new EnvironmentRow(row1, table.getColumns());
 					Result expr1 = orderItem.condexpr_.accept(new CondExprInterpreter(), env1);
-					Environment env2 = new Environment(row2, table.getColumns());
+					Environment env2 = new EnvironmentRow(row2, table.getColumns());
 					Result expr2 = orderItem.condexpr_.accept(new CondExprInterpreter(), env2);
 					ValuesPair pair = new ValuesPair(expr1, expr2);
 					int result = orderItem.nulls_.accept(new NullsInterpreter(), pair);
@@ -233,9 +247,9 @@ public class Interpreter {
 
 	public class OrderInterpreter implements Order.Visitor<Integer, ValuesPair> {
 		private int compareAsc(ValuesPair pair) {
-			if(getBoolean(pair.left.isEqual(pair.right).getValue()))
+			if(equal(pair))
 				return 0;
-			if(getBoolean(pair.left.isLowerThan(pair.right).getValue()))
+			if(lower(pair))
 				return -1;
 			return 1;
 		}
@@ -280,14 +294,13 @@ public class Interpreter {
 
 	public class SelItemInterpreter implements SelItem.Visitor<QueryResult, Table> {
 		public QueryResult visit(SelItemC selItem, Table table) {
-			Environment env = new Environment(table);
+			Environment env = new EnvironmentTable(table);
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
 			return new QueryResult(result.getValue());
 		}
 
 		public QueryResult visit(AliasedSelItemC selItem, Table table) {
-		//	System.out.println(table.toString());
-			Environment env = new Environment(table);
+			Environment env = new EnvironmentTable(table);
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
 			return new QueryResult(new Attribute(selItem.qident_), result.getValue());
 		}
@@ -307,7 +320,7 @@ public class Interpreter {
 		public Result visit(BoolExprRegExpC expr, Environment env) {
 			try {
 				Result left = expr.basicexpr_.accept(new BasicExprInterpreter(), env);
-				return (new ResultSingle(new ValueString(expr.string_))).regExpr(left);
+				return left.unaryOperation(new UnaryOperation.RegexpOperation(expr.string_));
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -323,20 +336,25 @@ public class Interpreter {
 			try {
 				Result left = expr.condexpr_1.accept(new CondExprInterpreter(), env);
 				Result right = expr.condexpr_2.accept(new CondExprInterpreter(), env);
-				return left.or(right);
+				return left.binaryOperation(BinaryOperation.OR, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
 		}
 
 		public Result visit(CondExprAndC expr, Environment env) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			try {
+				Result left = expr.condexpr_1.accept(new CondExprInterpreter(), env);
+				Result right = expr.condexpr_2.accept(new CondExprInterpreter(), env);
+				return left.binaryOperation(BinaryOperation.AND, right);
+			} catch(Exception exception) {
+				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
+			}
 		}
 
 		public Result visit(CondExprNotC expr, Environment env) {
 			try {
-				return expr.condexpr_.accept(new CondExprInterpreter(), env).negate();
+				return not(expr.condexpr_.accept(new CondExprInterpreter(), env));
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -352,7 +370,7 @@ public class Interpreter {
 			try {
 				Result left = expr.basicexpr_1.accept(new BasicExprInterpreter(), env);
 				Result right = expr.basicexpr_2.accept(new BasicExprInterpreter(), env);
-				return left.addValue(right);
+				return left.binaryOperation(BinaryOperation.ADD_VALUE, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -362,7 +380,7 @@ public class Interpreter {
 			try {
 				Result left = expr.basicexpr_1.accept(new BasicExprInterpreter(), env);
 				Result right = expr.basicexpr_2.accept(new BasicExprInterpreter(), env);
-				return left.subtract(right);
+				return left.binaryOperation(BinaryOperation.SUBTRACT, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -372,7 +390,7 @@ public class Interpreter {
 			try {
 				Result left = expr.basicexpr_1.accept(new BasicExprInterpreter(), env);
 				Result right = expr.basicexpr_2.accept(new BasicExprInterpreter(), env);
-				return left.multiply(right);
+				return left.binaryOperation(BinaryOperation.MULTIPLY, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -382,7 +400,7 @@ public class Interpreter {
 			try {
 				Result left = expr.basicexpr_1.accept(new BasicExprInterpreter(), env);
 				Result right = expr.basicexpr_2.accept(new BasicExprInterpreter(), env);
-				return left.divide(right);
+				return left.binaryOperation(BinaryOperation.DIVIDE, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -392,7 +410,7 @@ public class Interpreter {
 			try {
 				Result left = expr.basicexpr_1.accept(new BasicExprInterpreter(), env);
 				Result right = expr.basicexpr_2.accept(new BasicExprInterpreter(), env);
-				return left.modulo(right);
+				return left.binaryOperation(BinaryOperation.MODULO, right);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -400,7 +418,7 @@ public class Interpreter {
 
 		public Result visit(BasicExprNegC expr, Environment env) {
 			try {
-				return expr.basicexpr_.accept(new BasicExprInterpreter(), env).negate();
+				return expr.basicexpr_.accept(new BasicExprInterpreter(), env).unaryOperation(UnaryOperation.NEGATE);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
@@ -471,29 +489,31 @@ public class Interpreter {
 
 	public class RelOpInterpreter implements RelOp.Visitor<Result, ValuesPair> {
 		public Result visit(RelOpGtC op, ValuesPair pair) {
-			return pair.left.isLowerThan(pair.right).negate().and(pair.left.isEqual(pair.right).negate());
+			Result greaterEqual = not(pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right));
+			Result notEqual = not(pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right));
+			return greaterEqual.binaryOperation(BinaryOperation.AND, notEqual);
 		}
 
 		public Result visit(RelOpEqC op, ValuesPair pair) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			return pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right);
 		}
 
 		public Result visit(RelOpNeC op, ValuesPair pair) {
-			return pair.left.isEqual(pair.right).negate();
+			return not(pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right));
 		}
 
 		public Result visit(RelOpLtC op, ValuesPair pair) {
-			return pair.left.isLowerThan(pair.right);
+			return pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right);
 		}
 
 		public Result visit(RelOpLeC op, ValuesPair pair) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			Result lowerThan = pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right);
+			Result equal = pair.left.binaryOperation(BinaryOperation.IS_EQUAL, pair.right);
+			return lowerThan.binaryOperation(BinaryOperation.OR, equal);
 		}
 
 		public Result visit(RelOpGeC op, ValuesPair pair) {
-			return pair.left.isLowerThan(pair.right).negate();
+			return not(pair.left.binaryOperation(BinaryOperation.IS_LOWER_THAN, pair.right));
 		}
 	}
 }

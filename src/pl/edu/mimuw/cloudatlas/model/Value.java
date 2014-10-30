@@ -24,6 +24,7 @@
 
 package pl.edu.mimuw.cloudatlas.model;
 
+import pl.edu.mimuw.cloudatlas.model.Type.PrimaryType;
 import pl.edu.mimuw.cloudatlas.model.Value;
 
 /**
@@ -53,8 +54,9 @@ public abstract class Value {
 	public abstract boolean isNull();
 	
 	protected final void sameTypesOrThrow(Value value, Operation operation) {
-		if(!getType().isCompatible(value.getType()))
+		if(!getType().isCompatible(value.getType())) {
 			throw new IncompatibleTypesException(getType(), value.getType(), operation);
+		}
 	}
 	
 	/**

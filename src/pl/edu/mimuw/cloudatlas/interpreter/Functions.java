@@ -33,7 +33,6 @@ import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.interpreter.Result.AggregationOperation;
 import pl.edu.mimuw.cloudatlas.interpreter.Result.TransformOperation;
-import pl.edu.mimuw.cloudatlas.interpreter.Result.UnaryOperation;
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.Type.PrimaryType;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
@@ -50,38 +49,6 @@ import pl.edu.mimuw.cloudatlas.model.ValueTime;
 class Functions {
 	private static Functions instance = null;
 
-	private static final UnaryOperation ROUND = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			if(v.getType().isCompatible(TypePrimitive.DOUBLE)) {
-				if(v.isNull())
-					return new ValueDouble(null);
-				return new ValueDouble((double)Math.round(((ValueDouble)v).getValue()));
-			}
-			throw new IllegalArgumentException("Value must have type " + TypePrimitive.DOUBLE + ".");
-		}
-	};
-
-	private static final UnaryOperation FLOOR = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			if(v.getType().isCompatible(TypePrimitive.DOUBLE)) {
-				if(v.isNull())
-					return new ValueDouble(null);
-				return new ValueDouble((double)Math.floor(((ValueDouble)v).getValue()));
-			}
-			throw new IllegalArgumentException("Value must have type " + TypePrimitive.DOUBLE + ".");
-		}
-	};
-
-	private static final UnaryOperation CEIL = new UnaryOperation() {
-		@Override
-		public Value perform(Value v) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
-		}
-	};
-
 	private static final AggregationOperation COUNT = new AggregationOperation() {
 		@Override
 		public ValueInt perform(ValueList values) {
@@ -96,8 +63,13 @@ class Functions {
 	private static final AggregationOperation SUM = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			values = Result.filterNullsList(values);
+			if ( values.size() == 0 )
+				return new ValueInt(0l);
+			Value result = values.get(0).getDefaultValue();
+			for ( Value v : values )
+				result = result.addValue(v);
+			return result;
 		}
 	};
 
@@ -151,8 +123,20 @@ class Functions {
 	private static final AggregationOperation OR = new AggregationOperation() {
 		@Override
 		public ValueBoolean perform(ValueList values) { // lazy
-			// TODO
-			throw new UnsupportedOperationException("Not yet implemented");
+			ValueList nlist = Result.filterNullsList(values);
+			if(nlist.getValue() == null) {
+				return new ValueBoolean(null);
+			} else if(values.isEmpty()) {
+				return new ValueBoolean(false);
+			}
+			for(Value v : nlist) {
+				if(v.getType().isCompatible(TypePrimitive.BOOLEAN)) {
+					if(v.isNull() || ((ValueBoolean)v).getValue())
+						return new ValueBoolean(true);
+				} else
+					throw new IllegalArgumentException("Aggregation doesn't support type: " + v.getType() + ".");
+			}
+			return new ValueBoolean(true);
 		}
 	};
 
@@ -231,29 +215,66 @@ class Functions {
 			return new ValueList(ret, ((TypeCollection)values.getType()).getElementType());
 		}
 	};
-
-	private static final TransformOperation SORT = new TransformOperation() {
-		@Override
-		public ValueList perform(ValueList values) {
-			if(values.isEmpty())
-				return new ValueList(((TypeCollection)values.getType()).getElementType());
-			List<Value> ret = new ArrayList<Value>();
-			ret.addAll(values);
-			Collections.sort(ret, new Comparator<Value>() {
-				public int compare(Value v1, Value v2) {
-					if(((ValueBoolean)v1.isLowerThan(v2)).getValue()) {
-						return -1;
-					} else if(((ValueBoolean)v1.isEqual(v2)).getValue()) {
-						return 0;
-					} else {
-						return 1;
-					}
-				}
-			});
-			return new ValueList(ret, ((TypeCollection)values.getType()).getElementType());
+	
+	private static abstract class ListAggregation implements AggregationOperation {
+		protected int count;
+		
+		public ListAggregation(Value count) {
+			if (count.getType().getPrimaryType() != PrimaryType.INT) {
+				throw new InternalInterpreterException(
+						"First argument to first, last and random functions should be INT");
+			}
+			this.count = ((ValueInt) count).getValue().intValue();
+			if (this.count < 0) {
+				throw new InternalInterpreterException(
+						"First argument to first, last and random functions should be greater or equal 0");
+			}
 		}
-	};
+		
+	}
+	
+	private static class FirstAggregation extends ListAggregation {
+		public FirstAggregation(Value count) {
+			super(count);
+		}
 
+		@Override
+		public Value perform(ValueList values) {
+			List<Value> res = values.subList(0, Math.min(count, values.size()));
+			return new ValueList(res, TypeCollection.computeElementType(res));
+		}
+	}
+	
+	
+	private static class LastAggregation extends ListAggregation {
+		public LastAggregation(Value count) {
+			super(count);
+		}
+
+		@Override
+		public Value perform(ValueList values) {
+			List<Value> res = values.subList(Math.max(0, values.size() - count), values.size());
+			return new ValueList(res, TypeCollection.computeElementType(res));
+		}
+	}
+
+	
+
+	private static class RandomAggregation extends ListAggregation {
+		public RandomAggregation(Value count) {
+			super(count);
+		}
+
+		@Override
+		public Value perform(ValueList values) {
+			List<Value> tmp = new ArrayList<Value>(values);
+			Collections.shuffle(tmp);
+			List<Value> res = tmp.subList(0, Math.min(count, tmp.size()));
+			return new ValueList(res, TypeCollection.computeElementType(res));
+		}
+	}
+
+	
 	private final ValueTime EPOCH;
 
 	private Functions() {
@@ -275,15 +296,15 @@ class Functions {
 		switch(name) {
 			case "round":
 				if(arguments.size() == 1)
-					return arguments.get(0).unaryOperation(ROUND);
+					return arguments.get(0).unaryOperation(UnaryOperation.ROUND);
 				break;
 			case "floor":
 				if(arguments.size() == 1)
-					return arguments.get(0).unaryOperation(FLOOR);
+					return arguments.get(0).unaryOperation(UnaryOperation.FLOOR);
 				break;
 			case "ceil":
 				if(arguments.size() == 1)
-					return arguments.get(0).unaryOperation(CEIL);
+					return arguments.get(0).unaryOperation(UnaryOperation.CEIL);
 				break;
 			case "now":
 				if(arguments.size() == 0)
@@ -299,7 +320,7 @@ class Functions {
 				break;
 			case "size":
 				if(arguments.size() == 1)
-					return arguments.get(0).valueSize();
+					return arguments.get(0).unaryOperation(UnaryOperation.VALUE_SIZE);
 				break;
 			case "sum":
 				if(arguments.size() == 1)
@@ -333,39 +354,19 @@ class Functions {
 				if(arguments.size() == 1)
 					return arguments.get(0).transformOperation(DISTINCT);
 				break;
-			case "sort":
-				if(arguments.size() == 1)
-					return arguments.get(0).transformOperation(SORT);
-				break;
-			case "filterNulls":
-				if(arguments.size() == 1)
-					return arguments.get(0).filterNulls();
-				break;
 			case "first":
 				if(arguments.size() == 2) {
-					Value size = arguments.get(0).getValue();
-					if(size.getType().isCompatible(TypePrimitive.INTEGER) && ((ValueInt)size).getValue().intValue() >= 0)
-						return arguments.get(1).first(((ValueInt)size).getValue().intValue());
-					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
-							+ " and be >= 0.");
+					return arguments.get(1).aggregationOperation(new FirstAggregation(arguments.get(0).getValue()));
 				}
 				break;
 			case "last":
 				if(arguments.size() == 2) {
-					Value size = arguments.get(0).getValue();
-					if(size.getType().isCompatible(TypePrimitive.INTEGER) && ((ValueInt)size).getValue().intValue() >= 0)
-						return arguments.get(1).last(((ValueInt)size).getValue().intValue());
-					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
-							+ " and be >= 0.");
+					return arguments.get(1).aggregationOperation(new LastAggregation(arguments.get(0).getValue()));
 				}
 				break;
 			case "random":
 				if(arguments.size() == 2) {
-					Value size = arguments.get(0).getValue();
-					if(size.getType().isCompatible(TypePrimitive.INTEGER) && ((ValueInt)size).getValue().intValue() >= 0)
-						return arguments.get(1).random(((ValueInt)size).getValue().intValue());
-					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
-							+ " and be >= 0.");
+					return arguments.get(1).aggregationOperation(new RandomAggregation(arguments.get(0).getValue()));
 				}
 				break;
 			case "to_boolean":
@@ -418,7 +419,7 @@ class Functions {
 				break;
 			case "isNull":
 				if(arguments.size() == 1)
-					return arguments.get(0).isNull();
+					return arguments.get(0).unaryOperation(UnaryOperation.IS_NULL);
 				break;
 			default:
 				throw new IllegalArgumentException("Illegal function name.");

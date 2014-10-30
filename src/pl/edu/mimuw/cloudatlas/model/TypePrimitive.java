@@ -61,7 +61,14 @@ public class TypePrimitive extends Type {
 	 * @see Type#isCompatible(Type)
 	 * @see ValueNull
 	 */
-	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL);
+	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL) {
+
+		@Override
+		public boolean isCollection() {
+			return true;
+		}
+
+	};
 	
 	/**
 	 * String type.
@@ -104,5 +111,23 @@ public class TypePrimitive extends Type {
 	@Override
 	public boolean isCompatible(Type type) {
 		return super.isCompatible(type) || getPrimaryType() == type.getPrimaryType();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this )
+			return true;
+		if ( o == null )
+			return false;
+		if ( o instanceof TypePrimitive ) {
+			TypePrimitive other = (TypePrimitive) o;
+			return getPrimaryType().equals(other.getPrimaryType());
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		return getPrimaryType().ordinal();
 	}
 }

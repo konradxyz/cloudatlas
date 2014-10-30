@@ -76,11 +76,12 @@ public class ValueString extends ValueSimple<String> {
 	@Override
 	public ValueBoolean regExpr(Value value) {
 		sameTypesOrThrow(value, Operation.REG_EXPR);
-		if(isNull() || value.isNull())
+		if (isNull() || value.isNull())
 			return new ValueBoolean(null);
-		return new ValueBoolean(getValue().matches(((ValueString)value).getValue()));
+		return new ValueBoolean(getValue().matches(
+				((ValueString) value).getValue()));
 	}
-	
+
 	@Override
 	public Value convertTo(Type type) {
 		switch(type.getPrimaryType()) {

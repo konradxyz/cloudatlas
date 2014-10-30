@@ -24,43 +24,19 @@
 
 package pl.edu.mimuw.cloudatlas.interpreter;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
-
-class Environment {
-	private final TableRow row;
-	private final Map<String, Integer> columns = new HashMap<String, Integer>();
+abstract class Environment {
+	protected final Map<String, Integer> columns = new HashMap<String, Integer>();
 	
-	public Environment(Table table) {
-		this(table.aggregate(), Collections.unmodifiableList(table.getColumns()));
-	}
-
-	public Environment(TableRow row, List<String> columns) {
-		this.row = row;
+	public abstract Result getIdent(String ident);
+	
+	
+	public Environment(List<String> columns) {
 		int i = 0;
 		for(String c : columns)
 			this.columns.put(c, i++);
-	}
-	
-	// TODO: extend
-	public Result getIdent(String ident) {
-		try {
-			Value value = row.getIth(columns.get(ident));
-
-			try {
-				ValueList list = (ValueList) value;
-				return new ResultColumn(list);
-			} catch (ClassCastException e) {
-				return new ResultSingle(value);
-			}
-		} catch (NullPointerException exception) {
-			return new ResultSingle(ValueNull.getInstance());
-		}
 	}
 }

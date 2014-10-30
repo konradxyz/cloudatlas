@@ -75,6 +75,10 @@ public class ValueList extends ValueSimple<List<Value>> implements List<Value> {
 		return type;
 	}
 	
+	public Type getElementType() {
+		return type.getElementType();
+	}
+	
 	@Override
 	public Value getDefaultValue() {
 		return new ValueList(((TypeCollection)this.getType()).getElementType());
