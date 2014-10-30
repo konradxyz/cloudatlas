@@ -1,23 +1,26 @@
 package test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.junit.Test;
 
 import pl.edu.mimuw.cloudatlas.serialization.Serializator;
-import javax.xml.bind.DatatypeConverter;
 
 public abstract class SerializatorTest<T> {
 	public abstract List<T> getObjects();
 
 	public abstract Serializator<T> getSerializator();
+	public void customCompare(T object, T deserialized) {
+		
+	}
 
 	@Test
 	public void test() throws IOException {
@@ -34,6 +37,7 @@ public abstract class SerializatorTest<T> {
 					.toByteArray()));
 			assertEquals(object, deserialized);
 			assertEquals(deserialized, object);
+			customCompare(object, deserialized);
 		}
 	}
 }

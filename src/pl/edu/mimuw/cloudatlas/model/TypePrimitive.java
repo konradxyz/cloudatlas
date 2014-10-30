@@ -105,4 +105,22 @@ public class TypePrimitive extends Type {
 	public boolean isCompatible(Type type) {
 		return super.isCompatible(type) || getPrimaryType() == type.getPrimaryType();
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this )
+			return true;
+		if ( o == null )
+			return false;
+		if ( o instanceof TypePrimitive ) {
+			TypePrimitive other = (TypePrimitive) o;
+			return getPrimaryType().equals(other.getPrimaryType());
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		return getPrimaryType().ordinal();
+	}
 }
