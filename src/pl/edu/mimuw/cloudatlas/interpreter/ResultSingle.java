@@ -46,14 +46,14 @@ class ResultSingle extends Result {
 	protected Result binaryOperationTyped(BinaryOperation operation,
 			ResultColumn right) {
 		return new ResultColumn(binaryOperationTyped(this, operation,
-				right.getColumn()));
+				right.getValues()));
 	}
 
 	@Override
 	public Result binaryOperationTyped(BinaryOperation operation,
 			ResultList right) {
 		return new ResultList(binaryOperationTyped(this, operation,
-				right.getList()));
+				right.getValues()));
 
 	}
 
@@ -73,24 +73,6 @@ class ResultSingle extends Result {
 		return value;
 	}
 
-	/*
-	 * @Override public ValueList getList() { throw new
-	 * UnsupportedOperationException("Not a ResultList."); }
-	 * 
-	 * @Override public ValueList getColumn() { throw new
-	 * UnsupportedOperationException("Not a ResultColumn."); }
-	 */
-
-	@Override
-	public ResultSingle convertTo(Type to) {
-		return new ResultSingle(value.convertTo(to));
-	}
-
-	@Override
-	public ResultSingle isNull() {
-		return new ResultSingle(new ValueBoolean(value.isNull()));
-	}
-
 	@Override
 	public Type getType() {
 		return value.getType();
@@ -99,7 +81,7 @@ class ResultSingle extends Result {
 	@Override
 	public ValueList getValues() {
 		throw new UnsupportedOperationException(
-				"Cannot aggregate on ResultSingle.");
+				"Cannot aggregate on OneResult.");
 	}
 
 }

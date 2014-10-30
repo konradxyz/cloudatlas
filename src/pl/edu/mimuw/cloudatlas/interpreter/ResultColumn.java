@@ -28,7 +28,7 @@ public class ResultColumn extends Result {
 	@Override
 	protected Result binaryOperationTyped(BinaryOperation operation,
 			ResultColumn right) {
-		Type type = operation.getResultType(this.list.getElementType(), right.getColumn().getElementType());
+		Type type = operation.getResultType(this.list.getElementType(), right.getValues().getElementType());
 		if (right.list.size() != this.list.size())
 			throw new UnsupportedOperationException(
 					"Binary operation on columns of different sizes");
@@ -59,26 +59,12 @@ public class ResultColumn extends Result {
 
 	@Override
 	public Value getValue() {
-		return list;
+		throw new InternalInterpreterException("OneResult expected, ColumnResult given");
 	}
 
 	@Override
 	public ValueList getValues() {
 		return list;
-	}
-
-	public ValueList getColumn() {
-		return list;
-	}
-
-	@Override
-	public Result convertTo(Type to) {
-		return new ResultColumn(convertTo(list, to));
-	}
-
-	@Override
-	public ResultSingle isNull() {
-		return new ResultSingle(new ValueBoolean(false));
 	}
 
 	@Override

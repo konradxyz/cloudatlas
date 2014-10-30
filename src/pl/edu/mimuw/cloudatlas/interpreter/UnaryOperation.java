@@ -215,4 +215,51 @@ public abstract class UnaryOperation {
 			return "isNull";
 		}
 	};
+	
+	public static class ConversionOperation extends UnaryOperation {
+		private Type target;
+		 
+
+		public ConversionOperation(Type target) {
+			this.target = target;
+		}
+
+		@Override
+		public Value perform(Value v) {
+			return v.convertTo(target);
+		}
+
+		@Override
+		public Type getResultTypeOrNull(Type type) {
+			if ( target.equals(TypePrimitive.NULL) || type.equals(TypePrimitive.NULL))
+				return target;
+			if ( type.equals(target))
+				return target;
+			if( target.isCollection() ) {
+				return type.isCollection() ? target : null;
+			}
+			// Anything can be converted to string.
+			if( target.equals(TypePrimitive.STRING))
+				return target;
+			// String can be converted to almost anything.
+			if (type.equals(TypePrimitive.STRING) && !target.isCollection()
+					&& !target.equals(TypePrimitive.CONTACT))
+				return target;
+			
+			if (type.equals(TypePrimitive.INTEGER) && (target.equals(TypePrimitive.DOUBLE) || target.equals(TypePrimitive.DURATION))) {
+				return target;
+			}
+			if ( (type.equals(TypePrimitive.DOUBLE) || type.equals(TypePrimitive.DURATION) && target.equals(TypePrimitive.INTEGER))) {
+				return target;
+			}
+				
+			return null;
+		}
+
+		@Override
+		public String getName() {
+			return "conversion to " + target.toString();
+		}
+
+	};
 }

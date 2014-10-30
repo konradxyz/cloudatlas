@@ -215,28 +215,6 @@ class Functions {
 			return new ValueList(ret, ((TypeCollection)values.getType()).getElementType());
 		}
 	};
-
-	private static final TransformOperation SORT = new TransformOperation() {
-		@Override
-		public ValueList perform(ValueList values) {
-			if(values.isEmpty())
-				return new ValueList(((TypeCollection)values.getType()).getElementType());
-			List<Value> ret = new ArrayList<Value>();
-			ret.addAll(values);
-			Collections.sort(ret, new Comparator<Value>() {
-				public int compare(Value v1, Value v2) {
-					if(((ValueBoolean)v1.isLowerThan(v2)).getValue()) {
-						return -1;
-					} else if(((ValueBoolean)v1.isEqual(v2)).getValue()) {
-						return 0;
-					} else {
-						return 1;
-					}
-				}
-			});
-			return new ValueList(ret, ((TypeCollection)values.getType()).getElementType());
-		}
-	};
 	
 	private static abstract class ListAggregation implements AggregationOperation {
 		protected int count;
@@ -342,7 +320,7 @@ class Functions {
 				break;
 			case "size":
 				if(arguments.size() == 1)
-					return arguments.get(0).valueSize();
+					return arguments.get(0).unaryOperation(UnaryOperation.VALUE_SIZE);
 				break;
 			case "sum":
 				if(arguments.size() == 1)

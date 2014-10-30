@@ -68,14 +68,6 @@ abstract class Result {
 		return new ResultList(operation.perform(getValues()));
 	}
 
-	public Result negate() {
-		return unaryOperation(UnaryOperation.NEGATE);
-	}
-
-	public Result valueSize() {
-		return unaryOperation(UnaryOperation.VALUE_SIZE);
-	}
-
 	protected static ValueList filterNullsList(ValueList list) {
 		List<Value> result = new ArrayList<Value>();
 		if(list.isEmpty())
@@ -124,9 +116,9 @@ abstract class Result {
 		return new ValueList(result, to);
 	}
 
-	public abstract Result convertTo(Type to);
-
-	public abstract ResultSingle isNull();
+	public  Result convertTo(Type to) {
+		return this.unaryOperation(new UnaryOperation.ConversionOperation(to));
+	}
 
 	public abstract Type getType();
 

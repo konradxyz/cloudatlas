@@ -418,7 +418,7 @@ public class Interpreter {
 
 		public Result visit(BasicExprNegC expr, Environment env) {
 			try {
-				return expr.basicexpr_.accept(new BasicExprInterpreter(), env).negate();
+				return expr.basicexpr_.accept(new BasicExprInterpreter(), env).unaryOperation(UnaryOperation.NEGATE);
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}

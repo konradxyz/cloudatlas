@@ -61,7 +61,14 @@ public class TypePrimitive extends Type {
 	 * @see Type#isCompatible(Type)
 	 * @see ValueNull
 	 */
-	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL);
+	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL) {
+
+		@Override
+		public boolean isCollection() {
+			return true;
+		}
+
+	};
 	
 	/**
 	 * String type.

@@ -158,7 +158,7 @@ public abstract class BinaryOperation {
 		private final TypePrimitive[] supportedPrimitives = {
 				TypePrimitive.INTEGER, TypePrimitive.DOUBLE,
 				TypePrimitive.DURATION, TypePrimitive.TIME,
-				TypePrimitive.STRING };
+				TypePrimitive.STRING, TypePrimitive.NULL };
 
 		Set<TypePrimitive> supportedPrimitivesSet = new HashSet<TypePrimitive>(
 				Arrays.asList(supportedPrimitives));

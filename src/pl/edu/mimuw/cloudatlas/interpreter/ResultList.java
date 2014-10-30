@@ -45,27 +45,12 @@ public class ResultList extends Result {
 
 	@Override
 	public Value getValue() {
-		return list;
+		throw new InternalInterpreterException("OneResult expected, ListResult given");
 	}
 	
 	@Override
 	public ValueList getValues() {
 		return list;
-	}
-
-
-	public ValueList getList() {
-		return list;
-	}
-
-	@Override
-	public Result convertTo(Type to) {
-		return new ResultList(convertTo(list, to));
-	}
-
-	@Override
-	public ResultSingle isNull() {
-		return new ResultSingle(new ValueBoolean(false));
 	}
 
 	@Override
