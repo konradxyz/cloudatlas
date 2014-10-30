@@ -29,6 +29,10 @@ public class BinaryOperationsTypesTest extends InterpreterTest {
 		e("- true");
 		f("NOT true");
 		i("- ( 1 + 1)", -2);
+		
+		ls("first(2, to_string(isNull(int_set)))", new String[]{"true", "false"});
+		
+		t("isNull(avg(unfold(int_set)))");
 	
 	}
 

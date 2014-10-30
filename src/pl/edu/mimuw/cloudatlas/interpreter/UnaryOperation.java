@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.interpreter;
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.Value;
+import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueDouble;
 import pl.edu.mimuw.cloudatlas.model.ValueString;
 
@@ -196,5 +197,22 @@ public abstract class UnaryOperation {
 		}
 
 	};
+	
+	public static final UnaryOperation IS_NULL = new UnaryOperation() {
 
+		@Override
+		public Value perform(Value v) {
+			return new ValueBoolean(v.isNull());
+		}
+
+		@Override
+		public Type getResultTypeOrNull(Type type) {
+			return TypePrimitive.BOOLEAN;
+		}
+
+		@Override
+		public String getName() {
+			return "isNull";
+		}
+	};
 }

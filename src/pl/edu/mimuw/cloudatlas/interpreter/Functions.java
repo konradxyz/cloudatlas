@@ -376,15 +376,6 @@ class Functions {
 				if(arguments.size() == 1)
 					return arguments.get(0).transformOperation(DISTINCT);
 				break;
-			// TODO: check whether sort and filterNulls are in language.
-			/*case "sort":
-				if(arguments.size() == 1)
-					return arguments.get(0).transformOperation(SORT);
-				break;
-			case "filterNulls":
-				if(arguments.size() == 1)
-					return arguments.get(0).filterNulls();
-				break;*/
 			case "first":
 				if(arguments.size() == 2) {
 					return arguments.get(1).aggregationOperation(new FirstAggregation(arguments.get(0).getValue()));
@@ -450,7 +441,7 @@ class Functions {
 				break;
 			case "isNull":
 				if(arguments.size() == 1)
-					return arguments.get(0).isNull();
+					return arguments.get(0).unaryOperation(UnaryOperation.IS_NULL);
 				break;
 			default:
 				throw new IllegalArgumentException("Illegal function name.");
