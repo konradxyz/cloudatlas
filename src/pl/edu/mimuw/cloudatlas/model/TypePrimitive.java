@@ -70,6 +70,8 @@ public class TypePrimitive extends Type {
 
 	};
 	
+	public static final TypePrimitive QUERY = new TypePrimitive(PrimaryType.QUERY);
+	
 	/**
 	 * String type.
 	 */
@@ -91,6 +93,7 @@ public class TypePrimitive extends Type {
 			case NULL:
 			case STRING:
 			case TIME:
+			case QUERY:
 				break;
 			default:
 				throw new IllegalArgumentException(

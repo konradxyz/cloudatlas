@@ -33,7 +33,7 @@ public abstract class Type {
 	 * be parameterized with a type of stored values.
 	 */
 	public static enum PrimaryType {
-		BOOLEAN, CONTACT, DOUBLE, DURATION, INT, LIST, NULL, SET, STRING, TIME,
+		BOOLEAN, CONTACT, DOUBLE, DURATION, INT, LIST, NULL, SET, STRING, TIME, QUERY
 	}
 	
 	private final PrimaryType primaryType;
