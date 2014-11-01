@@ -270,8 +270,15 @@ public class ValueDuration extends ValueSimple<Long> {
 
 	@Override
 	public ValueBoolean isLowerThan(Value value) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		if (value.getType().getPrimaryType() == PrimaryType.DURATION) {
+			if (getValue() >= ((ValueDuration) value).getValue())
+				return new ValueBoolean(true);
+			else 
+				return new ValueBoolean(false);
+		} else {
+			throw new UnsupportedOperationException(
+					"Wrong type of value in isLowerThan");
+		}
 	}
 
 	@Override
