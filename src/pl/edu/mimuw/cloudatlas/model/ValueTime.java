@@ -110,6 +110,8 @@ public class ValueTime extends ValueSimple<Long> {
 				return getValue() == null? ValueString.NULL_STRING : new ValueString(TIME_FORMAT.format(getValue()));
 			case TIME:
 				return this;
+			case INT:
+				return new ValueInt(getValue());
 			default:
 				throw new UnsupportedConversionException(getType(), type);
 		}
