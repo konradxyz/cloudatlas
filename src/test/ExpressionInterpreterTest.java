@@ -80,6 +80,12 @@ public class ExpressionInterpreterTest extends InterpreterTest {
 		s("to_string(to_duration(934782378235786))", "+10819240 11:43:55.786" );
 		s("to_string(to_duration(-934782378235786))", "-10819240 11:43:55.786" );
 		s("to_string(to_duration(0))", "+0" );
+		s("to_string(to_duration(\"+1 11:43:55.786\"))", "+1 11:43:55.786");
+		s("to_string(to_duration(\"-1 11:43:55.786\"))", "-1 11:43:55.786");
+		s("to_string(to_duration(\"+0\"))", "+0");
+		s("to_string(to_duration(\"-1 11:43:\"))", "NULL");
+		s("to_string(to_duration(\"11:43:32.321\"))", "NULL");
+		s("to_string(to_duration(\"+511:43:32.321\"))", "NULL");
 	}
 
 }

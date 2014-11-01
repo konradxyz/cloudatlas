@@ -25,6 +25,8 @@
 package pl.edu.mimuw.cloudatlas.model;
 
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.omg.CORBA.TIMEOUT;
 
@@ -45,6 +47,21 @@ public class ValueDuration extends ValueSimple<Long> {
 	 */
 	public ValueDuration(Long value) {
 		super(value);
+	}
+	
+	private static class StringHolder {
+		String string;
+		public StringHolder(String string) {
+			this.string = string;
+		}
+
+		public void setString(String string) {
+			this.string = string;
+		}
+		
+		public String getString() {
+			return string;
+		}
 	}
 
 	@Override
@@ -161,9 +178,77 @@ public class ValueDuration extends ValueSimple<Long> {
 		this(parseDuration(value));
 	}
 
-	private static long parseDuration(String value) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+	private static long getNumber(StringHolder stringHolder, Integer length) {
+		String value = stringHolder.getString();
+		Matcher matcher = Pattern.compile("\\d+").matcher(value);
+		matcher.find();
+		if (!value.startsWith(matcher.group())) {
+			throw new UnsupportedOperationException("Cannot parse this string");
+		}
+		stringHolder.setString(value.substring(matcher.group().length()));
+		long result = Integer.valueOf(matcher.group());
+		if (length != null && matcher.group().length()!=length) {
+			throw new UnsupportedOperationException("Cannot parse this string");
+		}
+		return result;
+	}
+	
+	private static Long parseDuration(String value) {
+		try {
+		long millis = 0;
+		String rest;
+		if (value.equals("+0"))
+			return 0l;
+		if (value.startsWith("+") || value.startsWith("-")) {
+			rest = value.substring(1);
+			StringHolder stringHolder = new StringHolder(rest);
+			long days = getNumber(stringHolder, null);
+			millis += TimeUnit.DAYS.toMillis(days);
+			rest = stringHolder.getString();
+			if (rest.startsWith(" ")) {
+				int i = 0;
+				long time;
+				while (i < 4) {
+					if (i > 0 && i < 3 && !(rest.startsWith(":")))
+						throw new UnsupportedOperationException("Cannot parse this string");
+					if (i == 3 && !(rest.startsWith(".")))
+						throw new UnsupportedOperationException("Cannot parse this string");
+					rest = rest.substring(1);
+					stringHolder.setString(rest);
+					if (i < 3) 
+						time = getNumber(stringHolder, 2);
+					else
+						time = getNumber(stringHolder, 3);
+					if (i == 0) 
+						millis += TimeUnit.HOURS.toMillis(time);
+					if (i == 1) 
+						millis += TimeUnit.MINUTES.toMillis(time);
+					if (i == 2) 
+						millis += TimeUnit.SECONDS.toMillis(time);
+					if (i == 3) 
+						millis += time;
+					rest = stringHolder.getString();
+					i++;
+				}
+				
+			}
+			else {
+				throw new UnsupportedOperationException("Cannot parse this string");
+			}
+		}
+		else {
+			throw new UnsupportedOperationException("Cannot parse this string");
+		}
+		if (!rest.equals(""))
+			throw new UnsupportedOperationException("Cannot parse this string");
+		if (value.startsWith("+")) 
+			return millis;
+		else 
+			return -millis;
+		}
+		catch (Exception e){
+			return null;
+		}
 	}
 	
 	private static String formatPositiveDuration(Long value) {
