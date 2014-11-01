@@ -43,7 +43,7 @@ public class ValueTime extends ValueSimple<Long> {
 	public static final DateFormat TIME_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
 	
 	static {
-	//	TIME_FORMAT.setTimeZone(TimeZone.getTimeZone("CET"));
+		TIME_FORMAT.setTimeZone(TimeZone.getTimeZone("CET"));
 	}
 	/**
 	 * Constructs a new <code>ValueTime</code> object wrapping the specified value.
