@@ -292,6 +292,7 @@ public abstract class InterpreterTest {
 				continue; // I feel bad about this particular line.
 			} else {
 				if (exception != null) {
+					exception.printStackTrace();
 					fail(exception.getStackTrace() + "\n" + query);
 				}
 			}
