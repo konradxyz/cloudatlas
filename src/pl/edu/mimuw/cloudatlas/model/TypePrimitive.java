@@ -30,30 +30,31 @@ package pl.edu.mimuw.cloudatlas.model;
  * @see TypeCollection
  */
 public class TypePrimitive extends Type {
+	private Value typedNull;
 	/**
 	 * Boolean type.
 	 */
-	public static final TypePrimitive BOOLEAN = new TypePrimitive(PrimaryType.BOOLEAN);
+	public static final TypePrimitive BOOLEAN = new TypePrimitive(PrimaryType.BOOLEAN, new ValueBoolean(null));
 	
 	/**
 	 * Contact type.
 	 */
-	public static final TypePrimitive CONTACT = new TypePrimitive(PrimaryType.CONTACT);
+	public static final TypePrimitive CONTACT = new TypePrimitive(PrimaryType.CONTACT, new ValueContact(null, null));
 	
 	/**
 	 * Double type.
 	 */
-	public static final TypePrimitive DOUBLE = new TypePrimitive(PrimaryType.DOUBLE);
+	public static final TypePrimitive DOUBLE = new TypePrimitive(PrimaryType.DOUBLE, new ValueDouble(null));
 	
 	/**
 	 * Duration type.
 	 */
-	public static final TypePrimitive DURATION = new TypePrimitive(PrimaryType.DURATION);
+	public static final TypePrimitive DURATION = new TypePrimitive(PrimaryType.DURATION, new ValueDuration((Long)null));
 	
 	/**
 	 * Integer type.
 	 */
-	public static final TypePrimitive INTEGER = new TypePrimitive(PrimaryType.INT);
+	public static final TypePrimitive INTEGER = new TypePrimitive(PrimaryType.INT, new ValueInt(null));
 	
 	/**
 	 * A special "null type" that represents null value of an unknown type. It can be converted to any other type.
@@ -61,29 +62,23 @@ public class TypePrimitive extends Type {
 	 * @see Type#isCompatible(Type)
 	 * @see ValueNull
 	 */
-	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL) {
-
-		@Override
-		public boolean isCollection() {
-			return true;
-		}
-
-	};
+	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL, ValueNull.getInstance());
 	
-	public static final TypePrimitive QUERY = new TypePrimitive(PrimaryType.QUERY);
+	public static final TypePrimitive QUERY = new TypePrimitive(PrimaryType.QUERY, new ValueQuery(null));
 	
 	/**
 	 * String type.
 	 */
-	public static final TypePrimitive STRING = new TypePrimitive(PrimaryType.STRING);
+	public static final TypePrimitive STRING = new TypePrimitive(PrimaryType.STRING, new ValueString(null));
 	
 	/**
 	 * Time type.
 	 */
-	public static final TypePrimitive TIME = new TypePrimitive(PrimaryType.TIME);
+	public static final TypePrimitive TIME = new TypePrimitive(PrimaryType.TIME, new ValueTime((Long)null));
 	
-	private TypePrimitive(PrimaryType primaryType) {
+	private TypePrimitive(PrimaryType primaryType, Value typedNull) {
 		super(primaryType);
+		this.typedNull = typedNull;
 		switch(primaryType) {
 			case BOOLEAN:
 			case CONTACT:
@@ -114,6 +109,10 @@ public class TypePrimitive extends Type {
 	@Override
 	public boolean isCompatible(Type type) {
 		return super.isCompatible(type) || getPrimaryType() == type.getPrimaryType();
+	}
+	
+	public Value getNull() {
+		return typedNull;
 	}
 	
 	@Override

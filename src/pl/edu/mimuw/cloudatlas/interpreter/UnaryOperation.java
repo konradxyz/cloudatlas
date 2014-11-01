@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.interpreter;
 
 import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
@@ -232,15 +233,21 @@ public abstract class UnaryOperation {
 		@Override
 		public Type getResultTypeOrNull(Type type) {
 			if ( target.equals(TypePrimitive.NULL) || type.equals(TypePrimitive.NULL))
-				return target;
+				return target.equals(TypePrimitive.NULL) ? type : target;
 			if ( type.equals(target))
 				return target;
-			if( target.isCollection() ) {
-				return type.isCollection() ? target : null;
-			}
 			// Anything can be converted to string.
 			if( target.equals(TypePrimitive.STRING))
 				return target;
+			if( target.isCollection() ) {
+				if ( type.isCollection() ) {
+					TypeCollection targetC = (TypeCollection) target;
+					TypeCollection typeC = (TypeCollection) type;
+					return typeC.getElementType().isCompatible(targetC.getElementType()) ? target : null;	
+				} else
+					return null;
+			}
+			
 			// String can be converted to almost anything.
 			if (type.equals(TypePrimitive.STRING) && !target.isCollection()
 					&& !target.equals(TypePrimitive.CONTACT))

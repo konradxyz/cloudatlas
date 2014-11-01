@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.model.Type;
-import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 
@@ -69,11 +68,11 @@ abstract class Result {
 	protected static ValueList filterNullsList(ValueList list) {
 		List<Value> result = new ArrayList<Value>();
 		if(list.isEmpty())
-			return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
+			return new ValueList(result, list.getElementType());
 		for(Value v : list)
 			if(!v.isNull())
 				result.add(v);
-		return new ValueList(result.isEmpty()? null : result, ((TypeCollection)list.getType()).getElementType());
+		return new ValueList(result, list.getElementType());
 	}
 
 
