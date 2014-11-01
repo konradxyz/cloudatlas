@@ -128,10 +128,7 @@ public class ZMI implements Cloneable {
 	 */
 	public void printAttributes(PrintStream stream) {
 		for(Entry<Attribute, Value> entry : attributes)
-			stream.println(entry.getKey() + " : " + entry.getValue().getType() + " = " + entry.getValue());
-		System.out.println();
-		for(ZMI son : sons)
-			son.printAttributes(stream);
+			stream.println("\t" + entry.getKey() + " : " + entry.getValue().getType() + " = " + entry.getValue());
 	}
 	
 	/**
