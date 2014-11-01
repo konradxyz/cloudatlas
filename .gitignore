@@ -14,3 +14,6 @@ hs_err_pid*
 tmp.out
 /bin/
 /bin/
+
+#Our pack:
+cloudatlas_kz306486_kp306410_*.tar.gz
