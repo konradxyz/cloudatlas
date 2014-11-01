@@ -249,7 +249,7 @@ public abstract class UnaryOperation {
 			if (type.equals(TypePrimitive.INTEGER) && (target.equals(TypePrimitive.DOUBLE) || target.equals(TypePrimitive.DURATION))) {
 				return target;
 			}
-			if ( (type.equals(TypePrimitive.DOUBLE) || type.equals(TypePrimitive.TIME) || type.equals(TypePrimitive.DURATION) && target.equals(TypePrimitive.INTEGER))) {
+			if ( (type.equals(TypePrimitive.DOUBLE) || type.equals(TypePrimitive.DURATION) && target.equals(TypePrimitive.INTEGER))) {
 				return target;
 			}
 				
