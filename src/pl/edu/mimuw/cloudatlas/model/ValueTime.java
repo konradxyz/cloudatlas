@@ -27,6 +27,7 @@ package pl.edu.mimuw.cloudatlas.model;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
@@ -41,6 +42,9 @@ public class ValueTime extends ValueSimple<Long> {
 	 */
 	public static final DateFormat TIME_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
 	
+	static {
+		TIME_FORMAT.setTimeZone(TimeZone.getTimeZone("CET"));
+	}
 	/**
 	 * Constructs a new <code>ValueTime</code> object wrapping the specified value.
 	 * 

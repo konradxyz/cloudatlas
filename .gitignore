@@ -12,3 +12,5 @@
 hs_err_pid*
 /bin
 tmp.out
+/bin/
+/bin/

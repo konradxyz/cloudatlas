@@ -61,7 +61,7 @@ public class Main {
 		scanner.close();
 	}
 	
-	private static PathName getPathName(ZMI zmi) {
+	static PathName getPathName(ZMI zmi) {
 		String name = ((ValueString)zmi.getAttributes().get("name")).getValue();
 		return zmi.getFather() == null? PathName.ROOT : getPathName(zmi.getFather()).levelDown(name);
 	}
@@ -92,7 +92,7 @@ public class Main {
 		}));
 	}
 	
-	private static ZMI createTestHierarchy() throws ParseException, UnknownHostException {
+	public static ZMI createTestHierarchy() throws ParseException, UnknownHostException {
 		ValueContact violet07Contact = createContact("/uw/violet07", (byte)10, (byte)1, (byte)1, (byte)10);
 		ValueContact khaki13Contact = createContact("/uw/khaki13", (byte)10, (byte)1, (byte)1, (byte)38);
 		ValueContact khaki31Contact = createContact("/uw/khaki31", (byte)10, (byte)1, (byte)1, (byte)39);

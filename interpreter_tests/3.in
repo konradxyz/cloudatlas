@@ -1,0 +1,1 @@
+&query1: SELECT avg(num_cores) AS num_cores WHERE num_cores > 100
