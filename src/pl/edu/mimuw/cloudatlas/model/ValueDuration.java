@@ -270,6 +270,8 @@ public class ValueDuration extends ValueSimple<Long> {
 
 	@Override
 	public ValueBoolean isLowerThan(Value value) {
+		if(isNull() || value.isNull())
+			return new ValueBoolean(null);
 		if (value.getType().getPrimaryType() == PrimaryType.DURATION) {
 			if (getValue() >= ((ValueDuration) value).getValue())
 				return new ValueBoolean(true);
