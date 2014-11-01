@@ -5,7 +5,6 @@ import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.model.ValueString;
 import pl.edu.mimuw.cloudatlas.serialization.Serializator;
-import pl.edu.mimuw.cloudatlas.serialization.SerializatorString;
 import pl.edu.mimuw.cloudatlas.serialization.SerializatorValueString;
 
 public class SerializatorValueStringTest extends SerializatorTest<ValueString> {

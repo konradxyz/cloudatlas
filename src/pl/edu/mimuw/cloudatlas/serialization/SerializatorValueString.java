@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.ValueString;
 
 import com.esotericsoftware.kryo.Kryo;

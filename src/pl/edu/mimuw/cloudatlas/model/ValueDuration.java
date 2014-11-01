@@ -28,10 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.omg.CORBA.TIMEOUT;
-
 import pl.edu.mimuw.cloudatlas.model.Type.PrimaryType;
-import pl.edu.mimuw.cloudatlas.model.Value.Operation;
 
 /**
  * A class representing duration in milliseconds. The duration can be negative.
