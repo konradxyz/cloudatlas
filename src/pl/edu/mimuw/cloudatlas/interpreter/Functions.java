@@ -175,7 +175,7 @@ public class Functions {
 		}
 	};
 
-	private static final AggregationOperation MIN = new AggregationOperation() {
+	public static final AggregationOperation MIN = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
 			// Make sure that objects in our list are comparable
