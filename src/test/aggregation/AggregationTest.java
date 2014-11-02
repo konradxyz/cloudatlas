@@ -15,6 +15,7 @@ import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
+import pl.edu.mimuw.cloudatlas.model.ValueString;
 
 public abstract class AggregationTest {
 	private List<ValueList> inputs = new ArrayList<ValueList>();
@@ -26,6 +27,19 @@ public abstract class AggregationTest {
 	}
 	
 	public abstract void fillTests();
+	
+	public void prepareTestFromStrings(String[] values, Type type, Value output) {
+		Value[] vvalues =  new Value[values.length];
+		int i = 0;
+		for ( String str: values ) {
+			System.err.println(str);
+			Value converted = new ValueString(str).convertTo(type);
+			assertEquals(converted.isNull(), false);
+			vvalues[i++] = converted;
+		}
+		prepareTest(vvalues, type, output);
+	}
+	
 	
 	public void prepareTest(Value[] values, Type type, Value output) {
 		ValueList in = new ValueList(type);

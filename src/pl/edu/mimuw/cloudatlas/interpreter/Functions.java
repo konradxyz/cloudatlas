@@ -83,7 +83,7 @@ public class Functions {
 		}
 	};
 
-	private static final AggregationOperation AVERAGE = new AggregationOperation() {
+	public static final AggregationOperation AVERAGE = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
 			if (values.getElementType().isCollection()) {
@@ -119,8 +119,10 @@ public class Functions {
 			if (elementType.equals(TypePrimitive.INTEGER)) {
 				result = result.convertTo(TypePrimitive.DOUBLE);
 			}
-			Value size = primaryType == PrimaryType.DOUBLE? new ValueDouble((double)nlist.size()) : new ValueInt(
-					(long)nlist.size());
+			Value size = new ValueDouble((double)nlist.size());
+			if (elementType.equals(TypePrimitive.DURATION)) {
+				size = new ValueInt((long)nlist.size());
+			}
 			return result.divide(size);
 		}
 	};
