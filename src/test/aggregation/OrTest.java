@@ -22,6 +22,6 @@ public class OrTest extends AggregationTest {
 		prepareTest(new Value[]{f,t,t}, TypePrimitive.BOOLEAN, t);
 		prepareTest(new Value[]{f,f,f}, TypePrimitive.BOOLEAN, f);
 		
-		prepareTest(new Value[]{n,t,t}, TypePrimitive.BOOLEAN, f);
+		prepareTest(new Value[]{n,t,t}, TypePrimitive.BOOLEAN, t);
 	}
 }
