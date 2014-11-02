@@ -25,14 +25,12 @@
 package pl.edu.mimuw.cloudatlas.interpreter;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 abstract class Result {
 

@@ -2,7 +2,6 @@ package pl.edu.mimuw.cloudatlas.interpreter;
 
 import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 
 public class ResultList extends Result {

@@ -1,23 +1,10 @@
 package pl.edu.mimuw.cloudatlas.serialization;
 
-import java.io.IOError;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
-
-
-
-
-
 import java.util.Set;
 
-import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
 
 import com.esotericsoftware.kryo.Kryo;

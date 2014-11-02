@@ -1,17 +1,8 @@
 package pl.edu.mimuw.cloudatlas.serialization;
 
-import java.io.IOError;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-
-
-
-
-import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
