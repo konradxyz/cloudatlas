@@ -28,7 +28,7 @@ import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 
-class ResultSingle extends Result {
+public class ResultSingle extends Result {
 	private final Value value;
 
 	public ResultSingle(Value value) {
