@@ -5,15 +5,14 @@ import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Scanner;
 
 import pl.edu.mimuw.cloudatlas.interpreter.query.Yylex;
 import pl.edu.mimuw.cloudatlas.interpreter.query.parser;
 import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
-import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.model.ZMI;
@@ -50,14 +49,11 @@ public class MainInterpreter {
 			}
 		}
 		for ( Entry<Attribute, Value> entry : queries ) {
-				System.err.println("Executing " + entry.getKey().getName());
 				try {
 					Interpreter interpreter = new Interpreter(zmi);
 					Program program = parseProgram(((ValueQuery) entry.getValue()).getValue());		
 					List<QueryResult> result = interpreter.interpretProgram(program);
-					PathName zone = Main.getPathName(zmi);
 					for(QueryResult r : result) {
-						System.err.println(zone + ": " + r);
 						zmi.getAttributes().addOrChange(r.getName(), r.getValue());
 					}
 				} catch ( Exception e) {
@@ -124,7 +120,7 @@ public class MainInterpreter {
 	
 	private static void printZMIs(ZMI root) {
 		System.out.println(Main.getPathName(root));
-		System.out.println(root.toString());
+		root.printAttributes(System.out);
 		for ( ZMI son : root.getSons()) {
 			printZMIs(son);
 		}
