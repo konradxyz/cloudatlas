@@ -121,8 +121,8 @@ public abstract class BinaryOperation {
 
 		@Override
 		public Type getResultType(Type left, Type right) {
-			if (left.isCollection() && left.isCompatible(right)) {
-				return left;
+			if ((left.equals(TypePrimitive.NULL) || left.isCollection()) && left.isCompatible(right)) {
+				return right;
 			}
 			return throwIfNull(BinaryOperation.getResultType(supportedPrimitivesMap, left,
 					right), left, right);

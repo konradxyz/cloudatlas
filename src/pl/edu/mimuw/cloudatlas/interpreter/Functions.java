@@ -51,21 +51,32 @@ class Functions {
 	private static final AggregationOperation COUNT = new AggregationOperation() {
 		@Override
 		public ValueInt perform(ValueList values) {
-			ValueList nlist = Result.filterNullsList(values);
-			if(nlist.getValue() == null) {
+			if(values.getValue() == null) {
 				return new ValueInt(null);
 			}
-			return new ValueInt((long)nlist.size());
+			return new ValueInt((long)values.size());
 		}
 	};
 
 	private static final AggregationOperation SUM = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
-			values = Result.filterNullsList(values);
+			if ( values.getElementType().isCollection()){
+				throw new IllegalArgumentException("SUM doesn't support type: " + values.getElementType().toString() + ".");
+			}
+			TypePrimitive type = (TypePrimitive) values.getElementType();
+			if ( type.equals(TypePrimitive.NULL))
+				return ValueNull.getInstance();
+			if (!type.equals(TypePrimitive.DURATION)
+					&& !type.equals(TypePrimitive.INTEGER)
+					&& !type.equals(TypePrimitive.DOUBLE))
+				throw new IllegalArgumentException(
+						"SUM doesn't support type: "
+								+ values.getElementType().toString() + ".");
+			Value typedNull = type.getNull();
 			if ( values.size() == 0 )
-				return new ValueInt(0l);
-			Value result = values.get(0).getDefaultValue();
+				return typedNull;
+			Value result = typedNull.getDefaultValue();
 			for ( Value v : values )
 				result = result.addValue(v);
 			return result;
@@ -75,23 +86,38 @@ class Functions {
 	private static final AggregationOperation AVERAGE = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
-			Type elementType = ((TypeCollection)values.getType()).getElementType();
+			if (values.getElementType().isCollection()) {
+				throw new IllegalArgumentException(
+						"AVERAGE doesn't support type: "
+								+ values.getElementType() + ".");
+			}
+			Type elementType = values.getElementType();
+
 			PrimaryType primaryType = elementType.getPrimaryType();
 
-			if(primaryType != PrimaryType.INT && primaryType != PrimaryType.DOUBLE && primaryType != PrimaryType.DURATION
+			if (primaryType != PrimaryType.INT
+					&& primaryType != PrimaryType.DOUBLE
+					&& primaryType != PrimaryType.DURATION
 					&& primaryType != PrimaryType.NULL) {
-				throw new IllegalArgumentException("Aggregation doesn't support type: " + elementType + ".");
+				throw new IllegalArgumentException(
+						"AVERAGE doesn't support type: " + elementType + ".");
 			}
-
-			ValueList nlist = Result.filterNullsList(values);
-			if(nlist.getValue() == null || nlist.isEmpty()) {
+			if (primaryType == PrimaryType.NULL)
 				return ValueNull.getInstance();
+
+			ValueList nlist = values;
+			TypePrimitive returnType = elementType.equals(TypePrimitive.DURATION) ? TypePrimitive.DURATION : TypePrimitive.DOUBLE;
+			if(nlist.isEmpty()) {
+				return returnType.getNull();
 			}
 
 			Value result = nlist.get(0).getDefaultValue();
 
 			for(Value v : nlist) {
 				result = result.addValue(v);
+			}
+			if (elementType.equals(TypePrimitive.INTEGER)) {
+				result = result.convertTo(TypePrimitive.DOUBLE);
 			}
 			Value size = primaryType == PrimaryType.DOUBLE? new ValueDouble((double)nlist.size()) : new ValueInt(
 					(long)nlist.size());
@@ -102,18 +128,18 @@ class Functions {
 	private static final AggregationOperation AND = new AggregationOperation() {
 		@Override
 		public ValueBoolean perform(ValueList values) { // lazy
-			ValueList nlist = Result.filterNullsList(values);
-			if(nlist.getValue() == null) {
-				return new ValueBoolean(null);
-			} else if(values.isEmpty()) {
-				return new ValueBoolean(true);
+			if (!values.getElementType().isCompatible(TypePrimitive.BOOLEAN)) {
+				throw new IllegalArgumentException("AND doesn't support type: "
+						+ values.getElementType() + ".");
 			}
-			for(Value v : nlist) {
-				if(v.getType().isCompatible(TypePrimitive.BOOLEAN)) {
-					if(v.isNull() || !((ValueBoolean)v).getValue())
-						return new ValueBoolean(false);
-				} else
-					throw new IllegalArgumentException("Aggregation doesn't support type: " + v.getType() + ".");
+			if (values.getValue() == null) {
+				return new ValueBoolean(null);
+			} else if (values.isEmpty()) {
+				return new ValueBoolean(null);
+			}
+			for (Value v : values) {
+				if (!((ValueBoolean) v).getValue())
+					return new ValueBoolean(false);
 			}
 			return new ValueBoolean(true);
 		}
@@ -122,32 +148,42 @@ class Functions {
 	private static final AggregationOperation OR = new AggregationOperation() {
 		@Override
 		public ValueBoolean perform(ValueList values) { // lazy
-			ValueList nlist = Result.filterNullsList(values);
-			if(nlist.getValue() == null) {
+			if (!values.getElementType().isCompatible(TypePrimitive.BOOLEAN)) {
+				throw new IllegalArgumentException("OR doesn't support type: "
+						+ values.getElementType() + ".");
+			}
+			if (values.getValue() == null) {
 				return new ValueBoolean(null);
-			} else if(values.isEmpty()) {
-				return new ValueBoolean(false);
+			} else if (values.isEmpty()) {
+				return new ValueBoolean(null);
 			}
-			for(Value v : nlist) {
-				if(v.getType().isCompatible(TypePrimitive.BOOLEAN)) {
-					if(v.isNull() || ((ValueBoolean)v).getValue())
-						return new ValueBoolean(true);
-				} else
-					throw new IllegalArgumentException("Aggregation doesn't support type: " + v.getType() + ".");
+
+			if (values.getValue() == null) {
+				return new ValueBoolean(null);
+			} else if (values.isEmpty()) {
+				return new ValueBoolean(null);
 			}
-			return new ValueBoolean(true);
+			for (Value v : values) {
+
+				if (((ValueBoolean) v).getValue())
+					return new ValueBoolean(true);
+
+			}
+			return new ValueBoolean(false);
 		}
 	};
 
 	private static final AggregationOperation MIN = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
-			ValueList nlist = Result.filterNullsList(values);
-			if(nlist.getValue() == null || nlist.isEmpty()) {
-				return ValueNull.getInstance();
+			// Make sure that objects in our list are comparable
+			BinaryOperation.IS_LOWER_THAN.getResultType(values.getElementType(), values.getElementType());
+			TypePrimitive type = (TypePrimitive) values.getElementType();
+			if(values.getValue() == null || values.isEmpty()) {
+				return type.getNull();
 			}
-			Value result = nlist.get(0);
-			for(Value v : nlist) {
+			Value result = values.get(0);
+			for(Value v : values) {
 				if(((ValueBoolean)v.isLowerThan(result)).getValue()) {
 					result = v;
 				}
@@ -159,12 +195,13 @@ class Functions {
 	private static final AggregationOperation MAX = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
-			ValueList nlist = Result.filterNullsList(values);
-			if(nlist.getValue() == null || nlist.isEmpty()) {
-				return ValueNull.getInstance();
+			BinaryOperation.IS_LOWER_THAN.getResultType(values.getElementType(), values.getElementType());
+			TypePrimitive type = (TypePrimitive) values.getElementType();
+			if(values.getValue() == null || values.isEmpty()) {
+				return type.getNull();
 			}
-			Value result = nlist.get(0);
-			for(Value v : nlist) {
+			Value result = values.get(0);
+			for(Value v : values) {
 				if(((ValueBoolean)v.isLowerThan(result)).negate().and(v.isEqual(result).negate()).getValue()) {
 					result = v;
 				}
