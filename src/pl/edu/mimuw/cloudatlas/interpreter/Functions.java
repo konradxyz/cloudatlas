@@ -58,7 +58,7 @@ public class Functions {
 		}
 	};
 
-	private static final AggregationOperation SUM = new AggregationOperation() {
+	public static final AggregationOperation SUM = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
 			if ( values.getElementType().isCollection()){
