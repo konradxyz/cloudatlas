@@ -7,6 +7,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import test.aggregation.AndTest;
 import test.aggregation.AverageTest;
 import test.aggregation.CountTest;
+import test.aggregation.OrTest;
 import test.aggregation.SumTest;
 
 
@@ -14,7 +15,7 @@ import test.aggregation.SumTest;
 @SuiteClasses({ Success.class, ZMITest.class, 
 		SerializationAttributesMapTest.class, SerializationStringTest.class,
 		SerializatorValueStringTest.class, ExpressionInterpreterTest.class, BinaryOperationsTypesTest.class,
-		CountTest.class, AverageTest.class, SumTest.class, AndTest.class})
+		CountTest.class, AverageTest.class, SumTest.class, AndTest.class, OrTest.class})
 public class AllTests {
 
 }
