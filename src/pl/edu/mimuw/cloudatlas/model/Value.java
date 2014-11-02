@@ -81,6 +81,16 @@ public abstract class Value {
 		return ((ValueBoolean)isEqual((Value)object)).getValue();
 	}
 	
+	
+	public boolean identical(Object object) {
+		if(!(object instanceof Value))
+			return false;
+		Value other = (Value) object;
+		if (!getType().equals(other.getType()))
+			return false;
+		return ((ValueBoolean)isEqual((Value)object)).getValue();
+	}
+	
 	/**
 	 * Checks whether this value is lower than the specified one (operator <=).
 	 * 
