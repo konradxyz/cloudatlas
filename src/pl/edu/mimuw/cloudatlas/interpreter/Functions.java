@@ -45,10 +45,10 @@ import pl.edu.mimuw.cloudatlas.model.ValueNull;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
 
-class Functions {
+public class Functions {
 	private static Functions instance = null;
 
-	private static final AggregationOperation COUNT = new AggregationOperation() {
+	public static final AggregationOperation COUNT = new AggregationOperation() {
 		@Override
 		public ValueInt perform(ValueList values) {
 			if(values.getValue() == null) {
@@ -83,7 +83,7 @@ class Functions {
 		}
 	};
 
-	private static final AggregationOperation AVERAGE = new AggregationOperation() {
+	public static final AggregationOperation AVERAGE = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
 			if (values.getElementType().isCollection()) {
@@ -119,8 +119,10 @@ class Functions {
 			if (elementType.equals(TypePrimitive.INTEGER)) {
 				result = result.convertTo(TypePrimitive.DOUBLE);
 			}
-			Value size = primaryType == PrimaryType.DOUBLE? new ValueDouble((double)nlist.size()) : new ValueInt(
-					(long)nlist.size());
+			Value size = new ValueDouble((double)nlist.size());
+			if (elementType.equals(TypePrimitive.DURATION)) {
+				size = new ValueInt((long)nlist.size());
+			}
 			return result.divide(size);
 		}
 	};

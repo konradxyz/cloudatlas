@@ -31,7 +31,7 @@ import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 
-abstract class Result {
+public abstract class Result {
 
 	public interface AggregationOperation {
 		public Value perform(ValueList values);

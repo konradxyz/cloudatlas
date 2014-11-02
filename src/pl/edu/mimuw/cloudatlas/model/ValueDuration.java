@@ -285,7 +285,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.ADD);
 		if (isNull() || value.isNull())
 			return new ValueDuration((Long) null);
-		return new ValueDuration(getValue() + ((ValueInt) value).getValue());
+		return new ValueDuration(getValue() + ((ValueDuration) value).getValue());
 	}
 
 	@Override
@@ -293,7 +293,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.ADD);
 		if (isNull() || value.isNull())
 			return new ValueDuration((Long) null);
-		return new ValueDuration(getValue() - ((ValueInt) value).getValue());
+		return new ValueDuration(getValue() - ((ValueDuration) value).getValue());
 	}
 
 	@Override
