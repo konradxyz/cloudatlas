@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import junit.framework.AssertionFailedError;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -52,6 +54,14 @@ public abstract class AggregationTest {
 		inputs.add(in);
 		outputs.add(output);
 	}
+	
+	public void assertIdentical(Value expected, Value got) {
+		if ( !expected.identical(got) ) {
+			throw new AssertionFailedError(String.format(
+					"Assert identical failed: expected %s, got %s", expected, got));
+		}
+	}
+	
 	@Test
 	public void test() {
 		fillTests();
@@ -59,11 +69,11 @@ public abstract class AggregationTest {
 			System.err.println(inputs.get(i));
 			ResultColumn column = new ResultColumn(inputs.get(i));
 			Value result = column.aggregationOperation(operation).getValue();
-			assertEquals(outputs.get(i), result);
+			assertIdentical(outputs.get(i), result);
 			
 			ResultList list = new ResultList(inputs.get(i));
 			Value res = list.aggregationOperation(operation).getValue();
-			assertEquals(outputs.get(i), res);
+			assertIdentical(outputs.get(i), res);
 		}
 	}
 }

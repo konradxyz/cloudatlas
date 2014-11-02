@@ -127,7 +127,7 @@ public class Functions {
 		}
 	};
 
-	private static final AggregationOperation AND = new AggregationOperation() {
+	public static final AggregationOperation AND = new AggregationOperation() {
 		@Override
 		public ValueBoolean perform(ValueList values) { // lazy
 			if (!values.getElementType().isCompatible(TypePrimitive.BOOLEAN)) {
