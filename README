@@ -1,0 +1,4 @@
+Compile:
+run ant
+Example usage:
+./interpreter < example.in
