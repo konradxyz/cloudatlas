@@ -45,10 +45,10 @@ import pl.edu.mimuw.cloudatlas.model.ValueNull;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
 
-class Functions {
+public class Functions {
 	private static Functions instance = null;
 
-	private static final AggregationOperation COUNT = new AggregationOperation() {
+	public static final AggregationOperation COUNT = new AggregationOperation() {
 		@Override
 		public ValueInt perform(ValueList values) {
 			if(values.getValue() == null) {
