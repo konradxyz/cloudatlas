@@ -1,2 +1,2 @@
 &query1: SELECT sum(num_cores) AS num_cores; SELECT sum(2 * num_cores) AS p
-&query2: SELECT "master?" AS missy
+&query2: SELECT "master" AS missy
