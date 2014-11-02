@@ -194,7 +194,7 @@ public class Functions {
 		}
 	};
 
-	private static final AggregationOperation MAX = new AggregationOperation() {
+	public static final AggregationOperation MAX = new AggregationOperation() {
 		@Override
 		public Value perform(ValueList values) {
 			BinaryOperation.IS_LOWER_THAN.getResultType(values.getElementType(), values.getElementType());
