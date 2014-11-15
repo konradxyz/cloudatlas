@@ -1,8 +1,10 @@
 package pl.edu.mimuw.cloudatlas.modules.framework.example;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 import pl.edu.mimuw.cloudatlas.modules.ModuleAddresses;
 import pl.edu.mimuw.cloudatlas.modules.framework.MessageHandler;
@@ -15,7 +17,7 @@ public class ReaderModule extends Module implements Runnable {
 
 	private final int target;
 	private Thread readingThread;
-	private Scanner scanner = new Scanner(System.in);
+	private BufferedReader reader = null;
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
@@ -30,14 +32,21 @@ public class ReaderModule extends Module implements Runnable {
 
 	@Override
 	public void initialize() {
+		reader = new BufferedReader(new InputStreamReader(System.in));
 		readingThread = new Thread(this);
 		readingThread.start();
+
 	}
 
 	@Override
 	public void shutdown() {
-		scanner.close();
 		readingThread.interrupt();
+		try {
+			readingThread.join();
+		} catch (InterruptedException e) {
+			// Cleanup error - I don't think we can do something more.
+			e.printStackTrace();
+		}
 	}
 
 	public ReaderModule(int target) {
@@ -47,9 +56,24 @@ public class ReaderModule extends Module implements Runnable {
 
 	@Override
 	public void run() {
-		while (!Thread.currentThread().isInterrupted() && scanner.hasNextLine()) {
-			String line = scanner.nextLine();
-			sendMessage(target, LINE_READ, new SimpleMessage<String>(line));
+		while (true) {
+			try {
+				while (reader.ready()) {
+					String line = reader.readLine();
+					sendMessage(target, LINE_READ, new SimpleMessage<String>(
+							line));
+				}
+			} catch (IOException e) {
+				e.printStackTrace(System.err);
+			}
+			if (Thread.interrupted()) {
+				return;
+			}
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				return;
+			}
 		}
 	}
 
