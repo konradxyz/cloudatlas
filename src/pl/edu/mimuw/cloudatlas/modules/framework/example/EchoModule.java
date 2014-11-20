@@ -37,7 +37,7 @@ public class EchoModule extends Module {
 			String content = message.getContent();			
 			if ( content.startsWith("send") ) {
 				try {
-					InetAddress target = InetAddress.getLocalHost();
+					InetAddress target = InetAddress.getByName("localhost");
 					if ( content.startsWith("sendto ") ) {
 						content = content.substring("sendto ".length());
 						String ip = content.split(" ")[0];
@@ -46,8 +46,9 @@ public class EchoModule extends Module {
 					} else {
 						content = content.substring("send ".length());
 					}
+					content = content + "\n";
 					sendMessage(socketAddress, SocketModule.SEND_MESSAGE,
-							new SendMessage(content.getBytes(), target));
+							new SendMessage(content.getBytes(), target, 12345));
 				} catch (UnknownHostException e) {
 					throw new HandlerException(e);
 				}
@@ -81,7 +82,7 @@ public class EchoModule extends Module {
 				getAddress());
 		modules.add(reader);
 		
-		SocketModule socket = new SocketModule(generator.getUniqueAddress(), 12345);
+		SocketModule socket = new SocketModule(generator.getUniqueAddress(), 10345);
 		modules.add(socket);
 		socketAddress = socket.getAddress();
 		

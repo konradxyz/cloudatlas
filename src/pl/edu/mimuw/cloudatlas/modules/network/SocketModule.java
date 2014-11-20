@@ -13,13 +13,15 @@ import pl.edu.mimuw.cloudatlas.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.modules.framework.ModuleInitializationException;
 
-public class SocketModule extends Module {
+public final class SocketModule extends Module {
 	private final int port;
 	private DatagramSocket socket;
 	
 	// Messages to be sent by senderThread through socket.
-	// In order to terminat senderThread you need to put null
+	// In order to terminate senderThread you need to put finishMessage
 	// in this queue.
+	// It is ugly solution but it will work for now.
+	private final SendMessage finishMessage = new SendMessage(null, null,  0);
 	private BlockingQueue<SendMessage> toSendQueue = new LinkedBlockingQueue<SendMessage>();
 	private Thread senderThread;
 	
@@ -46,10 +48,13 @@ public class SocketModule extends Module {
 			while (!finished) {
 				try {
 					SendMessage msg = toSendQueue.take();
-					finished = msg == null;
+					System.err.println("got message");
+					finished = msg == finishMessage;
 					if ( !finished ) {
+						System.err.println("sending");
 						socket.send(new DatagramPacket(msg.getContent(), 
-								msg.getContent().length, msg.getTarget(), port));
+								msg.getContent().length, msg.getTarget(), msg.getPort()));
+						System.err.println("sent");
 					}
 				} catch (InterruptedException | IOException e) {
 					// Note that even if we do not receive IOException here
@@ -91,11 +96,13 @@ public class SocketModule extends Module {
 	
 	@Override
 	public void shutdown() {
-		toSendQueue.add(null);
+		toSendQueue.add(finishMessage);
 		try {
 			senderThread.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		} finally {
+			socket.close();
 		}
 	}
 }
