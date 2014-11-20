@@ -14,7 +14,6 @@ import pl.edu.mimuw.cloudatlas.modules.framework.ShutdownModule;
 import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
 
 public class EchoModule extends Module {
-	private ShutdownModule shutdownModule;
 	private Address shutdownAddress;
 	private Address printerAddress;
 
@@ -32,9 +31,9 @@ public class EchoModule extends Module {
 		}
 	};
 
-	public EchoModule(Address uniqueAddress, ShutdownModule shutdownModule) {
+	public EchoModule(Address uniqueAddress, Address shutdownModuleAddress) {
 		super(uniqueAddress);
-		this.shutdownModule = shutdownModule;
+		this.shutdownAddress = shutdownModuleAddress;
 	}
 
 	@Override
@@ -47,9 +46,6 @@ public class EchoModule extends Module {
 	@Override
 	public List<Module> getSubModules(AddressGenerator generator) {
 		List<Module> modules = new ArrayList<Module>();
-		
-		modules.add(shutdownModule);
-		shutdownAddress = shutdownModule.getAddress();
 		
 		PrinterModule printer = new PrinterModule(generator.getUniqueAddress());
 		printerAddress = printer.getAddress();

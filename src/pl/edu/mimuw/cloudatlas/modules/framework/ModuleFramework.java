@@ -10,8 +10,8 @@ public abstract class ModuleFramework {
 	private Address rootAddress;
 	
 	
-	public abstract Module getRootModule(AddressGenerator addressGenerator, 
-			ShutdownModule shutdownModule);
+	public abstract Module getRootModule(Address rootAddress2, 
+			Address shutdownModuleAddress);
 	public abstract Message getInitializationMessage();
 	public abstract int getInitializationMessageType();
 
@@ -19,10 +19,12 @@ public abstract class ModuleFramework {
 	public final void init(int executorsCount) {
 		assert(executorsCount > 0);
 		AddressGenerator addressGenerator = new AddressGenerator();
-		Module root = getRootModule(addressGenerator, 
-				new ShutdownModule(context, addressGenerator.getUniqueAddress()));
-		rootAddress = root.getAddress();
+		ShutdownModule shutdownModule = new ShutdownModule(context, 
+				addressGenerator.getUniqueAddress());
+		rootAddress = addressGenerator.getUniqueAddress();
+		Module root = getRootModule(rootAddress, shutdownModule.getAddress());
 		List<Module> modules = new ArrayList<Module>();
+		gatherModules(shutdownModule, addressGenerator, modules);
 		gatherModules(root, addressGenerator, modules);
 		List<List<Module>> executorModules =
 				new ArrayList<List<Module>>();

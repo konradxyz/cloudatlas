@@ -1,10 +1,9 @@
 package pl.edu.mimuw.cloudatlas.modules.framework.example;
 
-import pl.edu.mimuw.cloudatlas.modules.framework.AddressGenerator;
+import pl.edu.mimuw.cloudatlas.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.modules.framework.ModuleFramework;
-import pl.edu.mimuw.cloudatlas.modules.framework.ShutdownModule;
 import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
 
 public final class ExampleModuleFramework extends ModuleFramework {
@@ -14,18 +13,17 @@ public final class ExampleModuleFramework extends ModuleFramework {
 		return new SimpleMessage<String>("Module test");
 	}
 
-
 	@Override
-	public Module getRootModule(AddressGenerator addressGenerator,
-			ShutdownModule shutdownModule) {
-		return new EchoModule(addressGenerator.getUniqueAddress(), 
-				shutdownModule);
+	public int getInitializationMessageType() {
+		return ReaderModule.LINE_READ;
 	}
 
 
 	@Override
-	public int getInitializationMessageType() {
-		return ReaderModule.LINE_READ;
+	public Module getRootModule(Address rootAddress,
+			Address shutdownModuleAddress) {
+		return new EchoModule(rootAddress, 
+				shutdownModuleAddress);
 	}
 
 }
