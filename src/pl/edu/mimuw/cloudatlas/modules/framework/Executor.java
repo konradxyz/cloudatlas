@@ -7,14 +7,14 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class Executor implements Runnable {
-	private Map<Integer, Module> modules = new HashMap<Integer, Module>();
+public final class Executor implements Runnable {
+	private Map<Address, Module> modules = new HashMap<Address, Module>();
 	private BlockingQueue<MessageWrapper> queue;
 	
 	public static final int SHUTDOWN_TYPE = -1;
 	
 	public void initialize(List<Module> modules, ExecutorContext context) {
-		List<Integer> addresses = new ArrayList<Integer>();
+		List<Address> addresses = new ArrayList<Address>();
 		for (Module m : modules) {
 			assert(!this.modules.containsKey(m.getAddress()));
 			this.modules.put(m.getAddress(), m);

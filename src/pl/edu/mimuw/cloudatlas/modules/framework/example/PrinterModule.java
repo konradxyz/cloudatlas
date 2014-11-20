@@ -3,12 +3,16 @@ package pl.edu.mimuw.cloudatlas.modules.framework.example;
 import java.util.HashMap;
 import java.util.Map;
 
-import pl.edu.mimuw.cloudatlas.modules.ModuleAddresses;
+import pl.edu.mimuw.cloudatlas.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
 
 public class PrinterModule extends Module {
+	public PrinterModule(Address address) {
+		super(address);
+	}
+
 	public static final int PRINT_LINE = 0;
 
 	private final MessageHandler<SimpleMessage<String>> printerHandler = new MessageHandler<SimpleMessage<String>>() {
@@ -26,10 +30,4 @@ public class PrinterModule extends Module {
 		handlers.put(PRINT_LINE, printerHandler);
 		return handlers;
 	}
-
-	@Override
-	protected Integer getAddress() {
-		return ModuleAddresses.PRINTER;
-	}
-
 }

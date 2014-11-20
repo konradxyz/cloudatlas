@@ -11,9 +11,9 @@ import java.util.concurrent.BlockingQueue;
 
 // TODO: maybe some state machine to make sure that all registerExecutor calls are
 // executed before first sendMessage?
-public class ExecutorContext extends Context {
-	private Map<Integer, BlockingQueue<MessageWrapper>> modulesQueues = 
-			new HashMap<Integer, BlockingQueue<MessageWrapper>>();
+public final class ExecutorContext implements Context {
+	private Map<Address, BlockingQueue<MessageWrapper>> modulesQueues = 
+			new HashMap<Address, BlockingQueue<MessageWrapper>>();
 	private List<BlockingQueue<MessageWrapper>> executorsQueues = 
 			new ArrayList<BlockingQueue<MessageWrapper>>();
 	
@@ -24,9 +24,9 @@ public class ExecutorContext extends Context {
 	
 	// All Executors must be registered before first executor starts to work.
 	// This method is NOT synchronized.
-	public void registerExecutor(List<Integer> addresses,
+	public void registerExecutor(List<Address> addresses,
 			BlockingQueue<MessageWrapper> queue) {
-		for ( Integer i : addresses ) {
+		for ( Address i : addresses ) {
 			modulesQueues.put(i,  queue);
 		}
 		executorsQueues.add(queue);

@@ -4,9 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-import pl.edu.mimuw.cloudatlas.modules.ModuleAddresses;
-
-public class ShutdownModule extends Module {
+public final class ShutdownModule extends Module {
 	public static final int INITIALIZE_SHUTDOWN = 0;
 
 	private final ExecutorContext executorContext;
@@ -17,7 +15,7 @@ public class ShutdownModule extends Module {
 		public void handleMessage(Message message) {
 			for (BlockingQueue<MessageWrapper> queue : executorContext
 					.getImmutableExecutorQueues()) {
-				queue.add(new MessageWrapper(ModuleAddresses.ANY,
+				queue.add(new MessageWrapper(Address.ANY,
 						Executor.SHUTDOWN_TYPE, new Message(), getAddress()));
 			}
 
@@ -31,13 +29,8 @@ public class ShutdownModule extends Module {
 		return result;
 	}
 
-	@Override
-	protected Integer getAddress() {
-		return ModuleAddresses.SHUTDOWN;
-	}
-
-	public ShutdownModule(ExecutorContext executorContext) {
-		super();
+	public ShutdownModule(ExecutorContext executorContext, Address address) {
+		super(address);
 		this.executorContext = executorContext;
 	}
 
