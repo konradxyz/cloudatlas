@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.modules.framework;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +18,7 @@ public abstract class Module {
 
 	// This function might be redefined in order to allow for custom
 	// initialization.
-	public void initialize() {
+	public void initialize() throws ModuleInitializationException {
 	}
 
 	// All resources that were allocated during this object's lifetime should be
@@ -50,16 +51,31 @@ public abstract class Module {
 		return address;
 	}
 	
-	public final void init(Context ctx) {
+	public final void init(Context ctx) throws ModuleInitializationException {
 		context = ctx;
 		handlers = generateHandlers();
 		initialize();
 	}
 	
-	public final void handleMessage(MessageWrapper wrapper) {
+	public final void handleMessage(MessageWrapper wrapper) 
+			throws HandlerException {
 		MessageHandler<?> handler = handlers.get(wrapper.getMessageType());
 		assert(handler != null);
 		wrapper.getMessage();
 		handler.handleUntypedMessage(wrapper.getMessage());
+	}
+	
+	
+	// Small helper function.
+	public static Map<Integer, MessageHandler<?>> getHandlers(
+			Integer[] addresses, MessageHandler<?>[] handlers) {
+		assert(addresses.length == handlers.length);
+		Map<Integer, MessageHandler<?>> result = 
+				new HashMap<Integer, MessageHandler<?>>();
+		for ( int i = 0; i < addresses.length; ++i ){
+			result.put(addresses[i], handlers[i]);
+		}
+		return result;
+
 	}
 }
