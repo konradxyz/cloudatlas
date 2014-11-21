@@ -15,7 +15,8 @@ import pl.edu.mimuw.cloudatlas.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.modules.framework.ShutdownModule;
 import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
-import pl.edu.mimuw.cloudatlas.modules.network.SendMessage;
+import pl.edu.mimuw.cloudatlas.modules.network.ReceivedDatagramMessage;
+import pl.edu.mimuw.cloudatlas.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.SocketModule;
 
 public class EchoModule extends Module {
@@ -23,7 +24,7 @@ public class EchoModule extends Module {
 	private Address printerAddress;
 	private Address socketAddress;
 
-
+	private static final int RECEIVED_DATAGRAM = 1;
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 
@@ -48,13 +49,24 @@ public class EchoModule extends Module {
 					}
 					content = content + "\n";
 					sendMessage(socketAddress, SocketModule.SEND_MESSAGE,
-							new SendMessage(content.getBytes(), target, 12345));
+							new SendDatagramMessage(content.getBytes(), target, 12345));
 				} catch (UnknownHostException e) {
 					throw new HandlerException(e);
 				}
 				
 			}
 			
+		}
+	};
+
+	private final MessageHandler<ReceivedDatagramMessage> receiveHandler = new MessageHandler<ReceivedDatagramMessage>() {
+
+		@Override
+		public void handleMessage(ReceivedDatagramMessage message)
+				throws HandlerException {
+			String toPrint = new String(message.getContent());
+			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
+					new SimpleMessage<String>(toPrint + "\n"));
 		}
 	};
 
@@ -67,6 +79,7 @@ public class EchoModule extends Module {
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
 		Map<Integer, MessageHandler<?>> handlers = new HashMap<Integer, MessageHandler<?>>();
 		handlers.put(ReaderModule.LINE_READ, readHandler);
+		handlers.put(RECEIVED_DATAGRAM, receiveHandler);
 		return handlers;
 	}
 	
@@ -82,7 +95,8 @@ public class EchoModule extends Module {
 				getAddress());
 		modules.add(reader);
 		
-		SocketModule socket = new SocketModule(generator.getUniqueAddress(), 10345);
+		SocketModule socket = new SocketModule(generator.getUniqueAddress(),
+				5432, 60 * 1024, getAddress(), RECEIVED_DATAGRAM);
 		modules.add(socket);
 		socketAddress = socket.getAddress();
 		
