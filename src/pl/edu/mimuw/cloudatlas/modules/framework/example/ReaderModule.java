@@ -6,16 +6,21 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import pl.edu.mimuw.cloudatlas.modules.ModuleAddresses;
+import pl.edu.mimuw.cloudatlas.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
 
 public class ReaderModule extends Module implements Runnable {
 
+	public ReaderModule(Address address, Address target) {
+		super(address);
+		this.target = target;
+	}
+
 	public static final int LINE_READ = 0;
 
-	private final int target;
+	private final Address target;
 	private Thread readingThread;
 	private BufferedReader reader = null;
 
@@ -25,10 +30,6 @@ public class ReaderModule extends Module implements Runnable {
 		return handlers;
 	}
 
-	@Override
-	protected Integer getAddress() {
-		return ModuleAddresses.READER;
-	}
 
 	@Override
 	public void initialize() {
@@ -47,11 +48,6 @@ public class ReaderModule extends Module implements Runnable {
 			// Cleanup error - I don't think we can do something more.
 			e.printStackTrace();
 		}
-	}
-
-	public ReaderModule(int target) {
-		super();
-		this.target = target;
 	}
 
 	@Override

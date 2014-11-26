@@ -1,17 +1,54 @@
 package pl.edu.mimuw.cloudatlas.modules.framework;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public abstract class Module {
 	private Context context;
 	private Map<Integer, MessageHandler<?>> handlers;
-	
-	public void sendMessage(int target, int messageType, Message message) {
-		context.sendMessage(new MessageWrapper(target, messageType, message, getAddress()));
+	private Address address;
+
+	// This function will be called during module initialization.
+	// All handlers returned by this function will be associated with their 
+	// respective message types. Note that it is possible to define
+	// handler that would handle multiple message types.
+	protected abstract Map<Integer, MessageHandler<?>> generateHandlers();
+
+	// This function might be redefined in order to allow for custom
+	// initialization.
+	public void initialize() {
+	}
+
+	// All resources that were allocated during this object's lifetime should be
+	// freed by this function.
+	public void shutdown() {
 	}
 	
-	protected abstract Map<Integer, MessageHandler<?>> generateHandlers();
-	protected abstract Integer getAddress();
+	// Every module might depend on submodules.
+	// In fact, root module should almost always redefine this function.
+	// Otherwise, root would be the only module in particular ModuleFramework.
+	// It might be good idea to store addresses of generated modules.
+	// It will not be possible to access those addresses from this module
+	// at any other moment.
+	public List<Module> getSubModules(AddressGenerator generator) {
+		return new ArrayList<Module>();
+	}
+
+	protected final void sendMessage(Address target, int messageType,
+			Message message) {
+		context.sendMessage(new MessageWrapper(target, messageType, message,
+				getAddress()));
+	}	
+	
+	
+	public Module(Address address) {
+		this.address = address;
+	}
+	
+	public final Address getAddress() {
+		return address;
+	}
 	
 	public final void init(Context ctx) {
 		context = ctx;
@@ -19,14 +56,10 @@ public abstract class Module {
 		initialize();
 	}
 	
-	public void handleMessage(MessageWrapper wrapper) {
+	public final void handleMessage(MessageWrapper wrapper) {
 		MessageHandler<?> handler = handlers.get(wrapper.getMessageType());
 		assert(handler != null);
 		wrapper.getMessage();
 		handler.handleUntypedMessage(wrapper.getMessage());
 	}
-	
-	
-	public void initialize() {}
-	public void shutdown(){}
 }

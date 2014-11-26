@@ -1,19 +1,19 @@
 package pl.edu.mimuw.cloudatlas.modules.framework;
 
-public class MessageWrapper {
-	private int target;
+public final class MessageWrapper {
+	private Address target;
 	private int messageType;
 	private Message message;
-	private int source;
+	private Address source;
 
-	public MessageWrapper(int target, int messageType, Message message, int source) {
+	public MessageWrapper(Address target, int messageType, Message message, Address source) {
 		this.target = target;
 		this.messageType = messageType;
 		this.message = message;
 		this.source = source;
 	}
 
-	public int getTarget() {
+	public Address getTarget() {
 		return target;
 	}
 
@@ -29,7 +29,7 @@ public class MessageWrapper {
 		return "" + target + " " + source + " " + messageType + " " + message.toString();
 	}
 
-	public int getSource() {
+	public Address getSource() {
 		return source;
 	}
 }
