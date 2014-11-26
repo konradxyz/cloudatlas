@@ -60,6 +60,9 @@ public abstract class Module {
 	public final void handleMessage(MessageWrapper wrapper) 
 			throws HandlerException {
 		MessageHandler<?> handler = handlers.get(wrapper.getMessageType());
+		if (handler == null) {
+			System.err.println("Undefined handler.");
+		}
 		assert(handler != null);
 		wrapper.getMessage();
 		handler.handleUntypedMessage(wrapper.getMessage());

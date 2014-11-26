@@ -6,6 +6,6 @@ public class Main {
 
 	public static void main(String[] args) throws InterruptedException, ModuleInitializationException {
 		ExampleModuleFramework framework = new ExampleModuleFramework();
-		framework.initAndRun(8);
+		framework.initAndRun(1);
 	}
 }
