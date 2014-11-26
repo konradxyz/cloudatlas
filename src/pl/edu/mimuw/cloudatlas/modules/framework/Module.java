@@ -68,12 +68,12 @@ public abstract class Module {
 	
 	// Small helper function.
 	public static Map<Integer, MessageHandler<?>> getHandlers(
-			Integer[] addresses, MessageHandler<?>[] handlers) {
-		assert(addresses.length == handlers.length);
+			Integer[] msgTypes, MessageHandler<?>[] handlers) {
+		assert(msgTypes.length == handlers.length);
 		Map<Integer, MessageHandler<?>> result = 
 				new HashMap<Integer, MessageHandler<?>>();
-		for ( int i = 0; i < addresses.length; ++i ){
-			result.put(addresses[i], handlers[i]);
+		for ( int i = 0; i < msgTypes.length; ++i ){
+			result.put(msgTypes[i], handlers[i]);
 		}
 		return result;
 
