@@ -1,16 +1,18 @@
 package pl.edu.mimuw.cloudatlas.modules.zmi;
 
+import java.util.Calendar;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.ValueString;
+import pl.edu.mimuw.cloudatlas.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.model.ZMI;
 import pl.edu.mimuw.cloudatlas.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.modules.framework.Module;
 
-public class ZmiKeeperModule extends Module {
+public final class ZmiKeeperModule extends Module {
 	private ZMI rootZmi;
 	private PathName currentMachinePathName;
 	private ZMI currentMachineZmi;
@@ -25,16 +27,18 @@ public class ZmiKeeperModule extends Module {
 		rootZmi.getAttributes().add("name", new ValueString(""));
 		ZMI parent = rootZmi;
 		for (String zoneName : currentMachinePathName.getComponents()) {
-			// We should probably add names here.
-			// Timestamps
-			// Etc
-			// As usual: TODO
 			ZMI current = new ZMI(parent);
 			current.getAttributes().add("name", new ValueString(zoneName));
 			parent.addSon(current);
 			parent = current;
 		}
 		currentMachineZmi = parent;
+		refreshCurrentZmiTimestamp();
+	}
+
+	private void refreshCurrentZmiTimestamp() {
+		currentMachineZmi.getAttributes().addOrChange("timestamp",
+				new ValueTime(Calendar.getInstance().getTimeInMillis()));
 	}
 
 	public static final int SET_ATTRIBUTE = 1;
@@ -48,6 +52,7 @@ public class ZmiKeeperModule extends Module {
 			assert (currentMachineZmi != null);
 			currentMachineZmi.getAttributes().addOrChange(
 					message.getAttribute(), message.getValue());
+			refreshCurrentZmiTimestamp();
 		}
 	};
 
@@ -60,7 +65,6 @@ public class ZmiKeeperModule extends Module {
 					message.getResponseMessageType(), new RootZmiMessage(
 							rootZmi.clone()));
 		}
-
 	};
 
 	@Override
