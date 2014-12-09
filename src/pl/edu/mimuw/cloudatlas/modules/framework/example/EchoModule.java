@@ -18,13 +18,18 @@ import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.SocketModule;
+import pl.edu.mimuw.cloudatlas.modules.timer.AlarmMessage;
+import pl.edu.mimuw.cloudatlas.modules.timer.ScheduleAlarmMessage;
+import pl.edu.mimuw.cloudatlas.modules.timer.TimerModule;
 
 public class EchoModule extends Module {
 	private Address shutdownAddress;
 	private Address printerAddress;
 	private Address socketAddress;
-
+	private Address timerAddress;
+	
 	private static final int RECEIVED_DATAGRAM = 1;
+	private static final int ALARM_RECEIVED = 2;
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 
@@ -44,7 +49,8 @@ public class EchoModule extends Module {
 						String ip = content.split(" ")[0];
 						target = InetAddress.getByName(ip);
 						content  = content.substring(ip.length() + 1);
-					} else {
+					} 
+					else {
 						content = content.substring("send ".length());
 					}
 					content = content + "\n";
@@ -55,6 +61,14 @@ public class EchoModule extends Module {
 				}
 				
 			}
+			else if ( content.startsWith("alarm ") ) {
+				content = content.substring("alarm ".length());
+				int i = 0;
+				int delay = Integer.parseInt(content.split(" ")[i++]);
+				int requestId= Integer.parseInt(content.split(" ")[i++]);
+				sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE,
+						new ScheduleAlarmMessage(delay, requestId));
+			} 
 			
 		}
 	};
@@ -65,6 +79,17 @@ public class EchoModule extends Module {
 		public void handleMessage(ReceivedDatagramMessage message)
 				throws HandlerException {
 			String toPrint = new String(message.getContent());
+			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
+					new SimpleMessage<String>(toPrint + "\n"));
+		}
+	};
+	
+	private final MessageHandler<AlarmMessage> alarmHandler = new MessageHandler<AlarmMessage>() {
+
+		@Override
+		public void handleMessage(AlarmMessage message)
+				throws HandlerException {
+			String toPrint = "alarm received "+message.getRequestId();
 			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
 					new SimpleMessage<String>(toPrint + "\n"));
 		}
@@ -80,6 +105,7 @@ public class EchoModule extends Module {
 		Map<Integer, MessageHandler<?>> handlers = new HashMap<Integer, MessageHandler<?>>();
 		handlers.put(ReaderModule.LINE_READ, readHandler);
 		handlers.put(RECEIVED_DATAGRAM, receiveHandler);
+		handlers.put(ALARM_RECEIVED, alarmHandler);
 		return handlers;
 	}
 	
@@ -99,6 +125,10 @@ public class EchoModule extends Module {
 				5432, 60 * 1024, getAddress(), RECEIVED_DATAGRAM);
 		modules.add(socket);
 		socketAddress = socket.getAddress();
+		
+		TimerModule timeModule = new TimerModule(generator.getUniqueAddress(), getAddress(), ALARM_RECEIVED);
+		timerAddress = timeModule.getAddress();
+		modules.add(timeModule);
 		
 		return modules;
 	}
