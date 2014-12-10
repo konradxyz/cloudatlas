@@ -22,19 +22,26 @@ import pl.edu.mimuw.cloudatlas.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.modules.network.SocketModule;
+import pl.edu.mimuw.cloudatlas.modules.timer.AlarmMessage;
+import pl.edu.mimuw.cloudatlas.modules.timer.ScheduleAlarmMessage;
+import pl.edu.mimuw.cloudatlas.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.modules.zmi.GetRootZmiMessage;
 import pl.edu.mimuw.cloudatlas.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.modules.zmi.SetAttributeMessage;
 import pl.edu.mimuw.cloudatlas.modules.zmi.ZmiKeeperModule;
+
 
 public class EchoModule extends Module {
 	private Address shutdownAddress;
 	private Address printerAddress;
 	private Address socketAddress;
 	private Address zmiKeeperAddress;
-
+	private Address timerAddress;
+	
 	private static final int RECEIVED_DATAGRAM = 1;
 	protected static final Integer ZMI_RECEIVED = 2;
+	protected static final Integer ALARM_RECEIVED = 3;
+	
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 
@@ -54,7 +61,8 @@ public class EchoModule extends Module {
 						String ip = content.split(" ")[0];
 						target = InetAddress.getByName(ip);
 						content  = content.substring(ip.length() + 1);
-					} else {
+					} 
+					else {
 						content = content.substring("send ".length());
 					}
 					content = content + "\n";
@@ -65,6 +73,7 @@ public class EchoModule extends Module {
 				}
 				
 			}
+
 			if ( content.startsWith("set") ) {
 				String attrs[] = content.split(" ");
 				sendMessage(zmiKeeperAddress, ZmiKeeperModule.SET_ATTRIBUTE,
@@ -77,6 +86,14 @@ public class EchoModule extends Module {
 						new GetRootZmiMessage(getAddress(), ZMI_RECEIVED));
 			}
 
+			if ( content.startsWith("alarm ") ) {
+				content = content.substring("alarm ".length());
+				int i = 0;
+				int delay = Integer.parseInt(content.split(" ")[i++]);
+				int requestId= Integer.parseInt(content.split(" ")[i++]);
+				sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE,
+						new ScheduleAlarmMessage(delay, requestId));
+			} 
 		}
 	};
 
@@ -86,6 +103,17 @@ public class EchoModule extends Module {
 		public void handleMessage(ReceivedDatagramMessage message)
 				throws HandlerException {
 			String toPrint = new String(message.getContent());
+			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
+					new SimpleMessage<String>(toPrint + "\n"));
+		}
+	};
+	
+	private final MessageHandler<AlarmMessage> alarmHandler = new MessageHandler<AlarmMessage>() {
+
+		@Override
+		public void handleMessage(AlarmMessage message)
+				throws HandlerException {
+			String toPrint = "alarm received "+message.getRequestId();
 			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
 					new SimpleMessage<String>(toPrint + "\n"));
 		}
@@ -115,6 +143,7 @@ public class EchoModule extends Module {
 		handlers.put(ReaderModule.LINE_READ, readHandler);
 		handlers.put(RECEIVED_DATAGRAM, receiveHandler);
 		handlers.put(ZMI_RECEIVED, rootZmiHandler);
+		handlers.put(ALARM_RECEIVED, alarmHandler);
 		return handlers;
 	}
 	
@@ -140,6 +169,10 @@ public class EchoModule extends Module {
 		zmiKeeperAddress = zmiKeeper.getAddress();
 		modules.add(zmiKeeper);
 
+		TimerModule timeModule = new TimerModule(generator.getUniqueAddress(), getAddress(), ALARM_RECEIVED);
+		timerAddress = timeModule.getAddress();
+		modules.add(timeModule);
+		
 		return modules;
 	}
 }
