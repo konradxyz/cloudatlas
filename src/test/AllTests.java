@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import pl.edu.mimuw.cloudatlas.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
 import test.aggregation.AndTest;
 import test.aggregation.AverageTest;
 import test.aggregation.CountTest;

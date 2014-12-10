@@ -1,9 +1,9 @@
 package test.aggregation;
 
-import pl.edu.mimuw.cloudatlas.interpreter.Functions;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.Functions;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueBoolean;
 
 public class AndTest extends AggregationTest {
 

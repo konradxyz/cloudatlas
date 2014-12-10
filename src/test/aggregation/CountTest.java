@@ -1,11 +1,11 @@
 package test.aggregation;
 
-import pl.edu.mimuw.cloudatlas.interpreter.Functions;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueInt;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
-import pl.edu.mimuw.cloudatlas.model.ValueString;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.Functions;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueNull;
+import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 
 public class CountTest extends AggregationTest {
 

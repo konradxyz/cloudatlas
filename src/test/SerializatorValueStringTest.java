@@ -3,9 +3,9 @@ package test;
 import java.util.ArrayList;
 import java.util.List;
 
-import pl.edu.mimuw.cloudatlas.model.ValueString;
-import pl.edu.mimuw.cloudatlas.serialization.Serializator;
-import pl.edu.mimuw.cloudatlas.serialization.SerializatorValueString;
+import pl.edu.mimuw.cloudatlas.agent.serialization.Serializator;
+import pl.edu.mimuw.cloudatlas.agent.serialization.SerializatorValueString;
+import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 
 public class SerializatorValueStringTest extends SerializatorTest<ValueString> {
 

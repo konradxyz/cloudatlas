@@ -17,25 +17,25 @@ import junit.framework.AssertionFailedError;
 
 import org.junit.Test;
 
-import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
-import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;
-import pl.edu.mimuw.cloudatlas.interpreter.query.Yylex;
-import pl.edu.mimuw.cloudatlas.interpreter.query.parser;
-import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
-import pl.edu.mimuw.cloudatlas.model.PathName;
-import pl.edu.mimuw.cloudatlas.model.TypeCollection;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
-import pl.edu.mimuw.cloudatlas.model.ValueContact;
-import pl.edu.mimuw.cloudatlas.model.ValueDouble;
-import pl.edu.mimuw.cloudatlas.model.ValueDuration;
-import pl.edu.mimuw.cloudatlas.model.ValueInt;
-import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueSet;
-import pl.edu.mimuw.cloudatlas.model.ValueString;
-import pl.edu.mimuw.cloudatlas.model.ValueTime;
-import pl.edu.mimuw.cloudatlas.model.ZMI;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.QueryResult;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Yylex;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.query.parser;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
+import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.TypeCollection;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueBoolean;
+import pl.edu.mimuw.cloudatlas.common.model.ValueContact;
+import pl.edu.mimuw.cloudatlas.common.model.ValueDouble;
+import pl.edu.mimuw.cloudatlas.common.model.ValueDuration;
+import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueList;
+import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
+import pl.edu.mimuw.cloudatlas.common.model.ValueString;
+import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.common.model.ZMI;
 
 public abstract class InterpreterTest {
 	private static Interpreter instance = null;

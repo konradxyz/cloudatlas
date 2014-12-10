@@ -10,23 +10,23 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import pl.edu.mimuw.cloudatlas.model.Attribute;
-import pl.edu.mimuw.cloudatlas.model.AttributesMap;
-import pl.edu.mimuw.cloudatlas.model.PathName;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
-import pl.edu.mimuw.cloudatlas.model.ValueContact;
-import pl.edu.mimuw.cloudatlas.model.ValueDouble;
-import pl.edu.mimuw.cloudatlas.model.ValueDuration;
-import pl.edu.mimuw.cloudatlas.model.ValueInt;
-import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
-import pl.edu.mimuw.cloudatlas.model.ValueSet;
-import pl.edu.mimuw.cloudatlas.model.ValueString;
-import pl.edu.mimuw.cloudatlas.model.ValueTime;
-import pl.edu.mimuw.cloudatlas.serialization.Serializator;
-import pl.edu.mimuw.cloudatlas.serialization.SerializatorAtributeMap;
+import pl.edu.mimuw.cloudatlas.agent.serialization.Serializator;
+import pl.edu.mimuw.cloudatlas.agent.serialization.SerializatorAtributeMap;
+import pl.edu.mimuw.cloudatlas.common.model.Attribute;
+import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueBoolean;
+import pl.edu.mimuw.cloudatlas.common.model.ValueContact;
+import pl.edu.mimuw.cloudatlas.common.model.ValueDouble;
+import pl.edu.mimuw.cloudatlas.common.model.ValueDuration;
+import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueList;
+import pl.edu.mimuw.cloudatlas.common.model.ValueNull;
+import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
+import pl.edu.mimuw.cloudatlas.common.model.ValueString;
+import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 
 public class SerializationAttributesMapTest extends SerializatorTest<AttributesMap> {
 
