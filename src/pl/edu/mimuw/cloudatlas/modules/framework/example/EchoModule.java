@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import pl.edu.mimuw.cloudatlas.interpreter.MainInterpreter;
+import pl.edu.mimuw.cloudatlas.model.Attribute;
+import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.model.ValueString;
 import pl.edu.mimuw.cloudatlas.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.modules.framework.AddressGenerator;
 import pl.edu.mimuw.cloudatlas.modules.framework.HandlerException;
@@ -21,15 +25,23 @@ import pl.edu.mimuw.cloudatlas.modules.network.SocketModule;
 import pl.edu.mimuw.cloudatlas.modules.timer.AlarmMessage;
 import pl.edu.mimuw.cloudatlas.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.modules.timer.TimerModule;
+import pl.edu.mimuw.cloudatlas.modules.zmi.GetRootZmiMessage;
+import pl.edu.mimuw.cloudatlas.modules.zmi.RootZmiMessage;
+import pl.edu.mimuw.cloudatlas.modules.zmi.SetAttributeMessage;
+import pl.edu.mimuw.cloudatlas.modules.zmi.ZmiKeeperModule;
+
 
 public class EchoModule extends Module {
 	private Address shutdownAddress;
 	private Address printerAddress;
 	private Address socketAddress;
+	private Address zmiKeeperAddress;
 	private Address timerAddress;
 	
 	private static final int RECEIVED_DATAGRAM = 1;
-	private static final int ALARM_RECEIVED = 2;
+	protected static final Integer ZMI_RECEIVED = 2;
+	protected static final Integer ALARM_RECEIVED = 3;
+	
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 
@@ -61,7 +73,20 @@ public class EchoModule extends Module {
 				}
 				
 			}
-			else if ( content.startsWith("alarm ") ) {
+
+			if ( content.startsWith("set") ) {
+				String attrs[] = content.split(" ");
+				sendMessage(zmiKeeperAddress, ZmiKeeperModule.SET_ATTRIBUTE,
+						new SetAttributeMessage(new Attribute(attrs[1]),
+								new ValueString(attrs[2])));
+				return;
+			}
+			if (content.startsWith("show")) {
+				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
+						new GetRootZmiMessage(getAddress(), ZMI_RECEIVED));
+			}
+
+			if ( content.startsWith("alarm ") ) {
 				content = content.substring("alarm ".length());
 				int i = 0;
 				int delay = Integer.parseInt(content.split(" ")[i++]);
@@ -69,7 +94,6 @@ public class EchoModule extends Module {
 				sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE,
 						new ScheduleAlarmMessage(delay, requestId));
 			} 
-			
 		}
 	};
 
@@ -95,6 +119,19 @@ public class EchoModule extends Module {
 		}
 	};
 
+	private final MessageHandler<RootZmiMessage> rootZmiHandler = new MessageHandler<RootZmiMessage>() {
+
+		@Override
+		public void handleMessage(RootZmiMessage message)
+				throws HandlerException {
+			// Well - we should not print in here....
+			// But who cares? We are going to delete this code.
+			// TODO: remove.
+			MainInterpreter.printZMIs(message.getContent());
+		}
+
+	};
+
 	public EchoModule(Address uniqueAddress, Address shutdownModuleAddress) {
 		super(uniqueAddress);
 		this.shutdownAddress = shutdownModuleAddress;
@@ -105,6 +142,7 @@ public class EchoModule extends Module {
 		Map<Integer, MessageHandler<?>> handlers = new HashMap<Integer, MessageHandler<?>>();
 		handlers.put(ReaderModule.LINE_READ, readHandler);
 		handlers.put(RECEIVED_DATAGRAM, receiveHandler);
+		handlers.put(ZMI_RECEIVED, rootZmiHandler);
 		handlers.put(ALARM_RECEIVED, alarmHandler);
 		return handlers;
 	}
@@ -126,6 +164,11 @@ public class EchoModule extends Module {
 		modules.add(socket);
 		socketAddress = socket.getAddress();
 		
+		ZmiKeeperModule zmiKeeper = new ZmiKeeperModule(generator.getUniqueAddress(), 
+				new PathName("/I/dont/really/care"));
+		zmiKeeperAddress = zmiKeeper.getAddress();
+		modules.add(zmiKeeper);
+
 		TimerModule timeModule = new TimerModule(generator.getUniqueAddress(), getAddress(), ALARM_RECEIVED);
 		timerAddress = timeModule.getAddress();
 		modules.add(timeModule);

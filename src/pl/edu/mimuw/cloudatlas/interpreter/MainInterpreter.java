@@ -118,7 +118,7 @@ public class MainInterpreter {
 		}
 	}
 	
-	private static void printZMIs(ZMI root) {
+	public static void printZMIs(ZMI root) {
 		System.out.println(Main.getPathName(root));
 		root.printAttributes(System.out);
 		for ( ZMI son : root.getSons()) {
