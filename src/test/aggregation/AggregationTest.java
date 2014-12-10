@@ -9,15 +9,15 @@ import junit.framework.AssertionFailedError;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import pl.edu.mimuw.cloudatlas.interpreter.Result.AggregationOperation;
-import pl.edu.mimuw.cloudatlas.interpreter.ResultColumn;
-import pl.edu.mimuw.cloudatlas.interpreter.ResultList;
-import pl.edu.mimuw.cloudatlas.model.Type;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
-import pl.edu.mimuw.cloudatlas.model.ValueString;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.ResultColumn;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.ResultList;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.Result.AggregationOperation;
+import pl.edu.mimuw.cloudatlas.common.model.Type;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueList;
+import pl.edu.mimuw.cloudatlas.common.model.ValueNull;
+import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 
 public abstract class AggregationTest {
 	private List<ValueList> inputs = new ArrayList<ValueList>();

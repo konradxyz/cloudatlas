@@ -7,16 +7,16 @@ import java.util.HashSet;
 
 import org.junit.Test;
 
-import pl.edu.mimuw.cloudatlas.interpreter.BinaryOperation;
-import pl.edu.mimuw.cloudatlas.interpreter.Result;
-import pl.edu.mimuw.cloudatlas.interpreter.ResultSingle;
-import pl.edu.mimuw.cloudatlas.model.Type.PrimaryType;
-import pl.edu.mimuw.cloudatlas.model.TypeCollection;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueInt;
-import pl.edu.mimuw.cloudatlas.model.ValueNull;
-import pl.edu.mimuw.cloudatlas.model.ValueSet;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.BinaryOperation;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.Result;
+import pl.edu.mimuw.cloudatlas.agent.interpreter.ResultSingle;
+import pl.edu.mimuw.cloudatlas.common.model.TypeCollection;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueNull;
+import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
+import pl.edu.mimuw.cloudatlas.common.model.Type.PrimaryType;
 
 public class AdditionTest {
 
