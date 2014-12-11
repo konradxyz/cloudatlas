@@ -33,6 +33,11 @@ import pl.edu.mimuw.cloudatlas.common.model.Type.PrimaryType;
  */
 public class ValueInt extends ValueSimple<Long> {
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8885377985803895520L;
+
+	/**
 	 * Constructs a new <code>ValueInt</code> object wrapping the specified <code>value</code>.
 	 * 
 	 * @param value the value to wrap

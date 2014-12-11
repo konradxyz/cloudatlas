@@ -20,6 +20,8 @@ import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
 public final class RmiModule extends Module {
 	private final Address zmiKeeper;
 	private final int port;
+	private Registry registry;
+	private CloudatlasAgentRmiServer stub;
 
 	public RmiModule(Address address, Address zmiKeeper, int port) {
 		super(address);
@@ -50,13 +52,28 @@ public final class RmiModule extends Module {
 			System.setSecurityManager(new SecurityManager());
 		}
 		try {
-			CloudatlasAgentRmiServer stub = 
-					(CloudatlasAgentRmiServer) UnicastRemoteObject.exportObject(server, port);
-			Registry registry = LocateRegistry.getRegistry();
+			stub = 
+					(CloudatlasAgentRmiServer) UnicastRemoteObject.exportObject(server, 0);
+			registry = LocateRegistry.createRegistry(port);
+			registry.rebind("cloudatlas", stub);
 		} catch (RemoteException e) {
 			throw new ModuleInitializationException(e);
 		}
-		
 	}
 
+	@Override
+	public void shutdown() {
+		// WORST IDEA EVER:
+		new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+				}
+				System.exit(0);
+			}
+		}).start();
+	}
 }

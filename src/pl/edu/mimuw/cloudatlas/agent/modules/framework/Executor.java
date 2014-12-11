@@ -16,13 +16,13 @@ public final class Executor implements Runnable {
 	public void initialize(List<Module> modules, ExecutorContext context)
 			throws ModuleInitializationException {
 		List<Address> addresses = new ArrayList<Address>();
+		queue = new LinkedBlockingQueue<MessageWrapper>();
 		for (Module m : modules) {
 			assert (!this.modules.containsKey(m.getAddress()));
 			this.modules.put(m.getAddress(), m);
 			m.init(context);
 			addresses.add(m.getAddress());
 		}
-		queue = new LinkedBlockingQueue<MessageWrapper>();
 		context.registerExecutor(addresses, queue);
 	}
 
@@ -34,8 +34,6 @@ public final class Executor implements Runnable {
 			MessageWrapper wrapper = null;
 			try {
 				wrapper = queue.take();
-				System.err.println(wrapper);
-
 				if (wrapper.getMessageType() == Executor.SHUTDOWN_TYPE) {
 					finished = true;
 				} else {
@@ -46,9 +44,13 @@ public final class Executor implements Runnable {
 				e.printStackTrace(System.err);
 			}
 		}
+		shutdown();
+		System.err.println("Executor shutdown");
+	}
+
+	public void shutdown() {
 		for (Module m : modules.values()) {
 			m.shutdown();
 		}
-		System.err.println("Executor shutdown");
 	}
 }
