@@ -19,6 +19,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
+import pl.edu.mimuw.cloudatlas.agent.modules.rmi.RmiModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.AlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
@@ -29,6 +30,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
+import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
 
 
 public class EchoModule extends Module {
@@ -172,7 +174,11 @@ public class EchoModule extends Module {
 		TimerModule timeModule = new TimerModule(generator.getUniqueAddress(), getAddress(), ALARM_RECEIVED);
 		timerAddress = timeModule.getAddress();
 		modules.add(timeModule);
-		
+
+		RmiModule rmiModule = new RmiModule(generator.getUniqueAddress(),
+				zmiKeeperAddress, CloudatlasAgentRmiServer.DEFAULT_PORT);
+		modules.add(rmiModule);
+
 		return modules;
 	}
 }
