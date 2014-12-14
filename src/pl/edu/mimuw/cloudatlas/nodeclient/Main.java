@@ -1,34 +1,27 @@
 package pl.edu.mimuw.cloudatlas.nodeclient;
 
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.util.Random;
+import java.io.File;
+import java.io.IOException;
 
-import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
-import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
+import org.ini4j.Ini;
 
 public class Main {
 
 	public static void main(String[] args) {
-		Random r = new Random();
-		while (true) {
-			try {
-				Registry registry = LocateRegistry.getRegistry("localhost",
-						CloudatlasAgentRmiServer.DEFAULT_PORT);
-				CloudatlasAgentRmiServer stub = (CloudatlasAgentRmiServer) registry
-						.lookup("cloudatlas");
-				stub.setCurrentNodeAttribute("random",
-						new ValueInt(r.nextLong()));
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		Ini config;
+		try {
+			config = new Ini(new File(args[0]));
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("Could not find, open or parse config file.");
+			return;
 		}
-
+		String host = config.get("target", "host");
+		int port = Integer.parseInt(config.get("target", "port"));
+		int refreshPeriodMs = Integer.parseInt(config.get("timing",  "refresh_period_ms"));
+		
+		NodeClient nodeClient = new NodeClient(host, port, refreshPeriodMs);
+		nodeClient.run();
 	}
 
 }
