@@ -10,5 +10,7 @@
 	<classpathentry kind="lib" path="lib/cup.jar"/>
 	<classpathentry kind="lib" path="lib/JLex.jar"/>
 	<classpathentry kind="lib" path="lib/ini4j-0.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-all.jar"/>
+	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

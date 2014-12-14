@@ -25,6 +25,7 @@
 package pl.edu.mimuw.cloudatlas.common.model;
 
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,12 @@ import java.util.Map.Entry;
  * A zone management information. This object is a single node in a zone hierarchy. It stores zone attributes as well as
  * references to its father and sons in the tree.
  */
-public class ZMI implements Cloneable {
+public class ZMI implements Cloneable, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4399229419829546861L;
+
 	private final AttributesMap attributes = new AttributesMap();
 	
 	private final List<ZMI> sons = new ArrayList<ZMI>();
