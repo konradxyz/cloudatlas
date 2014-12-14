@@ -15,5 +15,6 @@ tmp.out
 /bin/
 /bin/
 
+*.swp
 #Our pack:
 cloudatlas_kz306486_kp306410_*.tar.gz
