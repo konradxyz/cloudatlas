@@ -39,7 +39,15 @@ public abstract class ModuleFramework {
 		System.out.println(modules.size());
 		for (List<Module> singleExecutorModules : executorModules) {
 			Executor e = new Executor();
-			e.initialize(singleExecutorModules, context);
+			try {
+				e.initialize(singleExecutorModules, context);
+			} catch (Exception exception) {
+				e.shutdown();
+				for ( Executor executor : executors ) {
+					executor.shutdown();
+				}
+				throw exception;
+			}
 			executors.add(e);
 		}
 	}
