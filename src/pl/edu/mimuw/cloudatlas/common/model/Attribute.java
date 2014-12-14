@@ -24,6 +24,8 @@
 
 package pl.edu.mimuw.cloudatlas.common.model;
 
+import java.io.Serializable;
+
 /**
  * Represents an attribute (without value, name only).
  * <p>
@@ -32,7 +34,11 @@ package pl.edu.mimuw.cloudatlas.common.model;
  * <p>
  * This class is immutable.
  */
-public class Attribute {
+public class Attribute implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2260526560034065322L;
 	private final String name;
 	
 	/**

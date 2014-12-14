@@ -2,6 +2,8 @@ package pl.edu.mimuw.cloudatlas.agent.interpreter;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -119,10 +121,14 @@ public class MainInterpreter {
 	}
 	
 	public static void printZMIs(ZMI root) {
-		System.out.println(Main.getPathName(root));
-		root.printAttributes(System.out);
+		printZMIsToStream(root, System.out);
+	}
+	
+	public static void printZMIsToStream(ZMI root, PrintStream o) {
+		o.println(Main.getPathName(root));
+		root.printAttributes(o);
 		for ( ZMI son : root.getSons()) {
-			printZMIs(son);
+			printZMIsToStream(son, o);
 		}
 	}
 	
