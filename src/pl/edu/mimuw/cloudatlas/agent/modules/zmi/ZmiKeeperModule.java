@@ -36,6 +36,12 @@ public final class ZmiKeeperModule extends Module {
 		}
 		currentMachineZmi = parent;
 		currentMachineZmi.getAttributes().add("cardinality", new ValueInt(1l));
+		currentMachineZmi.getAttributes().add(
+				"level",
+				new ValueInt((long) currentMachinePathName.getComponents()
+						.size()));
+		currentMachineZmi.getAttributes().add("owner",
+				new ValueString(currentMachinePathName.toString()));
 		refreshCurrentZmiTimestamp();
 	}
 
