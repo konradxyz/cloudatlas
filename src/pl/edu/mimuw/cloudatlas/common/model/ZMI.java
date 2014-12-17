@@ -41,7 +41,7 @@ public class ZMI implements Cloneable, Serializable {
 	 */
 	private static final long serialVersionUID = 4399229419829546861L;
 
-	private final AttributesMap attributes = new AttributesMap();
+	private AttributesMap attributes = new AttributesMap();
 	
 	private final List<ZMI> sons = new ArrayList<ZMI>();
 	private ZMI father;
@@ -133,8 +133,7 @@ public class ZMI implements Cloneable, Serializable {
 	 * @see #toString()
 	 */
 	public void printAttributes(PrintStream stream) {
-		for(Entry<Attribute, Value> entry : attributes)
-			stream.println("\t" + entry.getKey() + " : " + entry.getValue().getType() + " = " + entry.getValue());
+		attributes.printAttributes(stream);
 	}
 	
 	/**
@@ -165,5 +164,9 @@ public class ZMI implements Cloneable, Serializable {
 	@Override
 	public String toString() {
 		return attributes.toString();
+	}
+
+	public void setAttributes(AttributesMap attributes) {
+		this.attributes = attributes;
 	}
 }

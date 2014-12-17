@@ -83,8 +83,8 @@ public class MainInterpreter {
 
 	}
 
-	
-	private static Program parseProgram(String program) throws Exception {
+	// TODO: move this function.
+	public static Program parseProgram(String program) throws Exception {
 		Yylex lex = new Yylex(new ByteArrayInputStream(program.getBytes()));
 		return new parser(lex).pProgram();
 	}

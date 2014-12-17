@@ -8,6 +8,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
@@ -33,6 +34,7 @@ public final class ZmiKeeperModule extends Module {
 			parent = current;
 		}
 		currentMachineZmi = parent;
+		currentMachineZmi.getAttributes().add("cardinality", new ValueInt(1l));
 		refreshCurrentZmiTimestamp();
 	}
 
