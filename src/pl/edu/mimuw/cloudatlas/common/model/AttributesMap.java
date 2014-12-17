@@ -24,6 +24,7 @@
 
 package pl.edu.mimuw.cloudatlas.common.model;
 
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -291,5 +292,12 @@ public class AttributesMap implements Iterable<Entry<Attribute, Value>>, Cloneab
 			return false;
 		AttributesMap other = (AttributesMap) object;
 		return this.map.equals(other.map);
+	}
+
+	public void printAttributes(PrintStream stream) {
+		for (Entry<Attribute, Value> entry : this)
+			stream.println("\t" + entry.getKey() + " : "
+					+ entry.getValue().getType() + " = " + entry.getValue());
+
 	}
 }
