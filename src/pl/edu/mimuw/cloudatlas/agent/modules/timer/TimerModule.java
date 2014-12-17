@@ -17,11 +17,13 @@ public class TimerModule extends Module implements Runnable {
 			Comparable<SchedulePriority> {
 		int requestId;
 		long timeStamp;
+		long period;
 
-		public SchedulePriority(int requestId, long timeStamp) {
+		public SchedulePriority(int requestId, long timeStamp, long period) {
 			System.err.println("Creating schedule priority " + requestId + " " + timeStamp);
 			this.requestId = requestId;
 			this.timeStamp = timeStamp;
+			this.period = period;
 		}
 
 		public int getRequestId() {
@@ -36,6 +38,11 @@ public class TimerModule extends Module implements Runnable {
 				return 1;
 			return requestId - schedule.requestId;
 		}
+		
+		public void setTimeStamp(long timeStamp) {
+			this.timeStamp = timeStamp;
+		}
+		
 	}
 
 	public TimerModule(Address address, Address target, int gatewayMessageType) {
@@ -65,7 +72,8 @@ public class TimerModule extends Module implements Runnable {
 				throws HandlerException {
 			Calendar now = GregorianCalendar.getInstance();
 			scheduleQueue.add(new SchedulePriority(message.getRequestId(),
-					(long) message.getDelay() + now.getTimeInMillis()));
+					(long) message.getDelay() + now.getTimeInMillis(), message.getPeriod()));
+			timingThread.interrupt();
 		}
 	};
 
@@ -78,6 +86,7 @@ public class TimerModule extends Module implements Runnable {
 
 	@Override
 	public void shutdown() {
+		scheduleQueue.add(new SchedulePriority(-1,-1,-1));
 		timingThread.interrupt();
 		try {
 			timingThread.join();
@@ -93,16 +102,23 @@ public class TimerModule extends Module implements Runnable {
 			SchedulePriority schedulePriority;
 			try {
 				schedulePriority = scheduleQueue.take();
+				if (schedulePriority.timeStamp < 0) {
+					return;
+				}
 				Calendar now = GregorianCalendar.getInstance();
-				if (now.getTimeInMillis() >= schedulePriority.timeStamp) {
+				long nowMillis = now.getTimeInMillis();
+				if (nowMillis >= schedulePriority.timeStamp) {
 					AlarmMessage alarmMessage = new AlarmMessage(
 							schedulePriority.getRequestId());
 					sendMessage(target, gatewayMessageType, alarmMessage);
+					schedulePriority.setTimeStamp(schedulePriority.timeStamp+schedulePriority.period);
+					scheduleQueue.add(schedulePriority);
+					
 				} else {
 					scheduleQueue.put(schedulePriority);
+					Thread.sleep(schedulePriority.timeStamp - nowMillis);
 				}
 			} catch (InterruptedException e) {
-				return;
 			}
 		}
 	}
