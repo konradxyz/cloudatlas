@@ -18,12 +18,16 @@ public class TimerModule extends Module implements Runnable {
 		int requestId;
 		long timeStamp;
 		long period;
+		Address target;
+		int gatewayMessageType;
 
-		public SchedulePriority(int requestId, long timeStamp, long period) {
+		public SchedulePriority(int requestId, long timeStamp, long period, Address target, int gatewayMessageType) {
 			System.err.println("Creating schedule priority " + requestId + " " + timeStamp);
 			this.requestId = requestId;
 			this.timeStamp = timeStamp;
 			this.period = period;
+			this.target = target;
+			this.gatewayMessageType = gatewayMessageType;
 		}
 
 		public int getRequestId() {
@@ -45,15 +49,11 @@ public class TimerModule extends Module implements Runnable {
 		
 	}
 
-	public TimerModule(Address address, Address target, int gatewayMessageType) {
+	public TimerModule(Address address) {
 		super(address);
-		this.target = target;
-		this.gatewayMessageType = gatewayMessageType;
 
 	}
 
-	private final Address target;
-	private final int gatewayMessageType;
 	private Thread timingThread;
 	public static final int SCHEDULE_MESSAGE = 1;
 	private PriorityBlockingQueue<SchedulePriority> scheduleQueue = new PriorityBlockingQueue<SchedulePriority>();
@@ -72,7 +72,7 @@ public class TimerModule extends Module implements Runnable {
 				throws HandlerException {
 			Calendar now = GregorianCalendar.getInstance();
 			scheduleQueue.add(new SchedulePriority(message.getRequestId(),
-					(long) message.getDelay() + now.getTimeInMillis(), message.getPeriod()));
+					(long) message.getDelay() + now.getTimeInMillis(), message.getPeriod(), message.getTarget(), message.getGatewayMessageType()));
 			timingThread.interrupt();
 		}
 	};
@@ -86,7 +86,7 @@ public class TimerModule extends Module implements Runnable {
 
 	@Override
 	public void shutdown() {
-		scheduleQueue.add(new SchedulePriority(-1,-1,-1));
+		scheduleQueue.add(new SchedulePriority(-1,-1,-1, null, -1));
 		timingThread.interrupt();
 		try {
 			timingThread.join();
@@ -110,7 +110,7 @@ public class TimerModule extends Module implements Runnable {
 				if (nowMillis >= schedulePriority.timeStamp) {
 					AlarmMessage alarmMessage = new AlarmMessage(
 							schedulePriority.getRequestId());
-					sendMessage(target, gatewayMessageType, alarmMessage);
+					sendMessage(schedulePriority.target, schedulePriority.gatewayMessageType, alarmMessage);
 					schedulePriority.setTimeStamp(schedulePriority.timeStamp+schedulePriority.period);
 					scheduleQueue.add(schedulePriority);
 					
