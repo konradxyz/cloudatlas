@@ -95,13 +95,9 @@ public final class SocketModule extends Module {
 			while (!finished) {
 				try {
 					DatagramPacket msg = toSendQueue.take();
-
-					System.err.println("got message");
 					finished = msg == finishMessage;
 					if (!finished) {
-						System.err.println("sending");
 						socket.send(msg);
-						System.err.println("sent");
 					}
 				} catch (InterruptedException | IOException e) {
 					// Note that even if we do not receive IOException here
@@ -173,7 +169,6 @@ public final class SocketModule extends Module {
 			while (!finished) {
 				try {
 					socket.receive(packet);
-					System.err.println(packet);
 					if (packet.getLength() <= maxMessageSize + HEADER_SIZE
 							&& packet.getLength() > HEADER_SIZE) {
 						ByteArrayInputStream stream = new ByteArrayInputStream(
@@ -182,15 +177,9 @@ public final class SocketModule extends Module {
 						int machineMessageId = dstream.readInt();
 						int packetId = dstream.readInt();
 						int packetCount = dstream.readInt();
-						System.err.println(machineMessageId);
-						System.err.println(packetId);
-						System.err.println(packetCount);
 						byte[] unwrappedContent = new byte[packet.getLength()
 								- HEADER_SIZE];
 						dstream.readFully(unwrappedContent);
-						System.err.println(unwrappedContent.length);
-						System.err.println("'" + new String(unwrappedContent)
-								+ "'");
 
 						MessageId key = new MessageId(packet.getAddress(),
 								machineMessageId);
@@ -213,19 +202,13 @@ public final class SocketModule extends Module {
 						while (i < incomingMessages.get(key).size()
 								&& incomingMessages.get(key).get(i) != null)
 							i++;
-						System.err.println(incomingMessages);
 						if (i >= incomingMessages.get(key).size()) {
 							ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 							for (int j = 0; j < incomingMessages.get(key)
 									.size(); ++j) {
-								System.err.println("a"
-										+ incomingMessages.get(key).get(j));
 								outputStream.write(incomingMessages.get(key)
 										.get(j));
 							}
-							System.err.println("removing");
-							System.err.println("removing "
-									+ new String(outputStream.toByteArray()));
 							sendMessage(
 									gatewayModuleAddress,
 									gatewayModuleMessageType,
@@ -233,8 +216,6 @@ public final class SocketModule extends Module {
 											.toByteArray()));
 							incomingMessages.remove(key);
 						}
-						System.err.println(incomingMessages);
-
 					} else {
 						System.err
 								.println("Received too big datagram or too small datagram- it might have been truncated - skipping");

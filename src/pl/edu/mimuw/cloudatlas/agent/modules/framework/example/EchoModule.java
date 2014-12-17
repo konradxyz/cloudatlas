@@ -162,7 +162,7 @@ public class EchoModule extends Module {
 		modules.add(reader);
 		
 		SocketModule socket = new SocketModule(generator.getUniqueAddress(),
-				5432, 2, getAddress(), RECEIVED_DATAGRAM);
+				5432, 1000, getAddress(), RECEIVED_DATAGRAM);
 		modules.add(socket);
 		socketAddress = socket.getAddress();
 		
