@@ -17,11 +17,13 @@ public class TimerModule extends Module implements Runnable {
 			Comparable<SchedulePriority> {
 		int requestId;
 		long timeStamp;
+		long period;
 
-		public SchedulePriority(int requestId, long timeStamp) {
+		public SchedulePriority(int requestId, long timeStamp, long period) {
 			System.err.println("Creating schedule priority " + requestId + " " + timeStamp);
 			this.requestId = requestId;
 			this.timeStamp = timeStamp;
+			this.period = period;
 		}
 
 		public int getRequestId() {
@@ -36,6 +38,11 @@ public class TimerModule extends Module implements Runnable {
 				return 1;
 			return requestId - schedule.requestId;
 		}
+		
+		public void setTimeStamp(long timeStamp) {
+			this.timeStamp = timeStamp;
+		}
+		
 	}
 
 	public TimerModule(Address address, Address target, int gatewayMessageType) {
@@ -65,7 +72,7 @@ public class TimerModule extends Module implements Runnable {
 				throws HandlerException {
 			Calendar now = GregorianCalendar.getInstance();
 			scheduleQueue.add(new SchedulePriority(message.getRequestId(),
-					(long) message.getDelay() + now.getTimeInMillis()));
+					(long) message.getDelay() + now.getTimeInMillis(), message.getPeriod()));
 		}
 	};
 
@@ -98,6 +105,9 @@ public class TimerModule extends Module implements Runnable {
 					AlarmMessage alarmMessage = new AlarmMessage(
 							schedulePriority.getRequestId());
 					sendMessage(target, gatewayMessageType, alarmMessage);
+					schedulePriority.setTimeStamp(schedulePriority.timeStamp+schedulePriority.period);
+					scheduleQueue.add(schedulePriority);
+					
 				} else {
 					scheduleQueue.put(schedulePriority);
 				}
