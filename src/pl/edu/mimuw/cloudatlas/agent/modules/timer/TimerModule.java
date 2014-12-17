@@ -73,6 +73,7 @@ public class TimerModule extends Module implements Runnable {
 			Calendar now = GregorianCalendar.getInstance();
 			scheduleQueue.add(new SchedulePriority(message.getRequestId(),
 					(long) message.getDelay() + now.getTimeInMillis(), message.getPeriod()));
+			timingThread.interrupt();
 		}
 	};
 
@@ -85,6 +86,7 @@ public class TimerModule extends Module implements Runnable {
 
 	@Override
 	public void shutdown() {
+		scheduleQueue.add(new SchedulePriority(-1,-1,-1));
 		timingThread.interrupt();
 		try {
 			timingThread.join();
@@ -100,8 +102,12 @@ public class TimerModule extends Module implements Runnable {
 			SchedulePriority schedulePriority;
 			try {
 				schedulePriority = scheduleQueue.take();
+				if (schedulePriority.timeStamp < 0) {
+					return;
+				}
 				Calendar now = GregorianCalendar.getInstance();
-				if (now.getTimeInMillis() >= schedulePriority.timeStamp) {
+				long nowMillis = now.getTimeInMillis();
+				if (nowMillis >= schedulePriority.timeStamp) {
 					AlarmMessage alarmMessage = new AlarmMessage(
 							schedulePriority.getRequestId());
 					sendMessage(target, gatewayMessageType, alarmMessage);
@@ -110,9 +116,10 @@ public class TimerModule extends Module implements Runnable {
 					
 				} else {
 					scheduleQueue.put(schedulePriority);
+					Thread.sleep(schedulePriority.timeStamp - nowMillis);
 				}
 			} catch (InterruptedException e) {
-				return;
+				e.printStackTrace();
 			}
 		}
 	}
