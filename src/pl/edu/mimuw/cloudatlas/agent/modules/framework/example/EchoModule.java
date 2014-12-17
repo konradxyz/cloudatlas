@@ -69,7 +69,7 @@ public class EchoModule extends Module {
 					}
 					content = content + "\n";
 					sendMessage(socketAddress, SocketModule.SEND_MESSAGE,
-							new SendDatagramMessage(content.getBytes(), target, 12345));
+							new SendDatagramMessage(content.getBytes(), target, 5432));
 				} catch (UnknownHostException e) {
 					throw new HandlerException(e);
 				}
@@ -106,7 +106,7 @@ public class EchoModule extends Module {
 				throws HandlerException {
 			String toPrint = new String(message.getContent());
 			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
-					new SimpleMessage<String>(toPrint + "\n"));
+					new SimpleMessage<String>("received via network:" + toPrint + "\n"));
 		}
 	};
 	
@@ -162,7 +162,7 @@ public class EchoModule extends Module {
 		modules.add(reader);
 		
 		SocketModule socket = new SocketModule(generator.getUniqueAddress(),
-				5432, 60 * 1024, getAddress(), RECEIVED_DATAGRAM);
+				5432, 2, getAddress(), RECEIVED_DATAGRAM);
 		modules.add(socket);
 		socketAddress = socket.getAddress();
 		
