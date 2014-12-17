@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.zmi;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
@@ -45,6 +46,7 @@ public final class ZmiKeeperModule extends Module {
 
 	public static final int SET_ATTRIBUTE = 1;
 	public static final int GET_ROOT_ZMI = 2;
+	public static final int UPDATE_LOCAL_ZMI = 3;
 
 	private final MessageHandler<SetAttributeMessage> sendMessageHandler = new MessageHandler<SetAttributeMessage>() {
 
@@ -69,9 +71,61 @@ public final class ZmiKeeperModule extends Module {
 		}
 	};
 
+	private final MessageHandler<UpdateLocalZmiMessage> updateLocalZmiHandler = new MessageHandler<UpdateLocalZmiMessage>() {
+
+		@Override
+		public void handleMessage(UpdateLocalZmiMessage message)
+				throws HandlerException {
+			PathName path = message.getPath();
+			assertLocalNonSingletonPathName(path);
+			ZMI elem = findZmi(path.getComponents());
+			if (elem == null) {
+				throw new HandlerException("Zone " + path + " not found");
+			}
+			elem.setAttributes(message.getAttributes());
+		}
+	};
+
+	private void assertLocalNonSingletonPathName(PathName path)
+			throws HandlerException {
+		List<String> checked = path.getComponents();
+		List<String> local = currentMachinePathName.getComponents();
+		if (checked.size() >= local.size())
+			throw new HandlerException("Path " + path
+					+ " is not local nonsingleton zmi path");
+		for (int i = 0; i < checked.size(); ++i) {
+			if (!checked.get(i).equals(local.get(i))) {
+				throw new HandlerException("Path " + path
+						+ " is not local nonsingleton zmi path");
+			}
+		}
+
+	}
+
+	private ZMI findZmi(List<String> path) throws HandlerException {
+		return findZmi(path, -1, rootZmi);
+	}
+
+	private static ZMI findZmi(List<String> path, int parentId, ZMI parent)
+			throws HandlerException {
+		if (parentId >= path.size() - 1) {
+			return parent;
+		}
+		int nextParentId = parentId + 1;
+
+		String name = path.get(nextParentId);
+		for (ZMI son : parent.getSons()) {
+			if (son.getAttributes().get("name").equals(new ValueString(name))) {
+				return findZmi(path, nextParentId, son);
+			}
+		}
+		return null;
+	}
+
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { SET_ATTRIBUTE, GET_ROOT_ZMI },
-				new MessageHandler<?>[] { sendMessageHandler, getRootHandler});
+		return getHandlers(new Integer[] { SET_ATTRIBUTE, GET_ROOT_ZMI,
+				UPDATE_LOCAL_ZMI }, new MessageHandler<?>[] {
+				sendMessageHandler, getRootHandler, updateLocalZmiHandler });
 	}
 }
