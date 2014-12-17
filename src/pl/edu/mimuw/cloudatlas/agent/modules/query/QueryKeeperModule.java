@@ -17,6 +17,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationExcep
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
@@ -28,8 +29,26 @@ public class QueryKeeperModule extends Module {
 	}
 
 	public final static Integer RECALCULATE_ZMI = 1;
+	public final static Integer INSTALL_QUERY = 1;
 
 	private final List<Program> predefinedQueries = new ArrayList<Program>();
+	private final List<Program> queries = new ArrayList<Program>();
+	
+	private final MessageHandler<InstallQueryMessage> installQueryHandler = new MessageHandler<InstallQueryMessage>() {
+
+		@Override
+		public void handleMessage(InstallQueryMessage message)
+				throws HandlerException {
+			try {
+				// TODO: check query correctness.
+				queries.add(MainInterpreter.parseProgram(message.getQuery()));
+			} catch (Exception e) {
+				throw new HandlerException(e);
+			}
+			
+		}
+		
+	};
 
 	private final MessageHandler<RecalculateZmisMessage> recalculateHandler = new MessageHandler<RecalculateZmisMessage>() {
 
@@ -74,24 +93,34 @@ public class QueryKeeperModule extends Module {
 			newMap.add("level", new ValueInt(level));
 			newMap.add("owner", new ValueString(new PathName(path).toString()));
 			for (Program program : predefinedQueries) {
-				Interpreter interpreter = new Interpreter(parent);
-				List<QueryResult> result = interpreter
-						.interpretProgram(program);
-				for (QueryResult r : result) {
-					newMap.addOrChange(r.getName(), r.getValue());
-				}
+				runQuery(parent, program, newMap);
 			}
+			//for ( Program program : )
 			newMap.addOrChange("timestamp", new ValueTime(Calendar
 					.getInstance().getTimeInMillis()));
 			return newMap;
 
 		}
+		
+		private boolean runQuery(ZMI parent, Program query, AttributesMap result) {
+			try {
+				Interpreter interpreter = new Interpreter(parent);
+				List<QueryResult> results = interpreter.interpretProgram(query);
+				for (QueryResult r : results) {
+					result.addOrChange(r.getName(), r.getValue());
+				}
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
+			}			
+		}
 	};
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { RECALCULATE_ZMI },
-				new MessageHandler<?>[] { recalculateHandler });
+		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY },
+				new MessageHandler<?>[] { recalculateHandler, installQueryHandler });
 	}
 
 	@Override
