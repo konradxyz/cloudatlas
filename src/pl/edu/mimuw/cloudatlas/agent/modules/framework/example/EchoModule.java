@@ -97,12 +97,12 @@ public class EchoModule extends Module {
 			if ( content.startsWith("alarm ") ) {
 				content = content.substring("alarm ".length());
 				int i = 0;
+				int period= Integer.parseInt(content.split(" ")[i++]);
 				int delay = Integer.parseInt(content.split(" ")[i++]);
 				int requestId= Integer.parseInt(content.split(" ")[i++]);
 				sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE,
-						new ScheduleAlarmMessage(delay, requestId));
+						new ScheduleAlarmMessage(delay, requestId, period, getAddress(), ALARM_RECEIVED));
 			}
-
 			if (content.startsWith("calc"))
 				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
 						new GetRootZmiMessage(getAddress(),
@@ -208,7 +208,7 @@ public class EchoModule extends Module {
 		zmiKeeperAddress = zmiKeeper.getAddress();
 		modules.add(zmiKeeper);
 
-		TimerModule timeModule = new TimerModule(generator.getUniqueAddress(), getAddress(), ALARM_RECEIVED);
+		TimerModule timeModule = new TimerModule(generator.getUniqueAddress());
 		timerAddress = timeModule.getAddress();
 		modules.add(timeModule);
 
