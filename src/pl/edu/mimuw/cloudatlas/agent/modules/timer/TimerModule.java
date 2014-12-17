@@ -119,7 +119,6 @@ public class TimerModule extends Module implements Runnable {
 					Thread.sleep(schedulePriority.timeStamp - nowMillis);
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
 	}
