@@ -20,6 +20,7 @@ public final class Executor implements Runnable {
 		for (Module m : modules) {
 			assert (!this.modules.containsKey(m.getAddress()));
 			this.modules.put(m.getAddress(), m);
+			System.err.println("Initializing module " + m.getAddress());
 			m.init(context);
 			addresses.add(m.getAddress());
 		}

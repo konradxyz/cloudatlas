@@ -29,16 +29,19 @@ public abstract class ModuleFramework {
 		gatherModules(root, addressGenerator, modules);
 		List<List<Module>> executorModules = new ArrayList<List<Module>>();
 		// Because Math.ceil is too mainstream.
-		int modulesPerExecutor = Math.max(
-				(modules.size() + 1) / executorsCount, 1);
+		int modulesPerExecutor = (int) Math.max(
+				Math.ceil((double) modules.size()  / (double)executorsCount), 1);
 		for (int i = 0; i < executorsCount; ++i) {
 			executorModules.add(modules.subList(
 					Math.min(i * modulesPerExecutor, modules.size()),
 					Math.min((i + 1) * modulesPerExecutor, modules.size())));
 		}
 		System.out.println(modules.size());
+		int i = 0;
 		for (List<Module> singleExecutorModules : executorModules) {
 			Executor e = new Executor();
+			System.err.println("Initializing executor " + i);
+			++i;
 			try {
 				e.initialize(singleExecutorModules, context);
 			} catch (Exception exception) {
