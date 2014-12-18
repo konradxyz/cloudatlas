@@ -19,6 +19,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
+import pl.edu.mimuw.cloudatlas.agent.modules.query.InstallQueryMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.QueryKeeperModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.RecalculateZmisMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.ZmiRecalculatedMessage;
@@ -108,6 +109,14 @@ public class EchoModule extends Module {
 				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
 						new GetRootZmiMessage(getAddress(),
 								ZMI_RECEIVED_FOR_RECALCULATION));
+			if (content.startsWith("install")) {
+				String program = content.substring("install ".length());
+				String attrName = program.split(":")[0];
+				String query = program.substring(attrName.length() + 1);
+				sendMessage(queryKeeperAddress,
+						QueryKeeperModule.INSTALL_QUERY,
+						new InstallQueryMessage(query, attrName));
+			}
 		}
 	};
 

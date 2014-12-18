@@ -2,8 +2,10 @@ package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
@@ -29,25 +31,51 @@ public class QueryKeeperModule extends Module {
 	}
 
 	public final static Integer RECALCULATE_ZMI = 1;
-	public final static Integer INSTALL_QUERY = 1;
+	public final static Integer INSTALL_QUERY = 2;
 
 	private final List<Program> predefinedQueries = new ArrayList<Program>();
-	private final List<Program> queries = new ArrayList<Program>();
 	
+	private static class QueryWrapper {
+		private final Program parsedQuery;
+		private final ValueQuery value;
+		public QueryWrapper(Program parsedQuery, ValueQuery value) {
+			super();
+			this.parsedQuery = parsedQuery;
+			this.value = value;
+		}
+		public Program getParsedQuery() {
+			return parsedQuery;
+		}
+		public ValueQuery getValue() {
+			return value;
+		}
+	};
+
+	private final Map<String, QueryWrapper> queries = new HashMap<String, QueryWrapper>();
+
 	private final MessageHandler<InstallQueryMessage> installQueryHandler = new MessageHandler<InstallQueryMessage>() {
 
 		@Override
 		public void handleMessage(InstallQueryMessage message)
 				throws HandlerException {
+			if (!message.getQueryName().startsWith("&")
+					|| message.getQueryName().equals("&")) {
+				throw new HandlerException("Unallowed query name '"
+						+ message.getQueryName() + "'");
+			}
+
 			try {
 				// TODO: check query correctness.
-				queries.add(MainInterpreter.parseProgram(message.getQuery()));
+				Program parsedProgram = MainInterpreter.parseProgram(message
+						.getQuery());
+				ValueQuery val = new ValueQuery(message.getQuery());
+				queries.put(message.getQueryName(), new QueryWrapper(
+						parsedProgram, val));
 			} catch (Exception e) {
 				throw new HandlerException(e);
 			}
-			
 		}
-		
+
 	};
 
 	private final MessageHandler<RecalculateZmisMessage> recalculateHandler = new MessageHandler<RecalculateZmisMessage>() {
@@ -95,7 +123,12 @@ public class QueryKeeperModule extends Module {
 			for (Program program : predefinedQueries) {
 				runQuery(parent, program, newMap);
 			}
-			//for ( Program program : )
+			for (Entry<String, QueryWrapper> entry : queries.entrySet()) {
+				if (runQuery(parent, entry.getValue().getParsedQuery(), newMap)) {
+					newMap.addOrChange(entry.getKey(), entry.getValue()
+							.getValue());
+				}
+			}
 			newMap.addOrChange("timestamp", new ValueTime(Calendar
 					.getInstance().getTimeInMillis()));
 			return newMap;
