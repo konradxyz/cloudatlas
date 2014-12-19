@@ -4,31 +4,35 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
+import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
+import pl.edu.mimuw.cloudatlas.common.model.ValueContact;
 import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
 
 public final class ZmiKeeperModule extends Module {
 	private ZMI rootZmi;
-	private PathName currentMachinePathName;
 	private ZMI currentMachineZmi;
+	private final CloudatlasAgentConfig config;
 
-	public ZmiKeeperModule(Address address, PathName currentMachinePathName) {
+	public ZmiKeeperModule(Address address, CloudatlasAgentConfig config) {
 		super(address);
-		assert (!currentMachinePathName.getComponents().isEmpty());
-		this.currentMachinePathName = currentMachinePathName;
+		assert (!config.getPathName().getComponents().isEmpty());
+		this.config = config;
 		// First we will create ZMIs for path from current singleton zone to
 		// root.
 		rootZmi = new ZMI();
 		rootZmi.getAttributes().add("name", new ValueString(""));
 		ZMI parent = rootZmi;
-		for (String zoneName : currentMachinePathName.getComponents()) {
+		for (String zoneName : config.getPathName().getComponents()) {
 			ZMI current = new ZMI(parent);
 			current.getAttributes().add("name", new ValueString(zoneName));
 			parent.addSon(current);
@@ -38,10 +42,14 @@ public final class ZmiKeeperModule extends Module {
 		currentMachineZmi.getAttributes().add("cardinality", new ValueInt(1l));
 		currentMachineZmi.getAttributes().add(
 				"level",
-				new ValueInt((long) currentMachinePathName.getComponents()
+				new ValueInt((long) config.getPathName().getComponents()
 						.size()));
 		currentMachineZmi.getAttributes().add("owner",
-				new ValueString(currentMachinePathName.toString()));
+				new ValueString(config.getPathName().toString()));
+		ValueSet contacts = new ValueSet(TypePrimitive.CONTACT);
+		if  (config.getAddress() != null )
+			contacts.add(new ValueContact(config.getPathName(), config.getAddress()));
+		currentMachineZmi.getAttributes().add("contacts", contacts);
 		refreshCurrentZmiTimestamp();
 	}
 
@@ -95,7 +103,7 @@ public final class ZmiKeeperModule extends Module {
 	private void assertLocalNonSingletonPathName(PathName path)
 			throws HandlerException {
 		List<String> checked = path.getComponents();
-		List<String> local = currentMachinePathName.getComponents();
+		List<String> local = config.getPathName().getComponents();
 		if (checked.size() >= local.size())
 			throw new HandlerException("Path " + path
 					+ " is not local nonsingleton zmi path");

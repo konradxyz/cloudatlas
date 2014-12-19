@@ -159,12 +159,14 @@ public class QueryKeeperModule extends Module {
 	@Override
 	public void initialize() throws ModuleInitializationException {
 		try {
-			predefinedQueries.add(MainInterpreter
-					.parseProgram("SELECT sum(cardinality) AS cardinality"));
-			// TODO: add contacts query.
+			String[] queries = new String[] {
+					"SELECT sum(cardinality) AS cardinality",
+					"SELECT to_set(random(5, unfold(contacts))) AS contacts" };
+			for (String query : queries) {
+				predefinedQueries.add(MainInterpreter.parseProgram(query));
+			}
 		} catch (Exception e) {
 			throw new ModuleInitializationException(e);
 		}
 	}
-
 }

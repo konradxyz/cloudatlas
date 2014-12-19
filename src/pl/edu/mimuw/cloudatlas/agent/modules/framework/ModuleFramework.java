@@ -45,6 +45,7 @@ public abstract class ModuleFramework {
 			try {
 				e.initialize(singleExecutorModules, context);
 			} catch (Exception exception) {
+				System.err.println("Initialization failed: " + exception.getMessage());
 				e.shutdown();
 				for ( Executor executor : executors ) {
 					executor.shutdown();
