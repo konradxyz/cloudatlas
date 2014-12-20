@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
+import pl.edu.mimuw.cloudatlas.agent.model.Utils;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
@@ -151,7 +151,7 @@ public class EchoModule extends Module {
 			// Well - we should not print in here....
 			// But who cares? We are going to delete this code.
 			// TODO: remove.
-			MainInterpreter.printZMIs(message.getContent());
+			Utils.print(message.getContent(), System.err);
 		}
 
 	};
@@ -162,7 +162,7 @@ public class EchoModule extends Module {
 		public void handleMessage(RootZmiMessage message)
 				throws HandlerException {
 			sendMessage(queryKeeperAddress, QueryKeeperModule.RECALCULATE_ZMI,
-					new RecalculateZmisMessage(message.getContent(), config.getPathName(),
+					new RecalculateZmisMessage(message.getContent(),
 							getAddress(), RECALCULATED_ZMI));
 		}
 
@@ -241,7 +241,7 @@ public class EchoModule extends Module {
 		modules.add(rmiModule);
 
 		QueryKeeperModule queryKeeper = new QueryKeeperModule(
-				generator.getUniqueAddress());
+				generator.getUniqueAddress(), config.getPathName());
 		queryKeeperAddress = queryKeeper.getAddress();
 		modules.add(queryKeeper);
 

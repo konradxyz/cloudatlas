@@ -70,11 +70,12 @@ public final class RmiModule extends Module {
 	
 	private final MessageHandler<RootZmiMessage> rootZmiMessageReceivedHandler = new MessageHandler<RootZmiMessage>() {
 
+		// TODO: reenable sending ZMI via RMI.
 		@Override
 		public void handleMessage(RootZmiMessage message)
 				throws HandlerException {
 			synchronized(zmiLock) {
-				zmi = message.getContent();
+			//	zmi = message.getContent();
 				zmiLock.notifyAll();
 			}
 			

@@ -11,6 +11,8 @@ import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
+import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData;
+import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
@@ -25,9 +27,11 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
 
 public class QueryKeeperModule extends Module {
+	private PathName machineName;
 
-	public QueryKeeperModule(Address address) {
+	public QueryKeeperModule(Address address, PathName machineName) {
 		super(address);
+		this.machineName = machineName;
 	}
 
 	public final static Integer RECALCULATE_ZMI = 1;
@@ -83,43 +87,42 @@ public class QueryKeeperModule extends Module {
 		@Override
 		public void handleMessage(RecalculateZmisMessage message)
 				throws HandlerException {
-			PathName machineName = message.getMachineName();
-			recalculateZmis(machineName.getComponents(), -1,
-					message.getRootZmi(), message.getTargetAddress(),
-					message.getTargetMessageType());
-
-		}
-
-		private void recalculateZmis(List<String> path, int parentId,
-				ZMI parent, Address address, int messageType) {
-			int nextParentId = parentId + 1;
-			// If nextParentId == path.size() - 1 then next parent would be our
-			// singleton zone.
-			// We do not need to recalculate singleton zone's zmi.
-			if (parentId >= path.size() - 1)
-				return;
-			for (ZMI son : parent.getSons()) {
-				if (son.getAttributes().get("name")
-						.equals(new ValueString(path.get(nextParentId)))) {
-					recalculateZmis(path, nextParentId, son, address,
-							messageType);
-					break;
-				}
+			SingleMachineZmiData<AttributesMap> data = message.getRootZmi();
+			PathName current = PathName.ROOT;
+			List<PathName> paths = new ArrayList<PathName>();
+			paths.add(current);
+			for (int i = 1; i < data.getLevels().size(); ++i) {
+				current = current.levelDown(data.getLevels().get(i)
+						.getOurZoneName());
+				paths.add(current);
 			}
-			AttributesMap map = generateNewAttributes(parent, parentId + 1,
-					path);
-			parent.setAttributes(map.clone());
-			sendMessage(address, messageType, new ZmiRecalculatedMessage(map,
-					new PathName(path.subList(0, parentId + 1))));
+			for (int i = data.getLevels().size() - 2; i >= 0; --i) {
+				ZMI parent = new ZMI();
+				for (AttributesMap m : data.getLevels().get(i + 1).getZones()
+						.values()) {
+					ZMI son = new ZMI();
+					son.getAttributes().swap(m);
+					parent.addSon(son);
+				}
+				ZmiLevel<AttributesMap> parentLevel = data.getLevels().get(i);
+				AttributesMap newParentMap = generateNewAttributes(parent, i,
+						parentLevel.getOurZoneName());
+				sendMessage(message.getTargetAddress(), message.getTargetMessageType(), 
+						new ZmiRecalculatedMessage(newParentMap.clone(), paths.get(i)));
+
+				parentLevel.getZones().get(parentLevel.getOurZoneName())
+						.swap(newParentMap);
+
+			}
 		}
 
 		private AttributesMap generateNewAttributes(ZMI parent, long level,
-				List<String> path) {
+				String name) {
 			AttributesMap newMap = new AttributesMap();
 			// Lets copy current name.
-			newMap.add("name", parent.getAttributes().get("name"));
+			newMap.add("name", new ValueString(name));
 			newMap.add("level", new ValueInt(level));
-			newMap.add("owner", new ValueString(new PathName(path).toString()));
+			newMap.add("owner", new ValueString(machineName.getName()));
 			for (Program program : predefinedQueries) {
 				runQuery(parent, program, newMap);
 			}
