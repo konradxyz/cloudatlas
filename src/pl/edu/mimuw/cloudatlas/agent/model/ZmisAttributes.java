@@ -4,16 +4,16 @@ import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 
-public class SingleMachineZmiAttributes extends
+public class ZmisAttributes extends
 		SingleMachineZmiData<AttributesMap> {
 
-	public SingleMachineZmiAttributes(List<ZmiLevel<AttributesMap>> levels) {
+	public ZmisAttributes(List<ZmiLevel<AttributesMap>> levels) {
 		super(levels);
 	}
 
 	@Override
-	public SingleMachineZmiAttributes clone(Cloner<AttributesMap> cloner) {
+	public ZmisAttributes clone(Cloner<AttributesMap> cloner) {
 		SingleMachineZmiData<AttributesMap> tmp = super.clone(cloner);
-		return new SingleMachineZmiAttributes(tmp.getLevels());
+		return new ZmisAttributes(tmp.getLevels());
 	}
 }

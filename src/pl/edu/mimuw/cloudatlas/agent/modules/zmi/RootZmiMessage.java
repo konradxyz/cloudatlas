@@ -1,11 +1,11 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.zmi;
 
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiAttributes;
+import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 
-public class RootZmiMessage extends SimpleMessage<SingleMachineZmiAttributes> {
+public class RootZmiMessage extends SimpleMessage<ZmisAttributes> {
 
-	public RootZmiMessage(SingleMachineZmiAttributes content) {
+	public RootZmiMessage(ZmisAttributes content) {
 		super(content);
 	}
 
