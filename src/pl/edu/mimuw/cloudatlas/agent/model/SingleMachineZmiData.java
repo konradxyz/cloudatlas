@@ -40,21 +40,16 @@ public class SingleMachineZmiData<T> implements Cloneable {
 	}
 
 	private List<ZmiLevel<T>> levels;
-	private T defaultValue;
-	private final Cloner<T> cloner;
 
-	public SingleMachineZmiData(T defaultValue, Cloner<T> cloner,
-			List<ZmiLevel<T>> levels) {
+	public SingleMachineZmiData(List<ZmiLevel<T>> levels) {
 		this.levels = levels;
-		this.defaultValue = defaultValue;
-		this.cloner = cloner;
 	}
 
 	public T get(PathName pathName) throws UnknownZoneException {
 		List<String> components = pathName.getComponents();
-		if ( components.isEmpty() ) {
+		if (components.isEmpty()) {
 			T res = levels.get(0).siblingZones.get("");
-			if ( res == null ) {
+			if (res == null) {
 				throw new UnknownZoneException(pathName);
 			}
 			return res;
@@ -67,8 +62,8 @@ public class SingleMachineZmiData<T> implements Cloneable {
 			}
 		}
 		try {
-			T result = levels.get(components.size()).siblingZones.get(components
-				.get(components.size() - 1));
+			T result = levels.get(components.size()).siblingZones
+					.get(components.get(components.size() - 1));
 			if (result == null)
 				throw new UnknownZoneException(pathName);
 			return result;
@@ -77,13 +72,12 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		}
 	}
 
-	@Override
-	public SingleMachineZmiData<T> clone() {
+	public SingleMachineZmiData<T> clone(Cloner<T> cloner) {
 		List<ZmiLevel<T>> newLevels = new ArrayList<ZmiLevel<T>>();
 		for (ZmiLevel<T> level : levels) {
 			newLevels.add(level.clone(cloner));
 		}
-		return new SingleMachineZmiData<T>(defaultValue, cloner, newLevels);
+		return new SingleMachineZmiData<T>(newLevels);
 	}
 
 	public List<ZmiLevel<T>> getLevels() {

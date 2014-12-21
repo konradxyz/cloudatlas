@@ -29,6 +29,12 @@ public final class ZmiKeeperModule extends Module {
 	private SingleMachineZmiData<AttributesMap> zmi;
 	private AttributesMap currentMachineAttributes;
 	private final CloudatlasAgentConfig config;
+	private final Cloner<AttributesMap> cloner = new Cloner<AttributesMap>() {
+		@Override
+		public AttributesMap clone(AttributesMap c) {
+			return c.clone();
+		}
+	};
 
 	public ZmiKeeperModule(Address address, CloudatlasAgentConfig config) {
 		super(address);
@@ -39,13 +45,7 @@ public final class ZmiKeeperModule extends Module {
 		for (String zoneName : config.getPathName().getComponents()) {
 			levels.add(fromName(zoneName));
 		}
-		zmi = new SingleMachineZmiData<AttributesMap>(new AttributesMap(),
-				new Cloner<AttributesMap>() {
-					@Override
-					public AttributesMap clone(AttributesMap c) {
-						return c.clone();
-					}
-				}, levels);
+		zmi = new SingleMachineZmiData<AttributesMap>(levels);
 		Utils.print(zmi, System.err);
 		try {
 			currentMachineAttributes = zmi.get(config.getPathName());
@@ -102,7 +102,7 @@ public final class ZmiKeeperModule extends Module {
 				throws HandlerException {
 			sendMessage(message.getResponseTarget(),
 					message.getResponseMessageType(), new RootZmiMessage(
-							zmi.clone()));
+							zmi.clone(cloner)));
 		}
 	};
 
