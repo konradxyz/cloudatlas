@@ -10,12 +10,12 @@ public final class ExampleModuleFramework extends ModuleFramework {
 	
 	@Override
 	public Message getInitializationMessage() {
-		return new SimpleMessage<String>("Module test");
+		return new Message();
 	}
 
 	@Override
 	public int getInitializationMessageType() {
-		return ReaderModule.LINE_READ;
+		return EchoModule.INITIALIZATION;
 	}
 
 
