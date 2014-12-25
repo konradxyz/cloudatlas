@@ -1,21 +1,19 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
+import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
-import pl.edu.mimuw.cloudatlas.common.model.PathName;
-import pl.edu.mimuw.cloudatlas.common.model.ZMI;
+import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 
 public class RecalculateZmisMessage extends Message {
-	private final ZMI rootZmi;
-	private final PathName machineName;
+	private final SingleMachineZmiData<AttributesMap> zmi;
 	private final Address targetAddress;
 	private final int targetMessageType;
 
-	public RecalculateZmisMessage(ZMI rootZmi, PathName machineName,
+	public RecalculateZmisMessage(SingleMachineZmiData<AttributesMap> zmi,
 			Address targetAddress, int targetMessageType) {
 		super();
-		this.rootZmi = rootZmi;
-		this.machineName = machineName;
+		this.zmi = zmi;
 		this.targetAddress = targetAddress;
 		this.targetMessageType = targetMessageType;
 	}
@@ -28,11 +26,7 @@ public class RecalculateZmisMessage extends Message {
 		return targetMessageType;
 	}
 
-	public ZMI getRootZmi() {
-		return rootZmi;
-	}
-
-	public PathName getMachineName() {
-		return machineName;
+	public SingleMachineZmiData<AttributesMap> getRootZmi() {
+		return zmi;
 	}
 }

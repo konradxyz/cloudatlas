@@ -300,4 +300,10 @@ public class AttributesMap implements Iterable<Entry<Attribute, Value>>, Cloneab
 					+ entry.getValue().getType() + " = " + entry.getValue());
 
 	}
+
+	public void swap(AttributesMap other) {
+		Map<Attribute, Value> tmp = this.map;
+		this.map = other.map;
+		other.map = tmp;
+	}
 }

@@ -1,14 +1,22 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.zmi;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
+import pl.edu.mimuw.cloudatlas.agent.model.Cloner;
+import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
+import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.UnknownZoneException;
+import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
+import pl.edu.mimuw.cloudatlas.agent.model.Utils;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
+import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.common.model.ValueContact;
@@ -16,45 +24,58 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
-import pl.edu.mimuw.cloudatlas.common.model.ZMI;
 
 public final class ZmiKeeperModule extends Module {
-	private ZMI rootZmi;
-	private ZMI currentMachineZmi;
+	private ZmisAttributes zmi;
+	private AttributesMap currentMachineAttributes;
 	private final CloudatlasAgentConfig config;
+	private final Cloner<AttributesMap> cloner = new Cloner<AttributesMap>() {
+		@Override
+		public AttributesMap clone(AttributesMap c) {
+			return c.clone();
+		}
+	};
 
 	public ZmiKeeperModule(Address address, CloudatlasAgentConfig config) {
 		super(address);
 		assert (!config.getPathName().getComponents().isEmpty());
 		this.config = config;
-		// First we will create ZMIs for path from current singleton zone to
-		// root.
-		rootZmi = new ZMI();
-		rootZmi.getAttributes().add("name", new ValueString(""));
-		ZMI parent = rootZmi;
+		List<ZmiLevel<AttributesMap>> levels = new ArrayList<ZmiLevel<AttributesMap>>();
+		levels.add(fromName(""));
 		for (String zoneName : config.getPathName().getComponents()) {
-			ZMI current = new ZMI(parent);
-			current.getAttributes().add("name", new ValueString(zoneName));
-			parent.addSon(current);
-			parent = current;
+			levels.add(fromName(zoneName));
 		}
-		currentMachineZmi = parent;
-		currentMachineZmi.getAttributes().add("cardinality", new ValueInt(1l));
-		currentMachineZmi.getAttributes().add(
-				"level",
-				new ValueInt((long) config.getPathName().getComponents()
-						.size()));
-		currentMachineZmi.getAttributes().add("owner",
-				new ValueString(config.getPathName().toString()));
+		zmi = new ZmisAttributes(levels);
+		Utils.print(zmi, System.err);
+		try {
+			currentMachineAttributes = zmi.get(config.getPathName());
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			throw new InternalError();
+		}
+		currentMachineAttributes.add("cardinality", new ValueInt(1l));
+		currentMachineAttributes.add("level", new ValueInt((long) config
+				.getPathName().getComponents().size()));
+		currentMachineAttributes.add("owner", new ValueString(config
+				.getPathName().toString()));
 		ValueSet contacts = new ValueSet(TypePrimitive.CONTACT);
-		if  (config.getAddress() != null )
-			contacts.add(new ValueContact(config.getPathName(), config.getAddress()));
-		currentMachineZmi.getAttributes().add("contacts", contacts);
+		if (config.getAddress() != null)
+			contacts.add(new ValueContact(config.getPathName(), config
+					.getAddress()));
+		currentMachineAttributes.add("contacts", contacts);
 		refreshCurrentZmiTimestamp();
 	}
 
+	private static ZmiLevel<AttributesMap> fromName(String name) {
+		AttributesMap zone = new AttributesMap();
+		zone.add("name", new ValueString(name));
+		Map<String, AttributesMap> zones = new HashMap<String, AttributesMap>();
+		zones.put(name, zone);
+		return new ZmiLevel<AttributesMap>(name, zones);
+	}
+
 	private void refreshCurrentZmiTimestamp() {
-		currentMachineZmi.getAttributes().addOrChange("timestamp",
+		currentMachineAttributes.addOrChange("timestamp",
 				new ValueTime(Calendar.getInstance().getTimeInMillis()));
 	}
 
@@ -67,8 +88,8 @@ public final class ZmiKeeperModule extends Module {
 		@Override
 		public void handleMessage(SetAttributeMessage message)
 				throws HandlerException {
-			assert (currentMachineZmi != null);
-			currentMachineZmi.getAttributes().addOrChange(
+			assert (currentMachineAttributes != null);
+			currentMachineAttributes.addOrChange(
 					message.getAttribute(), message.getValue());
 			refreshCurrentZmiTimestamp();
 		}
@@ -81,7 +102,7 @@ public final class ZmiKeeperModule extends Module {
 				throws HandlerException {
 			sendMessage(message.getResponseTarget(),
 					message.getResponseMessageType(), new RootZmiMessage(
-							rootZmi.clone()));
+							zmi.clone(cloner)));
 		}
 	};
 
@@ -90,51 +111,18 @@ public final class ZmiKeeperModule extends Module {
 		@Override
 		public void handleMessage(UpdateLocalZmiMessage message)
 				throws HandlerException {
+			// TODO: assert that only local zones can be updated here.
 			PathName path = message.getPath();
-			assertLocalNonSingletonPathName(path);
-			ZMI elem = findZmi(path.getComponents());
-			if (elem == null) {
-				throw new HandlerException("Zone " + path + " not found");
+			if ( path.equals(config.getPathName())) {
+				throw new HandlerException("You can't update whole singleton ZMI");
 			}
-			elem.setAttributes(message.getAttributes());
+			try {
+				zmi.get(path).swap(message.getAttributes());
+			} catch (UnknownZoneException e) {
+				throw new HandlerException(e.getMessage());
+			}
 		}
 	};
-
-	private void assertLocalNonSingletonPathName(PathName path)
-			throws HandlerException {
-		List<String> checked = path.getComponents();
-		List<String> local = config.getPathName().getComponents();
-		if (checked.size() >= local.size())
-			throw new HandlerException("Path " + path
-					+ " is not local nonsingleton zmi path");
-		for (int i = 0; i < checked.size(); ++i) {
-			if (!checked.get(i).equals(local.get(i))) {
-				throw new HandlerException("Path " + path
-						+ " is not local nonsingleton zmi path");
-			}
-		}
-
-	}
-
-	private ZMI findZmi(List<String> path) throws HandlerException {
-		return findZmi(path, -1, rootZmi);
-	}
-
-	private static ZMI findZmi(List<String> path, int parentId, ZMI parent)
-			throws HandlerException {
-		if (parentId >= path.size() - 1) {
-			return parent;
-		}
-		int nextParentId = parentId + 1;
-
-		String name = path.get(nextParentId);
-		for (ZMI son : parent.getSons()) {
-			if (son.getAttributes().get("name").equals(new ValueString(name))) {
-				return findZmi(path, nextParentId, son);
-			}
-		}
-		return null;
-	}
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
