@@ -37,7 +37,7 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		public String getOurZoneName() {
 			return ourZoneName;
 		}
-		
+
 		@Override
 		public String toString() {
 			return ourZoneName + ": " + siblingZones.toString();
@@ -50,7 +50,8 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		this.levels = levels;
 	}
 
-	public T get(PathName pathName) throws UnknownZoneException {
+	public T getOrInsert(PathName pathName, T defaultValue)
+			throws UnknownZoneException {
 		List<String> components = pathName.getComponents();
 		if (components.isEmpty()) {
 			T res = levels.get(0).siblingZones.get("");
@@ -69,12 +70,23 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		try {
 			T result = levels.get(components.size()).siblingZones
 					.get(components.get(components.size() - 1));
-			if (result == null)
+			if (result == null) {
+				if (defaultValue != null) {
+					levels.get(components.size()).siblingZones
+							.put(components.get(components.size() - 1),
+									defaultValue);
+					return defaultValue;
+				}
 				throw new UnknownZoneException(pathName);
+			}
 			return result;
 		} catch (Exception e) {
 			throw new UnknownZoneException(pathName);
 		}
+	}
+
+	public T get(PathName pathName) throws UnknownZoneException {
+		return getOrInsert(pathName, null);
 	}
 
 	public SingleMachineZmiData<T> clone(Cloner<T> cloner) {
@@ -104,7 +116,7 @@ public class SingleMachineZmiData<T> implements Cloneable {
 
 		return result;
 	}
-	
+
 	@Override
 	public String toString() {
 		return levels.toString();

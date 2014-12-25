@@ -24,7 +24,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate.Type;
-import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicateWrapper;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessAnswerCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessInitCommunicate;
@@ -33,12 +32,10 @@ import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.GetRootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateRemoteZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
-import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
-
-import com.esotericsoftware.kryo.Kryo;
 
 public class GossipModule extends Module {
 	private final CloudatlasAgentConfig config;
@@ -70,12 +67,6 @@ public class GossipModule extends Module {
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT, freshnessInitCommunicateHandler);
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER, freshnessAnswerCommunicateHandler);
 		datagramHandlers.put(Type.ZMI, zmiCommunicateHandler);
-	}
-
-	private static void initKryo(Kryo kryo) {
-		kryo.setRegistrationRequired(false);
-		int id = 1;
-	
 	}
 
 	private static final int MESSAGE_RECEIVED = 1;
@@ -118,7 +109,9 @@ public class GossipModule extends Module {
 
 		@Override
 		public void handle(ZmiCommunicate communicate, InetAddress source) {
-			
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.UPDATE_REMOTE_ZMI,
+					new UpdateRemoteZmiMessage(communicate.getPathName(),
+							communicate.getAttributes()));
 		}
 	};
 	

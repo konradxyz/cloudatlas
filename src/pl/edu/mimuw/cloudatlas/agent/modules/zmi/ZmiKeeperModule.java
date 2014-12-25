@@ -75,6 +75,7 @@ public final class ZmiKeeperModule extends Module {
 	public static final int SET_ATTRIBUTE = 1;
 	public static final int GET_ROOT_ZMI = 2;
 	public static final int UPDATE_LOCAL_ZMI = 3;
+	public static final int UPDATE_REMOTE_ZMI = 4;
 
 	private final MessageHandler<SetAttributeMessage> sendMessageHandler = new MessageHandler<SetAttributeMessage>() {
 
@@ -104,8 +105,12 @@ public final class ZmiKeeperModule extends Module {
 		@Override
 		public void handleMessage(UpdateLocalZmiMessage message)
 				throws HandlerException {
-			// TODO: assert that only local zones can be updated here.
 			PathName path = message.getPath();
+			if ( !isLocalPath(path)) {
+				throw new HandlerException(
+						"You cant update local zmi with path " + path
+								+ " - this path is not local");
+			}
 			if ( path.equals(config.getPathName())) {
 				throw new HandlerException("You can't update whole singleton ZMI");
 			}
@@ -117,10 +122,48 @@ public final class ZmiKeeperModule extends Module {
 		}
 	};
 
+	private final MessageHandler<UpdateRemoteZmiMessage> updateRemoteZmiHandler = new MessageHandler<UpdateRemoteZmiMessage>() {
+
+		@Override
+		public void handleMessage(UpdateRemoteZmiMessage message)
+				throws HandlerException {
+			if (isLocalPath(message.getPath())) {
+				throw new HandlerException(
+						"You cant update remote zmi with local path "
+								+ message.getPath());
+			}
+			try {
+				AttributesMap current = zmi.getOrInsert(message.getPath(), new AttributesMap());
+				AttributesMap newMap = message.getAttributes();
+				Long newTimestamp = ((ValueTime) newMap.get("timestamp")).getValue();
+				ValueTime currentTime = (ValueTime) current.getOrNull("timestamp");
+				Long oldTimestamp = -1l;
+				if ( currentTime != null )
+					oldTimestamp = currentTime.getValue();
+				if ( newTimestamp > oldTimestamp ) {
+					current.swap(newMap);
+				}
+			} catch (UnknownZoneException e) {
+				throw new HandlerException(e);
+			}
+
+		}
+	};
+
+	private boolean isLocalPath(PathName path) {
+		for (int i = 0; i < path.getComponents().size(); ++i) {
+			if (!path.getComponents().get(i)
+					.equals(config.getPathName().getComponents().get(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
 		return getHandlers(new Integer[] { SET_ATTRIBUTE, GET_ROOT_ZMI,
-				UPDATE_LOCAL_ZMI }, new MessageHandler<?>[] {
-				sendMessageHandler, getRootHandler, updateLocalZmiHandler });
+				UPDATE_LOCAL_ZMI, UPDATE_REMOTE_ZMI }, new MessageHandler<?>[] {
+				sendMessageHandler, getRootHandler, updateLocalZmiHandler, updateRemoteZmiHandler});
 	}
 }
