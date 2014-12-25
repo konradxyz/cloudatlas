@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
@@ -45,7 +46,7 @@ public class EchoModule extends Module {
 	private Address timerAddress;
 	private Address queryKeeperAddress;
 
-	private final PathName pathName = new PathName("/I/dont/really/care");
+	private final PathName pathName;
 
 	private static final int RECEIVED_DATAGRAM = 1;
 	protected static final Integer ZMI_RECEIVED = 2;
@@ -199,6 +200,14 @@ public class EchoModule extends Module {
 	public EchoModule(Address uniqueAddress, Address shutdownModuleAddress) {
 		super(uniqueAddress);
 		this.shutdownAddress = shutdownModuleAddress;
+		this.pathName = new PathName("/I/dont/really/care");
+	}
+
+	public EchoModule(CloudatlasAgentConfig config, Address uniqueAddress,
+			Address shutdownModuleAddress) {
+		super(uniqueAddress);
+		this.shutdownAddress = shutdownModuleAddress;
+		this.pathName = config.getPathName();
 	}
 
 	@Override
