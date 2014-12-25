@@ -1,5 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
+import java.net.SocketException;
+import java.net.UnknownHostException;
+
 import org.ini4j.Ini;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
@@ -7,7 +10,7 @@ import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
 
 public class Main {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws UnknownHostException, SocketException {
 		System.setProperty("java.security.policy", "file:./agent.policy");
 		System.setProperty("java.rmi.server.hostname", "localhost");
 

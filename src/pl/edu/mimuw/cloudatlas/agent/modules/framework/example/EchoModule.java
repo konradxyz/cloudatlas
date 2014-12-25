@@ -46,7 +46,7 @@ public class EchoModule extends Module {
 	private Address timerAddress;
 	private Address queryKeeperAddress;
 
-	private final PathName pathName;
+	private final CloudatlasAgentConfig config;
 
 	private static final int RECEIVED_DATAGRAM = 1;
 	protected static final Integer ZMI_RECEIVED = 2;
@@ -164,7 +164,7 @@ public class EchoModule extends Module {
 		public void handleMessage(RootZmiMessage message)
 				throws HandlerException {
 			sendMessage(queryKeeperAddress, QueryKeeperModule.RECALCULATE_ZMI,
-					new RecalculateZmisMessage(message.getContent(), pathName,
+					new RecalculateZmisMessage(message.getContent(), config.getPathName(),
 							getAddress(), RECALCULATED_ZMI));
 		}
 
@@ -197,17 +197,18 @@ public class EchoModule extends Module {
 
 	};
 
+	// TODO: remove this constructor.
 	public EchoModule(Address uniqueAddress, Address shutdownModuleAddress) {
 		super(uniqueAddress);
 		this.shutdownAddress = shutdownModuleAddress;
-		this.pathName = new PathName("/I/dont/really/care");
+		this.config = new CloudatlasAgentConfig(new PathName("/I/dont/really/care"), null);
 	}
 
 	public EchoModule(CloudatlasAgentConfig config, Address uniqueAddress,
 			Address shutdownModuleAddress) {
 		super(uniqueAddress);
 		this.shutdownAddress = shutdownModuleAddress;
-		this.pathName = config.getPathName();
+		this.config = config;
 	}
 
 	@Override
@@ -241,7 +242,7 @@ public class EchoModule extends Module {
 		socketAddress = socket.getAddress();
 		
 		ZmiKeeperModule zmiKeeper = new ZmiKeeperModule(generator.getUniqueAddress(), 
-				pathName);
+				config);
 		zmiKeeperAddress = zmiKeeper.getAddress();
 		modules.add(zmiKeeper);
 
