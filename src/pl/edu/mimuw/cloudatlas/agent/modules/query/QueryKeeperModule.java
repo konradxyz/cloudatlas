@@ -2,8 +2,10 @@ package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
@@ -17,6 +19,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationExcep
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
@@ -28,8 +31,52 @@ public class QueryKeeperModule extends Module {
 	}
 
 	public final static Integer RECALCULATE_ZMI = 1;
+	public final static Integer INSTALL_QUERY = 2;
 
 	private final List<Program> predefinedQueries = new ArrayList<Program>();
+	
+	private static class QueryWrapper {
+		private final Program parsedQuery;
+		private final ValueQuery value;
+		public QueryWrapper(Program parsedQuery, ValueQuery value) {
+			super();
+			this.parsedQuery = parsedQuery;
+			this.value = value;
+		}
+		public Program getParsedQuery() {
+			return parsedQuery;
+		}
+		public ValueQuery getValue() {
+			return value;
+		}
+	};
+
+	private final Map<String, QueryWrapper> queries = new HashMap<String, QueryWrapper>();
+
+	private final MessageHandler<InstallQueryMessage> installQueryHandler = new MessageHandler<InstallQueryMessage>() {
+
+		@Override
+		public void handleMessage(InstallQueryMessage message)
+				throws HandlerException {
+			if (!message.getQueryName().startsWith("&")
+					|| message.getQueryName().equals("&")) {
+				throw new HandlerException("Unallowed query name '"
+						+ message.getQueryName() + "'");
+			}
+
+			try {
+				// TODO: check query correctness.
+				Program parsedProgram = MainInterpreter.parseProgram(message
+						.getQuery());
+				ValueQuery val = new ValueQuery(message.getQuery());
+				queries.put(message.getQueryName(), new QueryWrapper(
+						parsedProgram, val));
+			} catch (Exception e) {
+				throw new HandlerException(e);
+			}
+		}
+
+	};
 
 	private final MessageHandler<RecalculateZmisMessage> recalculateHandler = new MessageHandler<RecalculateZmisMessage>() {
 
@@ -74,11 +121,12 @@ public class QueryKeeperModule extends Module {
 			newMap.add("level", new ValueInt(level));
 			newMap.add("owner", new ValueString(new PathName(path).toString()));
 			for (Program program : predefinedQueries) {
-				Interpreter interpreter = new Interpreter(parent);
-				List<QueryResult> result = interpreter
-						.interpretProgram(program);
-				for (QueryResult r : result) {
-					newMap.addOrChange(r.getName(), r.getValue());
+				runQuery(parent, program, newMap);
+			}
+			for (Entry<String, QueryWrapper> entry : queries.entrySet()) {
+				if (runQuery(parent, entry.getValue().getParsedQuery(), newMap)) {
+					newMap.addOrChange(entry.getKey(), entry.getValue()
+							.getValue());
 				}
 			}
 			newMap.addOrChange("timestamp", new ValueTime(Calendar
@@ -86,12 +134,26 @@ public class QueryKeeperModule extends Module {
 			return newMap;
 
 		}
+		
+		private boolean runQuery(ZMI parent, Program query, AttributesMap result) {
+			try {
+				Interpreter interpreter = new Interpreter(parent);
+				List<QueryResult> results = interpreter.interpretProgram(query);
+				for (QueryResult r : results) {
+					result.addOrChange(r.getName(), r.getValue());
+				}
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
+			}			
+		}
 	};
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { RECALCULATE_ZMI },
-				new MessageHandler<?>[] { recalculateHandler });
+		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY },
+				new MessageHandler<?>[] { recalculateHandler, installQueryHandler });
 	}
 
 	@Override
