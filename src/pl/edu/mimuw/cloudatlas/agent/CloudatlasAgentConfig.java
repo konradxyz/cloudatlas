@@ -17,16 +17,20 @@ public final class CloudatlasAgentConfig {
 	// Gossip:
 	private int maxMessageSizeBytes;
 	private int port;
+	// Ignored if null.
 	private final InetAddress fallbackAddress;
+	private final int gossipPeriodMs;
 
 	public CloudatlasAgentConfig(PathName pathName, Inet4Address address,
-			int port, int maxMessageSizeBytes, InetAddress fallbackAddress) {
+			int port, int maxMessageSizeBytes, InetAddress fallbackAddress,
+			int gossipPeriodMs) {
 		super();
 		this.pathName = pathName;
 		this.address = address;
 		this.port = port;
 		this.maxMessageSizeBytes = maxMessageSizeBytes;
 		this.fallbackAddress = fallbackAddress;
+		this.gossipPeriodMs = gossipPeriodMs;
 	}
 
 	public static CloudatlasAgentConfig fromIni(Ini file) {
@@ -61,8 +65,9 @@ public final class CloudatlasAgentConfig {
 					fallbackAddress = InetAddress.getByName(addr);
 			} catch (Exception e) {
 			}
+			int gossipPeriod = Integer.parseInt(file.get("gossip", "period_ms"));
 			return new CloudatlasAgentConfig(new PathName(pathName), result,
-					port, maxMessageSizeBytes, fallbackAddress);
+					port, maxMessageSizeBytes, fallbackAddress, gossipPeriod);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Could not parse config file, cause: '"
@@ -89,5 +94,9 @@ public final class CloudatlasAgentConfig {
 
 	public InetAddress getFallbackAddress() {
 		return fallbackAddress;
+	}
+
+	public int getGossipPeriodMs() {
+		return gossipPeriodMs;
 	}
 }

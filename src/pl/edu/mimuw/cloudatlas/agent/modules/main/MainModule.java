@@ -59,6 +59,7 @@ public class MainModule extends Module {
 
 	protected static final Integer RECALCULATED_ZMI = 4;
 	protected static final Integer ZMI_RECEIVED_FOR_RECALCULATION = 5;
+	public static final Integer INITIALIZE = 6;
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 	
@@ -205,6 +206,16 @@ public class MainModule extends Module {
 
 	};
 
+	private final MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			sendMessage(gossipAddress, GossipModule.INITIALIZE_MODULE,
+					new Message());
+
+		}
+	};
+
 	public MainModule(CloudatlasAgentConfig config, Address uniqueAddress,
 			Address shutdownModuleAddress) {
 		super(uniqueAddress);
@@ -221,6 +232,7 @@ public class MainModule extends Module {
 		handlers.put(ALARM_RECEIVED, alarmHandler);
 		handlers.put(ZMI_RECEIVED_FOR_RECALCULATION, rootZmiHandlerForRecalc);
 		handlers.put(RECALCULATED_ZMI, recalcZmiHandler);
+		handlers.put(INITIALIZE, initializeHandler);
 		return handlers;
 	}
 	
@@ -260,7 +272,7 @@ public class MainModule extends Module {
 		modules.add(queryKeeper);
 		
 		GossipModule gossip = new GossipModule(generator.getUniqueAddress(),
-				config, zmiKeeperAddress);
+				config, zmiKeeperAddress, timerAddress);
 		gossipAddress = gossip.getAddress();
 		modules.add(gossip);
 

@@ -33,6 +33,8 @@ import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessInitCo
 import pl.edu.mimuw.cloudatlas.agent.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
+import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.GetRootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateRemoteZmiMessage;
@@ -49,6 +51,7 @@ public class GossipModule extends Module {
 	private final CommunicateSerializer communicateSerializer = new CommunicateSerializer();
 
 	private Address socketModuleAddress;
+	private final Address timerModuleAddress;
 	
 	// Waiting for freshness info:
 	// Here we store messages connected with gossiping initialized different machine.
@@ -66,13 +69,14 @@ public class GossipModule extends Module {
 	private ContactSelectionStrategy selectionStrategy = new RoundRobinContactSelectionStrategy();
 
 	public GossipModule(Address address, CloudatlasAgentConfig config,
-			Address zmiKeeperAddress) {
+			Address zmiKeeperAddress, Address timerModuleAddress) {
 		super(address);
 		this.config = config;
 		this.zmiKeeperAddress = zmiKeeperAddress;
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT, freshnessInitCommunicateHandler);
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER, freshnessAnswerCommunicateHandler);
 		datagramHandlers.put(Type.ZMI, zmiCommunicateHandler);
+		this.timerModuleAddress = timerModuleAddress;
 		if ( config.getFallbackAddress() != null )
 			fallbackContacts.add(config.getFallbackAddress());
 	}
@@ -82,6 +86,7 @@ public class GossipModule extends Module {
 	private static final int RECEIVED_ZMI = 3;
 	public static final int SET_FALLBACK_CONTACTS = 4;
 	private static final int INITIALIZE_GOSSIP = 5;
+	public static final int INITIALIZE_MODULE = 6;
 	
 	
 	private abstract class HandleCommunicate<T extends GossipCommunicate> {
@@ -237,12 +242,26 @@ public class GossipModule extends Module {
 			}
 		}
 	};
+	
+	private MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
+		
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			sendMessage(timerModuleAddress, TimerModule.SCHEDULE_MESSAGE, 
+					new ScheduleAlarmMessage(0, 0, config.getGossipPeriodMs(), 
+							getAddress(), START_GOSSIP));
+		}
+	};
 
 	private static List<ZmiData<AttributesMap>> filterNewer(
 			List<ZmiData<AttributesMap>> myZmis, ZmisFreshness otherFreshness) {
 		List<ZmiData<AttributesMap>> result = new ArrayList<ZmiData<AttributesMap>>();
+		PathName otherPathName = otherFreshness.getPath();
 		for (ZmiData<AttributesMap> myAttrs : myZmis) {
 			try {
+				if ( !myAttrs.getPath().levelUp().isPrefixOf(otherPathName) ) {
+					continue;
+				}
 				Long myTimestamp = ((ValueTime) myAttrs.getContent().get(
 						"timestamp")).getValue();
 				Long otherTimestamp = -1l;
@@ -299,13 +318,15 @@ public class GossipModule extends Module {
 					START_GOSSIP,
 					RECEIVED_ZMI, 
 					SET_FALLBACK_CONTACTS,
-					INITIALIZE_GOSSIP},
+					INITIALIZE_GOSSIP,
+					INITIALIZE_MODULE},
 				new MessageHandler<?>[] { 
 					receivedMessageHandler,
 					startGossipHandler, 
 					receivedZmi,
 					setFallbackContactsHandler,
-					initializeGossipHandler});
+					initializeGossipHandler,
+					initializeHandler});
 	}
 
 	@Override

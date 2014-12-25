@@ -4,8 +4,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleFramework;
-import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
-import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.ReaderModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.main.MainModule;
 
 public class CloudatlasAgentModulesFramework extends ModuleFramework {
@@ -17,12 +15,12 @@ public class CloudatlasAgentModulesFramework extends ModuleFramework {
 
 	@Override
 	public Message getInitializationMessage() {
-		return new SimpleMessage<String>("Module test");
+		return new Message();
 	}
 
 	@Override
 	public int getInitializationMessageType() {
-		return ReaderModule.LINE_READ;
+		return MainModule.INITIALIZE;
 	}
 
 	@Override
