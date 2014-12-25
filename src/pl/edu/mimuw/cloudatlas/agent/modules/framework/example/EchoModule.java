@@ -29,6 +29,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.GetRootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.SetAttributeMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateLocalZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
@@ -177,7 +178,11 @@ public class EchoModule extends Module {
 				throws HandlerException {
 			System.out.println(message.getPathName());
 			message.getMap().printAttributes(System.out);
-
+			sendMessage(
+					zmiKeeperAddress,
+					ZmiKeeperModule.UPDATE_LOCAL_ZMI,
+					new UpdateLocalZmiMessage(message.getPathName(), message
+							.getMap()));
 		}
 
 	};
