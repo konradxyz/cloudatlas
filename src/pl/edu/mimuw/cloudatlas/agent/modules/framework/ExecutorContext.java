@@ -19,7 +19,15 @@ public final class ExecutorContext implements Context {
 	
 	@Override
 	public void sendMessage(MessageWrapper message) {
-		modulesQueues.get(message.getTarget()).add(message);
+		try {
+			modulesQueues.get(message.getTarget()).add(message);
+		} catch (NullPointerException e) {
+			System.err.println("ERROR: Could not send message to module "
+					+ message.getTarget());
+			System.err.println("ERROR: Message content " + message);
+			System.err.println("ERROR: Really, it should not happen.");
+			throw e;
+		}
 	}
 	
 	// All Executors must be registered before first executor starts to work.
