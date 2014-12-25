@@ -13,17 +13,25 @@ import pl.edu.mimuw.cloudatlas.common.model.PathName;
 public final class CloudatlasAgentConfig {
 	private final PathName pathName;
 	private final Inet4Address address;
+	
+	// Gossip:
+	private int maxMessageSizeBytes;
+	private int port;
 
-	public CloudatlasAgentConfig(PathName pathName, Inet4Address address) {
+	public CloudatlasAgentConfig(PathName pathName, Inet4Address address, int port, int maxMessageSizeBytes) {
 		super();
 		this.pathName = pathName;
 		this.address = address;
+		this.port = port;
+		this.maxMessageSizeBytes = maxMessageSizeBytes;
 	}
 
 	public static CloudatlasAgentConfig fromIni(Ini file) {
 		try {
 			String pathName = file.get("agent", "zone_path_name");
 			String interfaceName = file.get("agent", "external_interface");
+			int port = Integer.parseInt(file.get("gossip", "port"));
+			int maxMessageSizeBytes = Integer.parseInt(file.get("gossip", "max_message_size_bytes"));
 			Inet4Address result = null;
 			try {
 				List<InetAddress> addresses = Collections.list(NetworkInterface
@@ -43,7 +51,7 @@ public final class CloudatlasAgentConfig {
 			} else {
 				System.err.println("Retrieved IP address " + result);
 			}
-			return new CloudatlasAgentConfig(new PathName(pathName), result);
+			return new CloudatlasAgentConfig(new PathName(pathName), result, port, maxMessageSizeBytes);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Could not parse config file, cause: '"
@@ -58,5 +66,13 @@ public final class CloudatlasAgentConfig {
 
 	public PathName getPathName() {
 		return pathName;
+	}
+
+	public int getMaxMessageSizeBytes() {
+		return maxMessageSizeBytes;
+	}
+
+	public int getPort() {
+		return port;
 	}
 }

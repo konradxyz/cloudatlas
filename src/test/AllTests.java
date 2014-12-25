@@ -22,7 +22,7 @@ import test.aggregation.SumTest;
 		SerializatorValueStringTest.class, ExpressionInterpreterTest.class,
 		BinaryOperationsTypesTest.class, CountTest.class, AverageTest.class,
 		SumTest.class, AndTest.class, OrTest.class, MinTest.class,
-		MaxTest.class, AdditionTest.class })
+		MaxTest.class, AdditionTest.class, CommunicateSerializerTest.class })
 public class AllTests {
 	public static void assertIdentical(Value expected, Value got) {
 		if ( !expected.identical(got) ) {

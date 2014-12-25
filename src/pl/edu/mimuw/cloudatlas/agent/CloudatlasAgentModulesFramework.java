@@ -5,7 +5,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleFramework;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
-import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.EchoModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.ReaderModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.main.MainModule;
 

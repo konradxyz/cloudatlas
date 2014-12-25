@@ -7,11 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
-import pl.edu.mimuw.cloudatlas.agent.model.Cloner;
-import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.UnknownZoneException;
 import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
 import pl.edu.mimuw.cloudatlas.agent.model.Utils;
+import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
@@ -29,12 +28,6 @@ public final class ZmiKeeperModule extends Module {
 	private ZmisAttributes zmi;
 	private AttributesMap currentMachineAttributes;
 	private final CloudatlasAgentConfig config;
-	private final Cloner<AttributesMap> cloner = new Cloner<AttributesMap>() {
-		@Override
-		public AttributesMap clone(AttributesMap c) {
-			return c.clone();
-		}
-	};
 
 	public ZmiKeeperModule(Address address, CloudatlasAgentConfig config) {
 		super(address);
@@ -102,7 +95,7 @@ public final class ZmiKeeperModule extends Module {
 				throws HandlerException {
 			sendMessage(message.getResponseTarget(),
 					message.getResponseMessageType(), new RootZmiMessage(
-							zmi.clone(cloner)));
+							zmi.clone()));
 		}
 	};
 

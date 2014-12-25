@@ -1,8 +1,10 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.main;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.ShutdownModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.PrinterModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.ReaderModule;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.GossipModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
@@ -46,6 +49,7 @@ public class MainModule extends Module {
 	private Address zmiKeeperAddress;
 	private Address timerAddress;
 	private Address queryKeeperAddress;
+	private Address gossipAddress;
 
 	private final CloudatlasAgentConfig config;
 
@@ -118,6 +122,22 @@ public class MainModule extends Module {
 				sendMessage(queryKeeperAddress,
 						QueryKeeperModule.INSTALL_QUERY,
 						new InstallQueryMessage(query, attrName));
+			}
+			if (content.startsWith("gossip"))
+				sendMessage(gossipAddress, GossipModule.START_GOSSIP,  new Message());
+			if (content.startsWith("fallback")) {
+				String addr = content.substring("fallback ".length());
+				try {
+					Inet4Address address = (Inet4Address) InetAddress
+							.getByName(addr);
+					sendMessage(
+							gossipAddress,
+							GossipModule.SET_FALLBACK_CONTACTS,
+							new SimpleMessage<List<Inet4Address>>(Arrays
+									.asList(address)));
+				} catch (UnknownHostException e) {
+					throw new HandlerException(e);
+				}
 			}
 		}
 	};
@@ -238,6 +258,11 @@ public class MainModule extends Module {
 				generator.getUniqueAddress(), config.getPathName());
 		queryKeeperAddress = queryKeeper.getAddress();
 		modules.add(queryKeeper);
+		
+		GossipModule gossip = new GossipModule(generator.getUniqueAddress(),
+				config, zmiKeeperAddress);
+		gossipAddress = gossip.getAddress();
+		modules.add(gossip);
 
 		return modules;
 	}

@@ -41,8 +41,8 @@ public final class Executor implements Runnable {
 					modules.get(wrapper.getTarget()).handleMessage(wrapper);
 				}
 			} catch (Exception e) {
-				System.err.println(wrapper);
 				e.printStackTrace(System.err);
+				System.err.println(wrapper);
 			}
 		}
 		shutdown();

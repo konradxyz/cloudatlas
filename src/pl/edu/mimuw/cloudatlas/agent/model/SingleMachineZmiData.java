@@ -37,6 +37,11 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		public String getOurZoneName() {
 			return ourZoneName;
 		}
+		
+		@Override
+		public String toString() {
+			return ourZoneName + ": " + siblingZones.toString();
+		}
 	}
 
 	private List<ZmiLevel<T>> levels;
@@ -98,6 +103,11 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		}
 
 		return result;
+	}
+	
+	@Override
+	public String toString() {
+		return levels.toString();
 	}
 
 	public static class UnknownZoneException extends Exception {

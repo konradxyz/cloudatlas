@@ -213,7 +213,7 @@ public final class SocketModule extends Module {
 									gatewayModuleAddress,
 									gatewayModuleMessageType,
 									new ReceivedDatagramMessage(outputStream
-											.toByteArray()));
+											.toByteArray(), key.from));
 							incomingMessages.remove(key);
 						}
 					} else {

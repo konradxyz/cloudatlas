@@ -38,6 +38,9 @@ public abstract class Module {
 
 	protected final void sendMessage(Address target, int messageType,
 			Message message) {
+		if ( message==null ) {
+			throw new NullPointerException("Null message can not be sent to another module");
+		}
 		context.sendMessage(new MessageWrapper(target, messageType, message,
 				getAddress()));
 	}	
