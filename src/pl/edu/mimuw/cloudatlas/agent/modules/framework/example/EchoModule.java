@@ -36,6 +36,8 @@ public class EchoModule extends Module {
 
 	protected static final Integer RECALCULATED_ZMI = 4;
 	protected static final Integer ZMI_RECEIVED_FOR_RECALCULATION = 5;
+	
+	protected static final Integer INITIALIZATION = 6;
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 	
@@ -113,12 +115,25 @@ public class EchoModule extends Module {
 		}
 
 	};
+	
+	private final MessageHandler<Message> initializationHandler = new MessageHandler<Message>() {
 
-	public EchoModule(Address uniqueAddress,
-			Address shutdownModuleAddress) {
+		@Override
+		public void handleMessage(Message message)
+				throws HandlerException {
+			sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE,
+					new ScheduleAlarmMessage(1000, 0, 1000, getAddress(), ALARM_RECEIVED));
+		}
+
+	};
+
+
+	// TODO: remove this constructor.
+	public EchoModule(Address uniqueAddress, Address shutdownModuleAddress) {
 		super(uniqueAddress);
 		this.shutdownAddress = shutdownModuleAddress;
 	}
+
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
@@ -127,6 +142,7 @@ public class EchoModule extends Module {
 		handlers.put(RECEIVED_DATAGRAM, receiveHandler);
 		handlers.put(ZMI_RECEIVED, rootZmiHandler);
 		handlers.put(ALARM_RECEIVED, alarmHandler);
+		handlers.put(INITIALIZATION, initializationHandler);
 		return handlers;
 	}
 	
