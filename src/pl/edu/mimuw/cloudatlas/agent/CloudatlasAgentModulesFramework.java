@@ -7,6 +7,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleFramework;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.EchoModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.ReaderModule;
+import pl.edu.mimuw.cloudatlas.agent.modules.main.MainModule;
 
 public class CloudatlasAgentModulesFramework extends ModuleFramework {
 	private final CloudatlasAgentConfig config;
@@ -28,7 +29,7 @@ public class CloudatlasAgentModulesFramework extends ModuleFramework {
 	@Override
 	public Module getRootModule(Address rootAddress,
 			Address shutdownModuleAddress) {
-		return new EchoModule(config, rootAddress, shutdownModuleAddress);
+		return new MainModule(config, rootAddress, shutdownModuleAddress);
 	}
 
 }
