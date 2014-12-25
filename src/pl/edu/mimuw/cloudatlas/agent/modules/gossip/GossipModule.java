@@ -22,6 +22,9 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSelectionStrategy;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSelectionStrategy.ContactResult;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.RoundRobinContactSelectionStrategy;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate.Type;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
@@ -35,12 +38,13 @@ import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateRemoteZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 
 public class GossipModule extends Module {
 	private final CloudatlasAgentConfig config;
 	private final Address zmiKeeperAddress;
-	private final List<Inet4Address> fallbackContacts = new ArrayList<Inet4Address>();
+	private final List<InetAddress> fallbackContacts = new ArrayList<InetAddress>();
 	private final Random random = new Random();
 	private final CommunicateSerializer communicateSerializer = new CommunicateSerializer();
 
@@ -58,6 +62,8 @@ public class GossipModule extends Module {
 	// Datagram handlers:
 	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers =
 			new HashMap<GossipCommunicate.Type, GossipModule.HandleCommunicate<?>>();
+	
+	private ContactSelectionStrategy selectionStrategy = new RoundRobinContactSelectionStrategy();
 
 	public GossipModule(Address address, CloudatlasAgentConfig config,
 			Address zmiKeeperAddress) {
@@ -67,6 +73,8 @@ public class GossipModule extends Module {
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT, freshnessInitCommunicateHandler);
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER, freshnessAnswerCommunicateHandler);
 		datagramHandlers.put(Type.ZMI, zmiCommunicateHandler);
+		if ( config.getFallbackAddress() != null )
+			fallbackContacts.add(config.getFallbackAddress());
 	}
 
 	private static final int MESSAGE_RECEIVED = 1;
@@ -182,12 +190,14 @@ public class GossipModule extends Module {
 					sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(
 							freshness), e.getKey());
 				}
-				//TODO: make sure we do not send target's local zones.
 				List<ZmiData<AttributesMap>> toSend = filterNewer(
 						attrs.getContent(), e.getValue());
+				PathName targetPath = e.getValue().getPath();
 				for (ZmiData<AttributesMap> single : toSend) {
-					sendNetworkMessage(new ZmiCommunicate(single.getPath(),
+					if ( !single.getPath().isPrefixOf(targetPath)) {
+						sendNetworkMessage(new ZmiCommunicate(single.getPath(),
 							single.getContent()), e.getKey());
+					}
 				}
 			} catch (Exception exc) {
 				exc.printStackTrace();
@@ -238,8 +248,6 @@ public class GossipModule extends Module {
 				Long otherTimestamp = -1l;
 				try {
 					otherTimestamp = otherFreshness.get(myAttrs.getPath());
-					// TODO: remove next line.
-					otherTimestamp = -1l;
 				} catch ( UnknownZoneException e) {
 					otherTimestamp = -1l;
 				}
@@ -255,14 +263,23 @@ public class GossipModule extends Module {
 	}
 
 	private void initializeGossip(ZmisAttributes zmis) throws HandlerException {
-		// For now we assume we are only using fallback contacts.
-		if (fallbackContacts.isEmpty()) {
-			throw new HandlerException("GossipModule: empty fallback contacts");
+		ContactResult contact = selectionStrategy.selectContact(zmis);
+		InetAddress target = null;
+		int level = 1;
+		if ( contact == null ) {
+			System.err.println("Using fallback contacts");
+			if (fallbackContacts.isEmpty()) {
+				throw new HandlerException("GossipModule: empty fallback contacts");
+			}
+			target = fallbackContacts.get(random
+					.nextInt(fallbackContacts.size()));
+			level = zmis.getLevels().size() - 1;
+		} else {
+			target = contact.getContact().getAddress();
+			level = contact.getLevel();
 		}
-		Inet4Address target = fallbackContacts.get(random
-				.nextInt(fallbackContacts.size()));
-		ZmisFreshness freshness = generateFreshness(zmis, zmis.getLevels()
-				.size() - 1);
+		System.err.println("Gossip on level " +  level + " with " + target);
+		ZmisFreshness freshness = generateFreshness(zmis, level);
 		sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness), target);
 	}
 

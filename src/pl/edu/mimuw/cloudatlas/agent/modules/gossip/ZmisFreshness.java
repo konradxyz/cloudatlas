@@ -10,5 +10,4 @@ public class ZmisFreshness extends SingleMachineZmiData<Long>{
 			List<ZmiLevel<Long>> levels) {
 		super(levels);
 	}
-
 }

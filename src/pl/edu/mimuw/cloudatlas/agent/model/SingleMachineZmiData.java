@@ -122,6 +122,14 @@ public class SingleMachineZmiData<T> implements Cloneable {
 		return levels.toString();
 	}
 
+	public PathName getPath() {
+		List<String> components = new ArrayList<String>();
+		for (ZmiLevel<?> level : this.getLevels()) {
+			components.add(level.getOurZoneName());
+		}
+		return new PathName(components.subList(1, components.size()));
+	}
+
 	public static class UnknownZoneException extends Exception {
 
 		/**
