@@ -16,7 +16,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.ini4j.Ini;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
 import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
 
@@ -45,8 +44,7 @@ public class Main {
 					e.printStackTrace();
 					throw new ServletException(e);
 				}
-				MainInterpreter.printZMIsToStream(stub.getRootZmi(),
-						new PrintStream(arg3.getOutputStream()));
+				stub.getRootZmi().print(new PrintStream(arg3.getOutputStream()));
 				arg1.setHandled(true);
 			}
 		};

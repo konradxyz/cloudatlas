@@ -1,4 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent.model;
+package pl.edu.mimuw.cloudatlas.common.single_machine_model;
 
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 

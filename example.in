@@ -1,1 +1,0 @@
-&query: SELECT sum(num_cores) AS num_cores

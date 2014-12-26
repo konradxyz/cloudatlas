@@ -1,11 +1,18 @@
-package pl.edu.mimuw.cloudatlas.agent.model;
+package pl.edu.mimuw.cloudatlas.common.single_machine_model;
 
+import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 
 public class ZmisAttributes extends
-		SingleMachineZmiData<AttributesMap> implements Cloneable {
+		SingleMachineZmiData<AttributesMap> implements Cloneable, Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4411924869436760831L;
 
 	public ZmisAttributes(List<ZmiLevel<AttributesMap>> levels) {
 		super(levels);
@@ -29,5 +36,12 @@ public class ZmisAttributes extends
 			return c.clone();
 		}
 		
+	}
+	
+	public void print(PrintStream output) {
+		for (ZmiData<AttributesMap> zmi : this.getContent()) {
+			output.println(zmi.getPath());
+			zmi.getContent().printAttributes(output);
+		}
 	}
 }

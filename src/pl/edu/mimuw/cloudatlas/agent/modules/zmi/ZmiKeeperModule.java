@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.UnknownZoneException;
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
-import pl.edu.mimuw.cloudatlas.agent.model.Utils;
-import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
@@ -23,6 +19,9 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
 
 public final class ZmiKeeperModule extends Module {
 	private ZmisAttributes zmi;
@@ -39,7 +38,6 @@ public final class ZmiKeeperModule extends Module {
 			levels.add(fromName(zoneName));
 		}
 		zmi = new ZmisAttributes(levels);
-		Utils.print(zmi, System.err);
 		try {
 			currentMachineAttributes = zmi.get(config.getPathName());
 		} catch (Exception e) {

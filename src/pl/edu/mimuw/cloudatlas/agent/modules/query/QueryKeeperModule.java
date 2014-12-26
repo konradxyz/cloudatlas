@@ -11,8 +11,6 @@ import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData;
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
@@ -25,6 +23,8 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
 
 public class QueryKeeperModule extends Module {
 	private PathName machineName;

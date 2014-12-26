@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
-import pl.edu.mimuw.cloudatlas.agent.model.Utils;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
@@ -173,7 +172,7 @@ public class MainModule extends Module {
 			// Well - we should not print in here....
 			// But who cares? We are going to delete this code.
 			// TODO: remove.
-			Utils.print(message.getContent(), System.err);
+			message.getContent().print(System.err);
 		}
 
 	};
@@ -247,7 +246,7 @@ public class MainModule extends Module {
 		ReaderModule reader = new ReaderModule(generator.getUniqueAddress(), 
 				getAddress());
 		modules.add(reader);
-		
+	
 		SocketModule socket = new SocketModule(generator.getUniqueAddress(),
 				5432, 1000, getAddress(), RECEIVED_DATAGRAM);
 		modules.add(socket);
@@ -263,7 +262,7 @@ public class MainModule extends Module {
 		modules.add(timeModule);
 
 		RmiModule rmiModule = new RmiModule(generator.getUniqueAddress(),
-				zmiKeeperAddress, CloudatlasAgentRmiServer.DEFAULT_PORT);
+				zmiKeeperAddress, CloudatlasAgentRmiServer.DEFAULT_PORT, config);
 		modules.add(rmiModule);
 
 		QueryKeeperModule queryKeeper = new QueryKeeperModule(

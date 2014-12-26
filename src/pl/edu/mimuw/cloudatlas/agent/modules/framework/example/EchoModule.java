@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import pl.edu.mimuw.cloudatlas.agent.model.Utils;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
@@ -111,7 +109,7 @@ public class EchoModule extends Module {
 			// Well - we should not print in here....
 			// But who cares? We are going to delete this code.
 			// TODO: remove.
-			Utils.print(message.getContent(), System.err);
+			message.getContent().print(System.err);
 		}
 
 	};

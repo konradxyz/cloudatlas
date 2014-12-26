@@ -54,7 +54,8 @@ public final class CloudatlasAgentConfig {
 			}
 			if (result == null) {
 				System.err
-						.println("Could not retrieve current node IP address.");
+						.println("Could not retrieve current node IP address. Check your ini file.");
+				return null;
 			} else {
 				System.err.println("Retrieved IP address " + result);
 			}

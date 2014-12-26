@@ -11,10 +11,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudatlasAgentConfig;
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.UnknownZoneException;
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
-import pl.edu.mimuw.cloudatlas.agent.model.ZmiData;
-import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
@@ -42,6 +38,10 @@ import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
 
 public class GossipModule extends Module {
 	private final CloudatlasAgentConfig config;

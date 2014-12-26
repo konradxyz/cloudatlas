@@ -24,10 +24,17 @@
 
 package pl.edu.mimuw.cloudatlas.common.model;
 
+import java.io.Serializable;
+
 /**
  * A type of a value that may be stored as an attribute.
  */
-public abstract class Type {
+public abstract class Type implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8657006729960089633L;
+
 	/**
 	 * A primary type. This is a characteristic that every type has. It can be extended: for instance a collection may
 	 * be parameterized with a type of stored values.

@@ -11,9 +11,6 @@ import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
 public class Main {
 
 	public static void main(String[] args) throws UnknownHostException, SocketException {
-		System.setProperty("java.security.policy", "file:./agent.policy");
-		System.setProperty("java.rmi.server.hostname", "localhost");
-
 		Ini config = IniUtils.readConfigFromArgs(args);
 		if (config == null)
 			return;

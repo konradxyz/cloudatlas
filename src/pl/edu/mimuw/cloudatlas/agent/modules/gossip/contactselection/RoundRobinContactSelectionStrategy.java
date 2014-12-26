@@ -2,10 +2,10 @@ package pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection;
 
 import java.util.List;
 
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData.ZmiLevel;
-import pl.edu.mimuw.cloudatlas.agent.model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.ValueContact;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
 
 public class RoundRobinContactSelectionStrategy extends
 		ContactSelectionStrategy {

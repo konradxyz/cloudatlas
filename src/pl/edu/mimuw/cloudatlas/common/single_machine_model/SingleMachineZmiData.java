@@ -1,5 +1,6 @@
-package pl.edu.mimuw.cloudatlas.agent.model;
+package pl.edu.mimuw.cloudatlas.common.single_machine_model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,8 +13,17 @@ import pl.edu.mimuw.cloudatlas.common.model.PathName;
 // Whole system ZMIs form a tree.
 // However, ZMIs stored by single machine 
 // form less complex structure. 
-public class SingleMachineZmiData<T> implements Cloneable {
-	public static class ZmiLevel<E> {
+public class SingleMachineZmiData<T> implements Cloneable, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4299024720289845407L;
+
+	public static class ZmiLevel<E> implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 414057529417299939L;
 		private String ourZoneName;
 		private Map<String, E> siblingZones; // including our zone.
 

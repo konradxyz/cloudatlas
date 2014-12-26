@@ -24,6 +24,7 @@
 
 package pl.edu.mimuw.cloudatlas.common.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,7 +34,12 @@ import java.util.List;
 /**
  * Represent a fully qualified name of a zone, also known as a global name or a path name. This class is immutable.
  */
-public class PathName {
+public class PathName implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5703960749869006756L;
+
 	/**
 	 * The object representing a name of the root zone (/).
 	 */

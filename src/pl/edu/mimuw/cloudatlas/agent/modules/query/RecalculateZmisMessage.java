@@ -1,9 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
-import pl.edu.mimuw.cloudatlas.agent.model.SingleMachineZmiData;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData;
 
 public class RecalculateZmisMessage extends Message {
 	private final SingleMachineZmiData<AttributesMap> zmi;
