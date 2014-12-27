@@ -1,5 +1,6 @@
-package pl.edu.mimuw.cloudatlas.agent;
+package pl.edu.mimuw.cloudatlas.common;
 
+import java.io.Serializable;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -10,7 +11,11 @@ import org.ini4j.Ini;
 
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 
-public final class CloudatlasAgentConfig {
+public final class CloudatlasAgentConfig implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8557446129359783603L;
 	private final PathName pathName;
 	private final Inet4Address address;
 	

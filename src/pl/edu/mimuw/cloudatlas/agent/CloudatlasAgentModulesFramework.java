@@ -5,6 +5,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleFramework;
 import pl.edu.mimuw.cloudatlas.agent.modules.main.MainModule;
+import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 
 public class CloudatlasAgentModulesFramework extends ModuleFramework {
 	private final CloudatlasAgentConfig config;

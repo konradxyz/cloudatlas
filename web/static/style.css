@@ -1,0 +1,9 @@
+.zone {
+	border-top-style: solid;
+    border-width: 1px;
+    margin: 4px;
+}
+
+.plot_header {
+	font-weight: normal;
+}

@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import org.ini4j.Ini;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
+import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
 
 public class Main {

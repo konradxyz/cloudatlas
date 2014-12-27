@@ -31,7 +31,7 @@ package pl.edu.mimuw.cloudatlas.common.model;
  * 
  * @param <T> a wrapped type
  */
-abstract class ValueSimple<T> extends Value {
+public abstract class ValueSimple<T> extends Value {
 	private T value;
 	
 	/**

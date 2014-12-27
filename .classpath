@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="lib/ini4j-0.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/jetty-all.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
+	<classpathentry kind="lib" path="lib/ST-4.0.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
