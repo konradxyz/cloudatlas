@@ -65,23 +65,25 @@ public class QueryKeeperModule extends Module {
 		@Override
 		public void handleMessage(InstallQueryMessage message)
 				throws HandlerException {
-			ValueQuery q = message.getContent();
-			if (!q.getName().startsWith("&")
-					|| q.getName().equals("&")) {
-				throw new HandlerException("Unallowed query name '"
-						+ q.getName() + "'");
-			}
+			for (ValueQuery q : message.getContent()) {
+				try {
+					if (!q.getName().startsWith("&") || q.getName().equals("&")) {
+						throw new HandlerException("Unallowed query name '"
+								+ q.getName() + "'");
+					}
 
-			try {
-				// TODO: check query correctness.
-				if ( q.getValue() != null ) {
-					Program parsedProgram = MainInterpreter.parseProgram(q.getValue());
-					queries.put(q.getName(), new QueryWrapper(parsedProgram, q));
-				} else {
-					queries.remove(q.getName());
+					// TODO: check query correctness.
+					if (q.getValue() != null) {
+						Program parsedProgram = MainInterpreter.parseProgram(q
+								.getValue());
+						queries.put(q.getName(), new QueryWrapper(
+								parsedProgram, q));
+					} else {
+						queries.remove(q.getName());
+					}
+				} catch (Exception e) {
+					// throw new HandlerException(e);
 				}
-			} catch (Exception e) {
-				throw new HandlerException(e);
 			}
 		}
 

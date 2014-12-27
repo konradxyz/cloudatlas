@@ -60,6 +60,7 @@ public class MainModule extends Module {
 	protected static final Integer RECALCULATED_ZMI = 4;
 	protected static final Integer ZMI_RECEIVED_FOR_RECALCULATION = 5;
 	public static final Integer INITIALIZE = 6;
+	protected static final int ALARM = 7;
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 	
@@ -159,9 +160,9 @@ public class MainModule extends Module {
 		@Override
 		public void handleMessage(AlarmMessage message)
 				throws HandlerException {
-			String toPrint = "alarm received "+message.getRequestId();
-			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
-					new SimpleMessage<String>(toPrint + "\n"));
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
+					new GetMessage(getAddress(),
+							ZMI_RECEIVED_FOR_RECALCULATION));
 		}
 	};
 
@@ -206,12 +207,14 @@ public class MainModule extends Module {
 
 	};
 
+	// TODO: add config
 	private final MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
 
 		@Override
 		public void handleMessage(Message message) throws HandlerException {
 			sendMessage(gossipAddress, GossipModule.INITIALIZE_MODULE,
 					new Message());
+			sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE, new ScheduleAlarmMessage(0, 0, 1000, getAddress(), ALARM_RECEIVED));
 
 		}
 	};
@@ -270,7 +273,7 @@ public class MainModule extends Module {
 
 
 		GossipModule gossip = new GossipModule(generator.getUniqueAddress(),
-				config, zmiKeeperAddress, timerAddress);
+				config, zmiKeeperAddress, queryKeeperAddress, timerAddress);
 		gossipAddress = gossip.getAddress();
 		modules.add(gossip);
 

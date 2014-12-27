@@ -1,6 +1,5 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.gossip;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,12 +22,15 @@ import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSele
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.RoundRobinContactSelectionStrategy;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate.Type;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessAnswerCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessInitCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
+import pl.edu.mimuw.cloudatlas.agent.modules.query.InstallQueryMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.query.QueryKeeperModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
@@ -37,15 +39,17 @@ import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
-import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
-import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
 
 public class GossipModule extends Module {
 	private final CloudatlasAgentConfig config;
 	private final Address zmiKeeperAddress;
+	private final Address queryKeeperAddress;
 	private final List<InetAddress> fallbackContacts = new ArrayList<InetAddress>();
 	private final Random random = new Random();
 	private final CommunicateSerializer communicateSerializer = new CommunicateSerializer();
@@ -61,6 +65,8 @@ public class GossipModule extends Module {
 	// It indicates that we have already sent our freshness info. We do not have to send it second time.
 	private Map<InetAddress, ZmisFreshness> freshnessAnswerRequests = new HashMap<InetAddress, ZmisFreshness>();
 	private boolean waitingForZmiForGossip = false;
+
+	private List<InetAddress> waitingForQueries = new ArrayList<InetAddress>();
 	
 	// Datagram handlers:
 	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers =
@@ -69,14 +75,16 @@ public class GossipModule extends Module {
 	private ContactSelectionStrategy selectionStrategy = new RoundRobinContactSelectionStrategy();
 
 	public GossipModule(Address address, CloudatlasAgentConfig config,
-			Address zmiKeeperAddress, Address timerModuleAddress) {
+			Address zmiKeeperAddress, Address queryKeeperAddress, Address timerModuleAddress) {
 		super(address);
 		this.config = config;
 		this.zmiKeeperAddress = zmiKeeperAddress;
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT, freshnessInitCommunicateHandler);
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER, freshnessAnswerCommunicateHandler);
 		datagramHandlers.put(Type.ZMI, zmiCommunicateHandler);
+		datagramHandlers.put(Type.QUERIES, queriesCommunicateHandler);
 		this.timerModuleAddress = timerModuleAddress;
+		this.queryKeeperAddress = queryKeeperAddress;
 		if ( config.getFallbackAddress() != null )
 			fallbackContacts.add(config.getFallbackAddress());
 	}
@@ -88,6 +96,7 @@ public class GossipModule extends Module {
 	private static final int INITIALIZE_GOSSIP = 5;
 	public static final int INITIALIZE_MODULE = 6;
 	public static final int GET_FALLBACK_CONTACTS = 7;
+	private static final int QUERIES_RECEIVED = 8;
 	
 	
 	private abstract class HandleCommunicate<T extends GossipCommunicate> {
@@ -106,7 +115,9 @@ public class GossipModule extends Module {
 		@Override
 		public void handle(ZmisFreshnessInitCommunicate communicate, InetAddress source) {
 			freshnessInitRequests.put(source, communicate.getContent());
+			waitingForQueries.add(source);
 			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), RECEIVED_ZMI));
+			sendMessage(queryKeeperAddress, QueryKeeperModule.GET_QUERIES, new GetMessage(getAddress(), QUERIES_RECEIVED));
 		}
 	};
 
@@ -115,7 +126,9 @@ public class GossipModule extends Module {
 		@Override
 		public void handle(ZmisFreshnessAnswerCommunicate communicate, InetAddress source) {
 			freshnessAnswerRequests.put(source, communicate.getContent());
+			waitingForQueries.add(source);
 			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), RECEIVED_ZMI));
+			sendMessage(queryKeeperAddress, QueryKeeperModule.GET_QUERIES, new GetMessage(getAddress(), QUERIES_RECEIVED));
 		}
 	};
 	
@@ -126,6 +139,16 @@ public class GossipModule extends Module {
 			sendMessage(zmiKeeperAddress, ZmiKeeperModule.UPDATE_REMOTE_ZMI,
 					new UpdateRemoteZmiMessage(communicate.getPathName(),
 							communicate.getAttributes()));
+		}
+	};
+	
+	private HandleCommunicate<QueriesCommunicate> queriesCommunicateHandler = new HandleCommunicate<QueriesCommunicate>() {
+
+		@Override
+		public void handle(QueriesCommunicate communicate, InetAddress source) {
+			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
+					new InstallQueryMessage(communicate.getQueries()));
+			
 		}
 	};
 	
@@ -191,6 +214,20 @@ public class GossipModule extends Module {
 					fallbackContacts.addAll(message.getContent());
 				}
 		
+	};
+
+	private MessageHandler<SimpleMessage<Map<String, ValueQuery>>> queriesReceivedHandler = new MessageHandler<SimpleMessage<Map<String, ValueQuery>>>() {
+
+		@Override
+		public void handleMessage(SimpleMessage<Map<String, ValueQuery>> message)
+				throws HandlerException {
+			List<ValueQuery> queries = new ArrayList<ValueQuery>(message
+					.getContent().values());
+			for (InetAddress addr : waitingForQueries) {
+				sendNetworkMessage(new QueriesCommunicate(queries), addr);
+			}
+			waitingForQueries.clear();
+		}
 	};
 
 	private void sendZmisAndOptionallyFreshness(
@@ -331,7 +368,8 @@ public class GossipModule extends Module {
 					SET_FALLBACK_CONTACTS,
 					INITIALIZE_GOSSIP,
 					INITIALIZE_MODULE,
-					GET_FALLBACK_CONTACTS},
+					GET_FALLBACK_CONTACTS,
+					QUERIES_RECEIVED},
 				new MessageHandler<?>[] { 
 					receivedMessageHandler,
 					startGossipHandler, 
@@ -339,7 +377,8 @@ public class GossipModule extends Module {
 					setFallbackContactsHandler,
 					initializeGossipHandler,
 					initializeHandler,
-					getFallbackContactsHandler});
+					getFallbackContactsHandler,
+					queriesReceivedHandler});
 	}
 
 	@Override
