@@ -7,15 +7,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.MainInterpreter;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Interpreter;
+import pl.edu.mimuw.cloudatlas.common.interpreter.MainInterpreter;
+import pl.edu.mimuw.cloudatlas.common.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
@@ -36,6 +38,7 @@ public class QueryKeeperModule extends Module {
 
 	public final static Integer RECALCULATE_ZMI = 1;
 	public final static Integer INSTALL_QUERY = 2;
+	public final static Integer GET_QUERIES = 3;
 
 	private final List<Program> predefinedQueries = new ArrayList<Program>();
 	
@@ -62,19 +65,21 @@ public class QueryKeeperModule extends Module {
 		@Override
 		public void handleMessage(InstallQueryMessage message)
 				throws HandlerException {
-			if (!message.getQueryName().startsWith("&")
-					|| message.getQueryName().equals("&")) {
+			ValueQuery q = message.getContent();
+			if (!q.getName().startsWith("&")
+					|| q.getName().equals("&")) {
 				throw new HandlerException("Unallowed query name '"
-						+ message.getQueryName() + "'");
+						+ q.getName() + "'");
 			}
 
 			try {
 				// TODO: check query correctness.
-				Program parsedProgram = MainInterpreter.parseProgram(message
-						.getQuery());
-				ValueQuery val = new ValueQuery(message.getQuery());
-				queries.put(message.getQueryName(), new QueryWrapper(
-						parsedProgram, val));
+				if ( q.getValue() != null ) {
+					Program parsedProgram = MainInterpreter.parseProgram(q.getValue());
+					queries.put(q.getName(), new QueryWrapper(parsedProgram, q));
+				} else {
+					queries.remove(q.getName());
+				}
 			} catch (Exception e) {
 				throw new HandlerException(e);
 			}
@@ -152,11 +157,23 @@ public class QueryKeeperModule extends Module {
 			}			
 		}
 	};
+	
+	private final MessageHandler<GetMessage> getQueriesHandler = new MessageHandler<GetMessage>() {
+
+		@Override
+		public void handleMessage(GetMessage message) throws HandlerException {
+			Map<String, ValueQuery> result = new HashMap<String, ValueQuery>();
+			for ( Entry<String, QueryWrapper> entry : queries.entrySet() ) {
+				result.put(entry.getKey(), entry.getValue().getValue());
+			}
+			sendMessage(message.getResponseTarget(), message.getResponseMessageType(), new SimpleMessage<>(result));
+		}
+	};
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY },
-				new MessageHandler<?>[] { recalculateHandler, installQueryHandler });
+		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY, GET_QUERIES },
+				new MessageHandler<?>[] { recalculateHandler, installQueryHandler, getQueriesHandler});
 	}
 
 	@Override

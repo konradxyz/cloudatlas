@@ -22,18 +22,29 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
 @SuppressWarnings("serial")
-public class NoSuchAttributeException extends InterpreterException {
-	private final String attribute;
+public class InsideQueryException extends InterpreterException {
+	private final String fragment;
+	private final Exception exception;
 
-	protected NoSuchAttributeException(String attribute) {
-		super("Attribute " + attribute + " does not exist.");
-		this.attribute = attribute;
+	protected InsideQueryException(String fragment, Exception exception) {
+		super(exception.getMessage() + "\nin: " + fragment);
+		this.fragment = fragment;
+		this.exception = exception;
 	}
 
-	public String getAttribute() {
-		return attribute;
+	public String getFragment() {
+		return fragment;
+	}
+
+	public Exception getException() {
+		return exception;
+	}
+
+	@Override
+	public StackTraceElement[] getStackTrace() {
+		return exception.getStackTrace();
 	}
 }

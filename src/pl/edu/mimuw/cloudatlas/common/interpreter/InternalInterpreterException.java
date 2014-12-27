@@ -22,34 +22,11 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
-import java.util.Arrays;
-
-import pl.edu.mimuw.cloudatlas.common.model.Value;
-
-// immutable
-public class TableRow {
-	private final Value[] columns;
-
-	public TableRow(Value[] values) {
-		this.columns = Arrays.copyOf(values, values.length);
-	}
-
-	public int getSize() {
-		return columns.length;
-	}
-
-	public Value getIth(int i) {
-		return columns[i];
-	}
-	
-	@Override
-	public String toString() {
-		String result = "";
-		for ( Value v : columns ) {
-			result = result + v.toString() + ", ";
-		}
-		return result;
+@SuppressWarnings("serial")
+public class InternalInterpreterException extends InterpreterException {
+	protected InternalInterpreterException(String message) {
+		super(message);
 	}
 }

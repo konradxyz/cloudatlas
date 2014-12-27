@@ -1,4 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -114,7 +114,7 @@ public class MainInterpreter {
 	private static void installQuery(ZMI zmi, String queryName, String query) {
 		if ( zmi.getSons().isEmpty() )
 			return;
-		zmi.getAttributes().addOrChange("&" + queryName, new ValueQuery(query));
+		zmi.getAttributes().addOrChange("&" + queryName, new ValueQuery(queryName, query));
 		for ( ZMI son : zmi.getSons() ) {
 			installQuery(son, queryName, query);
 		}

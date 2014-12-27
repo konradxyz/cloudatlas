@@ -22,7 +22,7 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;

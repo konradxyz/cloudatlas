@@ -1,9 +1,16 @@
 package pl.edu.mimuw.cloudatlas.common.model;
 
 public class ValueQuery extends ValueSimple<String> {
+	private final String name;
 
-	public ValueQuery(String value) {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5647899248337090676L;
+
+	public ValueQuery(String name, String value) {
 		super(value);
+		this.name = name;
 	}
 
 	@Override
@@ -26,7 +33,11 @@ public class ValueQuery extends ValueSimple<String> {
 
 	@Override
 	public Value getDefaultValue() {
-		return new ValueQuery(null);
+		return new ValueQuery(null, null);
+	}
+
+	public String getName() {
+		return name;
 	}
 
 }

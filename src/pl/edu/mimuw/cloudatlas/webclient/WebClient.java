@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.webclient;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -31,9 +32,11 @@ import org.eclipse.jetty.util.ajax.JSON;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupDir;
 
+import pl.edu.mimuw.cloudatlas.common.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.Type.PrimaryType;
 import pl.edu.mimuw.cloudatlas.common.model.Value;
 import pl.edu.mimuw.cloudatlas.common.model.ValueSimple;
@@ -42,6 +45,7 @@ import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
+import pl.edu.mimuw.cloudatlas.webclient.models.QueryModel;
 import pl.edu.mimuw.cloudatlas.webclient.models.ZoneModel;
 
 public class WebClient {
@@ -124,11 +128,108 @@ public class WebClient {
 		}
 	};
 	
-	private final Handler getAttrHandler = new AbstractHandler() {
+	private final PageHandler queriesHandler = new PageHandler() {
 		
 		@Override
-		public void handle(String arg0, Request arg1, HttpServletRequest request,
-				HttpServletResponse response) throws IOException, ServletException {
+		public void handlePage(HttpServletRequest request,
+				HttpServletResponse response, ST st) throws IOException {
+			fillHeader(st);
+			String message = "&nbsp;";
+			if ( "1".equals(request.getParameter("install"))) {
+				try {
+					System.out.println(request.getParameter("query"));
+					MainInterpreter.parseProgram(request.getParameter("query"));
+					ValueQuery q = new ValueQuery(request.getParameter("name"), request.getParameter("query"));
+					CloudatlasAgentRmiServer stub = connect();
+					stub.installQuery(q);
+					updateData(stub);
+					message = "Query installed.";
+				} catch (Exception e) {
+					message = "Could not install query";
+				}
+			}
+			
+			if ("1".equals(request.getParameter("remove"))) {
+				try {
+					ValueQuery q = new ValueQuery(request.getParameter("name"),
+							null);
+					CloudatlasAgentRmiServer stub = connect();
+					stub.installQuery(q);
+					updateData(stub);
+					message = "Query uninstalled.";
+				} catch (Exception e) {
+					message = "Could not uninstall query";
+				}
+			}
+			
+			
+			st.add("message", message);
+			Map<String, ValueQuery> queries = keeper.getQueries();
+			List<QueryModel> queriesModel = new ArrayList<QueryModel>();
+			for ( ValueQuery v : queries.values() ){
+				queriesModel.add(new QueryModel(v.getName() + ": " + v.getValue(), v.getName()));
+			}
+			st.add("queries", queriesModel);
+			response.getOutputStream().print(st.render());
+		}
+		
+		@Override
+		public String getPage() {
+			return "queries";
+		}
+	};
+	
+	private final PageHandler fallbackContactsHandler = new  PageHandler() {
+		
+		@Override
+		public void handlePage(HttpServletRequest request,
+				HttpServletResponse response, ST st) throws IOException {
+			fillHeader(st);
+			String message = "&nbsp;";
+			try {
+				CloudatlasAgentRmiServer stub = connect();
+				if ( "1".equals(request.getParameter("update")) ) {
+					try {
+						String[] contacts = request.getParameter("contacts").split(";");
+						List<InetAddress> addrs = new ArrayList<InetAddress>();
+						for ( String contact : contacts ) {
+							addrs.add(InetAddress.getByName(contact));
+						}
+						stub.setFallbackAddresses(addrs);
+						message = "Fallback contacts updated.";
+					} catch (Exception e) {
+						message = "Could not update fallback contacts.";
+					}		
+				}
+				
+				List<InetAddress> addrs = connect().getFallbackAddresses();
+				String contacts = "";
+				for ( InetAddress addr : addrs ) {
+					if ( !contacts.equals(""))
+						contacts = contacts + ";";
+					contacts = contacts + addr.getHostAddress();
+				}
+				st.add("message", message);
+				st.add("contacts", contacts);
+			} catch (RmiConnectionException e) {
+				throw new IOException(e);
+			}
+			response.getOutputStream().print(st.render());
+			
+		}
+		
+		@Override
+		public String getPage() {
+			return "fallback_contacts";
+		}
+	};
+	
+	private final Handler getAttrHandler = new AbstractHandler() {
+
+		@Override
+		public void handle(String arg0, Request arg1,
+				HttpServletRequest request, HttpServletResponse response)
+				throws IOException, ServletException {
 			arg1.setHandled(true);
 			response.setContentType("application/json");
 			ZmisAttributes attrs = keeper.getAttributes();
@@ -141,16 +242,19 @@ public class WebClient {
 				throw new ServletException(e);
 			}
 			Value attributeValue = zmiAttrs.get(attribute);
-			ValueTime timestamp = (ValueTime) zmiAttrs.get("timestamp");	
+			ValueTime timestamp = (ValueTime) zmiAttrs.get("timestamp");
 
 			Map<String, String> result = new HashMap<String, String>();
-			result.put("value", converters.get(attributeValue.getType().getPrimaryType()).convertValue(attributeValue));
+			result.put("value",
+					converters.get(attributeValue.getType().getPrimaryType())
+							.convertValue(attributeValue));
 			result.put("timestamp", timestamp.getValue().toString());
 			String output = JSON.toString(result);
 			response.getOutputStream().print(output);
-	}
+		}
 	};
 
+	// TODO: remove updater
 	private final Runnable keeperUpdater = new Runnable() {
 		
 		@Override
@@ -159,14 +263,19 @@ public class WebClient {
 				try {
 					Thread.sleep(refreshPeriodMs);
 					CloudatlasAgentRmiServer stub = connect();
-					keeper.setAttributes(stub.getRootZmi());
-					keeper.setConfig(stub.getConfig());
+					updateData(stub);
 				} catch (Exception e) {
 					System.err.println(e.getMessage());
 				}
 			}
 		}
 	};
+	
+	private void updateData(CloudatlasAgentRmiServer stub) throws RemoteException {
+		keeper.setAttributes(stub.getRootZmi());
+		keeper.setConfig(stub.getConfig());
+		keeper.setQueries(stub.getQueries());
+	}
 	
 
 	public WebClient(String rmiHost, int rmiPort, int port, int refreshPeriodMs,
@@ -202,7 +311,7 @@ public class WebClient {
 		resourceHandler.setResourceBase("web");
 
 		List<PageHandler> pageHandlers = Arrays
-				.asList(indexHandler, plotHandler);
+				.asList(indexHandler, plotHandler, queriesHandler, fallbackContactsHandler);
 		for (PageHandler p : pageHandlers)
 			p.init();
 		
@@ -222,7 +331,7 @@ public class WebClient {
 		jettyServer.setHandler(handlers);
 
 		CloudatlasAgentRmiServer stub = connect();
-		keeper = new NodeDataKeeper(stub.getRootZmi(), stub.getConfig());
+		keeper = new NodeDataKeeper(stub.getRootZmi(), stub.getConfig(), stub.getQueries());
 		keeperUpdaterThread = new Thread(keeperUpdater);
 		keeperUpdaterThread.start();
 	}

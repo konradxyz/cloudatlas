@@ -64,7 +64,7 @@ public class TypePrimitive extends Type {
 	 */
 	public static final TypePrimitive NULL = new TypePrimitive(PrimaryType.NULL, ValueNull.getInstance());
 	
-	public static final TypePrimitive QUERY = new TypePrimitive(PrimaryType.QUERY, new ValueQuery(null));
+	public static final TypePrimitive QUERY = new TypePrimitive(PrimaryType.QUERY, new ValueQuery(null, null));
 	
 	/**
 	 * String type.

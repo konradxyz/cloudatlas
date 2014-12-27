@@ -1,23 +1,12 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
-import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 
-public class InstallQueryMessage extends Message {
-	private final String query;
-	private final String queryName;
+public class InstallQueryMessage extends SimpleMessage<ValueQuery> {
 
-	public String getQuery() {
-		return query;
+	public InstallQueryMessage(ValueQuery content) {
+		super(content);
 	}
-
-	public String getQueryName() {
-		return queryName;
-	}
-
-	public InstallQueryMessage(String query, String queryName) {
-		super();
-		this.query = query;
-		this.queryName = queryName;
-	}
-
+	
 }

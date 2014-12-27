@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
@@ -87,10 +88,10 @@ public final class ZmiKeeperModule extends Module {
 		}
 	};
 
-	private final MessageHandler<GetRootZmiMessage> getRootHandler = new MessageHandler<GetRootZmiMessage>() {
+	private final MessageHandler<GetMessage> getRootHandler = new MessageHandler<GetMessage>() {
 
 		@Override
-		public void handleMessage(GetRootZmiMessage message)
+		public void handleMessage(GetMessage message)
 				throws HandlerException {
 			sendMessage(message.getResponseTarget(),
 					message.getResponseMessageType(), new RootZmiMessage(

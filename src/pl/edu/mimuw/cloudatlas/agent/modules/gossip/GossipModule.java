@@ -12,6 +12,7 @@ import java.util.Random;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
@@ -30,7 +31,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
-import pl.edu.mimuw.cloudatlas.agent.modules.zmi.GetRootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateRemoteZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
@@ -87,6 +87,7 @@ public class GossipModule extends Module {
 	public static final int SET_FALLBACK_CONTACTS = 4;
 	private static final int INITIALIZE_GOSSIP = 5;
 	public static final int INITIALIZE_MODULE = 6;
+	public static final int GET_FALLBACK_CONTACTS = 7;
 	
 	
 	private abstract class HandleCommunicate<T extends GossipCommunicate> {
@@ -105,7 +106,7 @@ public class GossipModule extends Module {
 		@Override
 		public void handle(ZmisFreshnessInitCommunicate communicate, InetAddress source) {
 			freshnessInitRequests.put(source, communicate.getContent());
-			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetRootZmiMessage(getAddress(), RECEIVED_ZMI));
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), RECEIVED_ZMI));
 		}
 	};
 
@@ -114,7 +115,7 @@ public class GossipModule extends Module {
 		@Override
 		public void handle(ZmisFreshnessAnswerCommunicate communicate, InetAddress source) {
 			freshnessAnswerRequests.put(source, communicate.getContent());
-			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetRootZmiMessage(getAddress(), RECEIVED_ZMI));
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), RECEIVED_ZMI));
 		}
 	};
 	
@@ -148,7 +149,7 @@ public class GossipModule extends Module {
 			sendMessage(
 					zmiKeeperAddress,
 					ZmiKeeperModule.GET_ROOT_ZMI,
-					new GetRootZmiMessage(getAddress(),  RECEIVED_ZMI));
+					new GetMessage(getAddress(),  RECEIVED_ZMI));
 			waitingForZmiForGossip = true;
 		}
 	};
@@ -167,14 +168,24 @@ public class GossipModule extends Module {
 		}
 	};
 	
+	private MessageHandler<GetMessage> getFallbackContactsHandler = new MessageHandler<GetMessage>() {
+
+		@Override
+		public void handleMessage(GetMessage message) throws HandlerException {
+			sendMessage(message.getResponseTarget(),
+					message.getResponseMessageType(),
+					new SimpleMessage<List<InetAddress>>(
+							new ArrayList<InetAddress>(fallbackContacts)));
+			
+		}
+	};
 	
-	
-	private MessageHandler<SimpleMessage<List<Inet4Address>>> setFallbackContactsHandler = 
-			new MessageHandler<SimpleMessage<List<Inet4Address>>>() {
+	private MessageHandler<SimpleMessage<List<InetAddress>>> setFallbackContactsHandler = 
+			new MessageHandler<SimpleMessage<List<InetAddress>>>() {
 
 				@Override
 				public void handleMessage(
-						SimpleMessage<List<Inet4Address>> message)
+						SimpleMessage<List<InetAddress>> message)
 						throws HandlerException {
 					fallbackContacts.clear();
 					fallbackContacts.addAll(message.getContent());
@@ -319,14 +330,16 @@ public class GossipModule extends Module {
 					RECEIVED_ZMI, 
 					SET_FALLBACK_CONTACTS,
 					INITIALIZE_GOSSIP,
-					INITIALIZE_MODULE},
+					INITIALIZE_MODULE,
+					GET_FALLBACK_CONTACTS},
 				new MessageHandler<?>[] { 
 					receivedMessageHandler,
 					startGossipHandler, 
 					receivedZmi,
 					setFallbackContactsHandler,
 					initializeGossipHandler,
-					initializeHandler});
+					initializeHandler,
+					getFallbackContactsHandler});
 	}
 
 	@Override

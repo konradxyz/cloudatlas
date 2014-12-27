@@ -1,6 +1,6 @@
 package test.aggregation;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Functions;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Functions;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.common.model.Value;
 import pl.edu.mimuw.cloudatlas.common.model.ValueDouble;

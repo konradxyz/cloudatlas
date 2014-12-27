@@ -1,9 +1,8 @@
-package pl.edu.mimuw.cloudatlas.agent.modules.zmi;
+package pl.edu.mimuw.cloudatlas.agent.modules.framework;
 
-import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
-import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
-
-public class GetRootZmiMessage extends Message {
+// This message contains only information necessary to send information to another module.
+// It will be used as common getter message.
+public class GetMessage extends Message {
 	private Address responseTarget;
 	private Integer responseMessageType;
 
@@ -14,10 +13,9 @@ public class GetRootZmiMessage extends Message {
 		return responseMessageType;
 	}
 
-	public GetRootZmiMessage(Address responseTarget, Integer responseMessageType) {
+	public GetMessage(Address responseTarget, Integer responseMessageType) {
 		super();
 		this.responseTarget = responseTarget;
 		this.responseMessageType = responseMessageType;
 	}
-	
 }

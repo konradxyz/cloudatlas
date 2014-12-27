@@ -4,7 +4,7 @@ function plot(placeholderId, path, attribute, interval, howLong) {
 	var selector = "#" + placeholderId
 	var lastTimestamp = -1
 	var options = {
-		xaxis: { mode: "time" }
+		xaxis: { mode: "time", timezone: "browser" }
 	}
 	$(document).ready(function() {
 		$(selector).width(800);

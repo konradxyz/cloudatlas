@@ -22,7 +22,7 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -30,8 +30,8 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Result.AggregationOperation;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Result.TransformOperation;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Result.AggregationOperation;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Result.TransformOperation;
 import pl.edu.mimuw.cloudatlas.common.model.Type;
 import pl.edu.mimuw.cloudatlas.common.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;

@@ -4,7 +4,7 @@ import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Functions;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Functions;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.common.model.Value;
 import pl.edu.mimuw.cloudatlas.common.model.ValueDouble;

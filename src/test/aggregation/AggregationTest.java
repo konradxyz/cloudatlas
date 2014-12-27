@@ -9,9 +9,9 @@ import junit.framework.AssertionFailedError;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.ResultColumn;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.ResultList;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Result.AggregationOperation;
+import pl.edu.mimuw.cloudatlas.common.interpreter.ResultColumn;
+import pl.edu.mimuw.cloudatlas.common.interpreter.ResultList;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Result.AggregationOperation;
 import pl.edu.mimuw.cloudatlas.common.model.Type;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.common.model.Value;

@@ -22,29 +22,34 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
-@SuppressWarnings("serial")
-public class InsideQueryException extends InterpreterException {
-	private final String fragment;
-	private final Exception exception;
+import java.util.Arrays;
 
-	protected InsideQueryException(String fragment, Exception exception) {
-		super(exception.getMessage() + "\nin: " + fragment);
-		this.fragment = fragment;
-		this.exception = exception;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+
+// immutable
+public class TableRow {
+	private final Value[] columns;
+
+	public TableRow(Value[] values) {
+		this.columns = Arrays.copyOf(values, values.length);
 	}
 
-	public String getFragment() {
-		return fragment;
+	public int getSize() {
+		return columns.length;
 	}
 
-	public Exception getException() {
-		return exception;
+	public Value getIth(int i) {
+		return columns[i];
 	}
-
+	
 	@Override
-	public StackTraceElement[] getStackTrace() {
-		return exception.getStackTrace();
+	public String toString() {
+		String result = "";
+		for ( Value v : columns ) {
+			result = result + v.toString() + ", ";
+		}
+		return result;
 	}
 }

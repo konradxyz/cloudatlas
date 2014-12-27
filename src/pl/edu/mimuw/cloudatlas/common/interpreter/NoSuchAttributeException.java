@@ -22,21 +22,18 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+@SuppressWarnings("serial")
+public class NoSuchAttributeException extends InterpreterException {
+	private final String attribute;
 
-abstract class Environment {
-	protected final Map<String, Integer> columns = new HashMap<String, Integer>();
-	
-	public abstract Result getIdent(String ident);
-	
-	
-	public Environment(List<String> columns) {
-		int i = 0;
-		for(String c : columns)
-			this.columns.put(c, i++);
+	protected NoSuchAttributeException(String attribute) {
+		super("Attribute " + attribute + " does not exist.");
+		this.attribute = attribute;
+	}
+
+	public String getAttribute() {
+		return attribute;
 	}
 }

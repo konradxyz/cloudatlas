@@ -22,26 +22,34 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
-import pl.edu.mimuw.cloudatlas.common.model.Type;
+import pl.edu.mimuw.cloudatlas.common.model.Attribute;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
 
-@SuppressWarnings("serial")
-public class InvalidTypeException extends InterpreterException {
-	private final Type expected;
-	private final Type got;
+// immutable
+public class QueryResult {
+	private final Attribute name;
+	private final Value value;
 
-	protected InvalidTypeException(Type expected, Type got) {
-		super("Invalid type. Expected " + expected + ", got " + got + ".");
-		this.expected = expected;
-		this.got = got;
+	public QueryResult(Attribute name, Value value) {
+		this.name = name;
+		this.value = value;
 	}
 
-	public Type getExpected() {
-		return expected;
+	public QueryResult(Value value) {
+		this(null, value);
 	}
 
-	public Type getGot() {
-		return got;
+	public Attribute getName() {
+		return name;
+	}
+
+	public Value getValue() {
+		return value;
+	}
+
+	public String toString() {
+		return name + ": " + value;
 	}
 }

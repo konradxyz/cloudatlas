@@ -7,9 +7,9 @@ import java.util.HashSet;
 
 import org.junit.Test;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.BinaryOperation;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Result;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.ResultSingle;
+import pl.edu.mimuw.cloudatlas.common.interpreter.BinaryOperation;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Result;
+import pl.edu.mimuw.cloudatlas.common.interpreter.ResultSingle;
 import pl.edu.mimuw.cloudatlas.common.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.common.model.Value;

@@ -1,4 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent.interpreter;
+package pl.edu.mimuw.cloudatlas.common.interpreter;
 
 import pl.edu.mimuw.cloudatlas.common.model.Type;
 import pl.edu.mimuw.cloudatlas.common.model.Value;

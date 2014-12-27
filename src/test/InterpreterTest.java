@@ -17,11 +17,11 @@ import junit.framework.AssertionFailedError;
 
 import org.junit.Test;
 
-import pl.edu.mimuw.cloudatlas.agent.interpreter.Interpreter;
-import pl.edu.mimuw.cloudatlas.agent.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Yylex;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.parser;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
+import pl.edu.mimuw.cloudatlas.common.interpreter.Interpreter;
+import pl.edu.mimuw.cloudatlas.common.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.common.model.TypePrimitive;

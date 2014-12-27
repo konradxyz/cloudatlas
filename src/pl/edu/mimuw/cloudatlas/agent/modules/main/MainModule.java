@@ -11,6 +11,7 @@ import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
@@ -31,13 +32,13 @@ import pl.edu.mimuw.cloudatlas.agent.modules.rmi.RmiModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.AlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
-import pl.edu.mimuw.cloudatlas.agent.modules.zmi.GetRootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.SetAttributeMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateLocalZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
 
@@ -99,7 +100,7 @@ public class MainModule extends Module {
 			}
 			if (content.startsWith("show")) {
 				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
-						new GetRootZmiMessage(getAddress(), ZMI_RECEIVED));
+						new GetMessage(getAddress(), ZMI_RECEIVED));
 			}
 
 			if ( content.startsWith("alarm ") ) {
@@ -113,7 +114,7 @@ public class MainModule extends Module {
 			}
 			if (content.startsWith("calc"))
 				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
-						new GetRootZmiMessage(getAddress(),
+						new GetMessage(getAddress(),
 								ZMI_RECEIVED_FOR_RECALCULATION));
 			if (content.startsWith("install")) {
 				String program = content.substring("install ".length());
@@ -121,7 +122,7 @@ public class MainModule extends Module {
 				String query = program.substring(attrName.length() + 1);
 				sendMessage(queryKeeperAddress,
 						QueryKeeperModule.INSTALL_QUERY,
-						new InstallQueryMessage(query, attrName));
+						new InstallQueryMessage(new ValueQuery(attrName, query)));
 			}
 			if (content.startsWith("gossip"))
 				sendMessage(gossipAddress, GossipModule.START_GOSSIP,  new Message());
@@ -260,21 +261,25 @@ public class MainModule extends Module {
 		TimerModule timeModule = new TimerModule(generator.getUniqueAddress());
 		timerAddress = timeModule.getAddress();
 		modules.add(timeModule);
-
-		RmiModule rmiModule = new RmiModule(generator.getUniqueAddress(),
-				zmiKeeperAddress, CloudatlasAgentRmiServer.DEFAULT_PORT, config);
-		modules.add(rmiModule);
+		
 
 		QueryKeeperModule queryKeeper = new QueryKeeperModule(
 				generator.getUniqueAddress(), config.getPathName());
 		queryKeeperAddress = queryKeeper.getAddress();
 		modules.add(queryKeeper);
-		
+
+
 		GossipModule gossip = new GossipModule(generator.getUniqueAddress(),
 				config, zmiKeeperAddress, timerAddress);
 		gossipAddress = gossip.getAddress();
 		modules.add(gossip);
 
+		
+		RmiModule rmiModule = new RmiModule(generator.getUniqueAddress(),
+				zmiKeeperAddress, queryKeeperAddress, gossipAddress, CloudatlasAgentRmiServer.DEFAULT_PORT, config);
+		modules.add(rmiModule);
+
+		
 		return modules;
 	}
 }
