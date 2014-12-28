@@ -65,7 +65,7 @@ public class GossipModule extends Module {
 	// Datagram handlers:
 	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers = new HashMap<GossipCommunicate.Type, GossipModule.HandleCommunicate<?>>();
 
-	private ContactSelectionStrategy selectionStrategy = new RoundRobinContactSelectionStrategy();
+	private final ContactSelectionStrategy selectionStrategy;
 
 	public GossipModule(Address address, CloudatlasAgentConfig config,
 			Address zmiKeeperAddress, Address queryKeeperAddress,
@@ -85,6 +85,7 @@ public class GossipModule extends Module {
 		this.queryKeeperAddress = queryKeeperAddress;
 		if (config.getFallbackAddress() != null)
 			fallbackContacts.add(config.getFallbackAddress());
+		this.selectionStrategy = ContactSelectionStrategy.fromType(config.getStrategy());
 	}
 
 	public static final int INITIALIZE_MODULE = 1;
@@ -181,6 +182,7 @@ public class GossipModule extends Module {
 				target = contact.getContact().getAddress();
 				level = contact.getLevel();
 			}
+			System.err.println("Gossip on level " + level + " with " + target);
 			sendNetworkMessage(new QueriesCommunicateInit(getCachedQueries(),
 					level), target);
 		}
@@ -216,9 +218,6 @@ public class GossipModule extends Module {
 				throws HandlerException {
 			GossipCommunicate communicate = communicateSerializer
 					.deserialize(message.getContent());
-			System.err.println("Sent " + message.getSentTimestampMs());
-			System.err.println("Received " + message.getReceivedTimestampMs());
-			System.err.println(communicate);
 			Type tp = communicate.getType();
 			datagramHandlers.get(tp).handleUntyped(communicate,
 					message.getSource(), message.getSentTimestampMs(),

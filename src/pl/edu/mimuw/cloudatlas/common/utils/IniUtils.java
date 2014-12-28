@@ -36,16 +36,23 @@ public class IniUtils {
 		}
 	}
 	
-	public static int readInt(Ini file, String group, String param) {
-		return Integer.parseInt(file.get(group, param));
+	public static String readString(Ini file, String group, String param) throws IniException {
+		String res = file.get(group, param);
+		if ( res == null )
+			throw new IniException("Unknown field " + param + " in section " + group);
+		return res;
 	}
 	
-	public static byte[] readByteArrayFromHex(Ini file, String group, String param) {
-		return DatatypeConverter.parseHexBinary(file.get(group, param));
+	public static int readInt(Ini file, String group, String param) throws NumberFormatException, IniException {
+		return Integer.parseInt(readString(file, group, param));
 	}
 	
-	public static Inet4Address readAddressFromIni(Ini file, String group, String interfaceParam) {
-		String interfaceName = file.get(group, interfaceParam);
+	public static byte[] readByteArrayFromHex(Ini file, String group, String param) throws IniException {
+		return DatatypeConverter.parseHexBinary(readString(file, group, param));
+	}
+	
+	public static Inet4Address readAddressFromIni(Ini file, String group, String interfaceParam) throws IniException {
+		String interfaceName = readString(file, group, interfaceParam);
 		Inet4Address result = null;
 		try {
 			List<InetAddress> addresses = Collections.list(NetworkInterface
@@ -64,5 +71,16 @@ public class IniUtils {
 		if ( result == null )
 			System.err.println("Could not retrieve IPv4 address associated with interface " + interfaceName);
 		return result;
+	}
+	
+	public static class IniException extends Exception {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5460548756218726904L;
+		public IniException(String msg) {
+			super(msg);
+		}
 	}
 }

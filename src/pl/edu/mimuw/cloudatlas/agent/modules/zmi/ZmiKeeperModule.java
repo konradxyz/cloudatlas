@@ -101,6 +101,7 @@ public final class ZmiKeeperModule extends Module {
 
 		@Override
 		public void handleMessage(Message message) throws HandlerException {
+			refreshCurrentZmiTimestamp();
 			List<ZmiData<AttributesMap>> contents = zmi.getContent();
 			for ( ZmiData<AttributesMap> attrs : contents ) {
 					if ( !isLocalPath(attrs.getPath()) ) {

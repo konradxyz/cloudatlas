@@ -19,13 +19,14 @@ import org.ini4j.Ini;
 
 import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasQuerySigner;
 import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
+import pl.edu.mimuw.cloudatlas.common.utils.IniUtils.IniException;
 
 public class Main {
 
 	public static void main(String[] args) throws RemoteException,
 			InterruptedException, NoSuchAlgorithmException,
 			InvalidKeySpecException, InvalidKeyException,
-			NoSuchPaddingException {
+			NoSuchPaddingException, IniException {
 		Ini config = IniUtils.readConfigFromArgs(args);
 		if (config == null)
 			return;
