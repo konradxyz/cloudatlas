@@ -159,8 +159,6 @@ public class MainModule extends Module {
 
 	};
 
-	// TODO: add config
-	// TODO: removing zones
 	private final MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
 
 		@Override

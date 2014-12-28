@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -20,9 +21,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
+import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.common.utils.Utils;
 
 public final class SocketModule extends Module {
@@ -30,32 +34,49 @@ public final class SocketModule extends Module {
 	private DatagramSocket socket;
 	private final int maxMessageSize;
 	private int nextMessageId = 0;
+
 	// Messages to be sent by senderThread through socket should be put
 	// in toSendQueue. In order to terminate senderThread you need to put
 	// finishMessage in this queue.
-	// It is ugly solution but it will work for now.
 	private final SendDatagramMessage finishMessage = new SendDatagramMessage(null, null,0);
 	private BlockingQueue<SendDatagramMessage> toSendQueue = new LinkedBlockingQueue<SendDatagramMessage>();
 	private Thread senderThread;
 
-	// receiverThread reads message from socket and sends it to
-	// gatewayModuleAddress. Datagram is wrapped in message of type
-	// gatewayModuleMessageType.
 	private Thread receiverThread;
 	private final Address gatewayModuleAddress;
 	private final int gatewayModuleMessageType;
 	private final int HEADER_SIZE = 12;
+	
+	private final Address timerAddress ;
+	
+	// Cleanup config:
+	private final int packetExpirationMs = 10000;
+	private final int packetCleanupPeriodMs = 1000;
+	
+	private final Map<MessageId, PartialMessage> incomingMessages = new HashMap<MessageId, PartialMessage>();
 
 	public SocketModule(Address address, int port, int maxMessageSize,
-			Address gatewayModule, int gatewayMessageType) {
+			Address gatewayModule, int gatewayMessageType, Address timerAddress) {
 		super(address);
 		this.port = port;
 		this.maxMessageSize = maxMessageSize;
 		gatewayModuleAddress = gatewayModule;
 		gatewayModuleMessageType = gatewayMessageType;
+		this.timerAddress = timerAddress;
 	}
 
 	public static final int SEND_MESSAGE = 1;
+	private static final int MESSAGE_RECEIVED = 2;
+	private static final int CLEANUP = 3;
+	public static final int INIT = 4;
+
+	private final MessageHandler<Message> initHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE, new ScheduleAlarmMessage(0, 0, packetCleanupPeriodMs, getAddress(), CLEANUP));
+		}
+	};
 
 	private final MessageHandler<SendDatagramMessage> sendHandler = new MessageHandler<SendDatagramMessage>() {
 
@@ -64,6 +85,90 @@ public final class SocketModule extends Module {
 			toSendQueue.add(message);
 		}
 	};
+	
+	private final MessageHandler<ReceivedDatagramInternalMessage> receivedDatagramHandler = new MessageHandler<ReceivedDatagramInternalMessage>() {
+
+		@Override
+		public void handleMessage(ReceivedDatagramInternalMessage message)
+				throws HandlerException {
+			DatagramPacket packet = message.getContent();
+			try {
+				if (packet.getLength() <= maxMessageSize + HEADER_SIZE
+						&& packet.getLength() > HEADER_SIZE) {
+					ByteArrayInputStream stream = new ByteArrayInputStream(
+							packet.getData());
+					DataInputStream dstream = new DataInputStream(stream);
+					int machineMessageId = dstream.readInt();
+					int packetId = dstream.readInt();
+					int packetCount = dstream.readInt();
+					byte[] unwrappedContent = new byte[packet.getLength()
+							- HEADER_SIZE];
+					dstream.readFully(unwrappedContent);
+
+					MessageId key = new MessageId(packet.getAddress(),
+							machineMessageId);
+					if (!incomingMessages.containsKey(key)) {
+						incomingMessages.put(key, new PartialMessage(
+								packetCount, message.getReceivedTimestampMs()));
+					}
+					if (incomingMessages.get(key).getParts().size() > packetId) {
+						incomingMessages.get(key).getParts()
+								.set(packetId, unwrappedContent);
+					}
+
+					int i = 0;
+					while (i < incomingMessages.get(key).getParts().size()
+							&& incomingMessages.get(key).getParts().get(i) != null)
+						i++;
+					if (i >= incomingMessages.get(key).getParts().size()) {
+						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+						for (int j = 0; j < incomingMessages.get(key)
+								.getParts().size(); ++j) {
+							outputStream.write(incomingMessages.get(key)
+									.getParts().get(j));
+						}
+						byte[] msg = outputStream.toByteArray();
+						byte[] sentTimestampBytes = Arrays.copyOfRange(msg, 0,
+								8);
+						byte[] realMsg = Arrays.copyOfRange(msg, 8, msg.length);
+
+						ByteArrayInputStream inputStream = new ByteArrayInputStream(
+								sentTimestampBytes);
+						DataInputStream dataInputStream = new DataInputStream(
+								inputStream);
+						Long sent = dataInputStream.readLong();
+						sendMessage(gatewayModuleAddress,
+								gatewayModuleMessageType,
+								new ReceivedDatagramMessage(realMsg, key.from,
+										sent, incomingMessages.get(key)
+												.getReceivedTimestampMs()));
+						incomingMessages.remove(key);
+					}
+				} else {
+					System.err
+							.println("Received too big datagram or too small datagram- it might have been truncated - skipping");
+				}
+			} catch (IOException e) {
+				throw new HandlerException(e);
+			}
+		}
+	};
+	
+	private final MessageHandler<Message> cleanupHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			for (Iterator<MessageId> it = incomingMessages.keySet().iterator(); it
+					.hasNext();) {
+				MessageId id = it.next();
+				if (incomingMessages.get(id).getReceivedTimestampMs()
+						+ packetExpirationMs < Utils.getNowMs()) {
+					it.remove();
+				}
+			}
+		}
+	};
+
 
 	private final Runnable sender = new Runnable() {
 
@@ -166,11 +271,11 @@ public final class SocketModule extends Module {
 	}
 	
 	private static class PartialMessage {
-		public PartialMessage(int partsCount) {
+		public PartialMessage(int partsCount, Long received) {
 			super();
 			this.parts = new ArrayList<byte[]>(Collections.nCopies(
 					partsCount, (byte[]) null));
-			this.receivedTimestampMs = Utils.getNowMs();
+			this.receivedTimestampMs = received;
 		}
 		public List<byte[]> getParts() {
 			return parts;
@@ -186,72 +291,14 @@ public final class SocketModule extends Module {
 
 		@Override
 		public void run() {
-			byte[] content = new byte[maxMessageSize + HEADER_SIZE + 1];
-			DatagramPacket packet = new DatagramPacket(content, maxMessageSize
-					+ HEADER_SIZE + 1);
-			Map<MessageId, PartialMessage> incomingMessages = new HashMap<MessageId, PartialMessage>();
 			boolean finished = false;
 			while (!finished) {
 				try {
+					byte[] content = new byte[maxMessageSize + HEADER_SIZE + 1];
+					DatagramPacket packet = new DatagramPacket(content, maxMessageSize
+							+ HEADER_SIZE + 1);
 					socket.receive(packet);
-					if (packet.getLength() <= maxMessageSize + HEADER_SIZE
-							&& packet.getLength() > HEADER_SIZE) {
-						ByteArrayInputStream stream = new ByteArrayInputStream(
-								packet.getData());
-						DataInputStream dstream = new DataInputStream(stream);
-						int machineMessageId = dstream.readInt();
-						int packetId = dstream.readInt();
-						int packetCount = dstream.readInt();
-						byte[] unwrappedContent = new byte[packet.getLength()
-								- HEADER_SIZE];
-						dstream.readFully(unwrappedContent);
-
-						MessageId key = new MessageId(packet.getAddress(),
-								machineMessageId);
-						if (!incomingMessages.containsKey(key)) {
-							incomingMessages.put(
-									key,
-									new PartialMessage(packetCount));
-						}
-						if (incomingMessages.get(key).getParts().size() > packetId) {
-							incomingMessages.get(key).getParts().set(packetId,
-									unwrappedContent);
-						}
-
-						// TODO: this part is slow.
-						// Moreover, there is obvious resources leak.
-						// We are ok with the first problem. Second one should
-						// be fixed.
-						int i = 0;
-						while (i < incomingMessages.get(key).getParts().size()
-								&& incomingMessages.get(key).getParts().get(i) != null)
-							i++;
-						if (i >= incomingMessages.get(key).getParts().size()) {
-							ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-							for (int j = 0; j < incomingMessages.get(key).getParts()
-									.size(); ++j) {
-								outputStream.write(incomingMessages.get(key).getParts()
-										.get(j));
-							}
-							byte[] msg = outputStream.toByteArray();
-							byte[] sentTimestampBytes = Arrays.copyOfRange(msg, 0,  8);
-							byte[] realMsg = Arrays.copyOfRange(msg, 8, msg.length);
-							
-							ByteArrayInputStream inputStream = new ByteArrayInputStream(sentTimestampBytes);
-							DataInputStream dataInputStream = new DataInputStream(inputStream);
-							Long sent = dataInputStream.readLong();
-							sendMessage(gatewayModuleAddress,
-									gatewayModuleMessageType,
-									new ReceivedDatagramMessage(realMsg,
-											key.from, sent, incomingMessages
-													.get(key)
-													.getReceivedTimestampMs()));
-							incomingMessages.remove(key);
-						}
-					} else {
-						System.err
-								.println("Received too big datagram or too small datagram- it might have been truncated - skipping");
-					}
+					sendMessage(getAddress(), MESSAGE_RECEIVED, new ReceivedDatagramInternalMessage(packet, Utils.getNowMs()));
 				} catch (IOException e) {
 					finished = Thread.interrupted();
 				}
@@ -262,8 +309,8 @@ public final class SocketModule extends Module {
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { SEND_MESSAGE },
-				new MessageHandler<?>[] { sendHandler });
+		return getHandlers(new Integer[] { SEND_MESSAGE, MESSAGE_RECEIVED, CLEANUP, INIT },
+				new MessageHandler<?>[] { sendHandler, receivedDatagramHandler, cleanupHandler, initHandler });
 	}
 
 	@Override

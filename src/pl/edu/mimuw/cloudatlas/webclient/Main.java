@@ -12,7 +12,6 @@ public class Main {
 		Ini config = IniUtils.readConfigFromArgs(args);
 		final String rmiHost = config.get("agent", "host");
 		final int rmiPort = Integer.parseInt(config.get("agent", "port"));
-		final int refreshPeriodMs = Integer.parseInt(config.get("agent", "refresh_period_ms"));
 		final int port = Integer.parseInt(config.get("web", "port"));
 		//Plot
 		final int plotLenghtMs = Integer.parseInt(config.get("plot", "length_ms"));
@@ -21,7 +20,7 @@ public class Main {
 		final InetAddress signerAddr = InetAddress.getByName(config.get("querysigner", "host"));
 		final int signerPort = Integer.parseInt(config.get("querysigner", "port"));
 
-		WebClient client = new WebClient(rmiHost, rmiPort, port, refreshPeriodMs, plotLenghtMs, plotRefreshPeriodMs,
+		WebClient client = new WebClient(rmiHost, rmiPort, port, plotLenghtMs, plotRefreshPeriodMs,
 				new QuerySignerAddress(signerAddr, signerPort));
 		client.initialize();
 		client.run();

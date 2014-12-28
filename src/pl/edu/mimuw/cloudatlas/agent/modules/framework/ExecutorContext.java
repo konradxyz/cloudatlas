@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-
-// TODO: maybe some state machine to make sure that all registerExecutor calls are
-// executed before first sendMessage?
 public final class ExecutorContext implements Context {
 	private Map<Address, BlockingQueue<MessageWrapper>> modulesQueues = 
 			new HashMap<Address, BlockingQueue<MessageWrapper>>();

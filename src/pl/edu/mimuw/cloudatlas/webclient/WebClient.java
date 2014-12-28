@@ -29,9 +29,11 @@ import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.ajax.JSON;
+import org.ini4j.Config;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupDir;
 
+import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
@@ -53,7 +55,6 @@ public class WebClient {
 	private final String rmiHost;
 	private final int rmiPort;
 	private final Server jettyServer;
-	private final int refreshPeriodMs;
 	
 	//Plot:
 	private final int plotLenghtMs;
@@ -63,14 +64,14 @@ public class WebClient {
 	
 	// Signer:
 	private final QuerySignerAddress signer;
+	
+	private CloudatlasAgentConfig config;
 
-	// Node data:
-	private NodeDataKeeper keeper;
 	private Thread keeperUpdaterThread;
 
 	private void fillHeader(ST template) {
-		template.add("path", keeper.getConfig().getPathName());
-		template.add("address", keeper.getConfig().getAddress());
+		template.add("path", config.getPathName());
+		template.add("address", config.getAddress());
 	}
 
 	private final PageHandler indexHandler = new PageHandler() {
@@ -80,27 +81,30 @@ public class WebClient {
 				HttpServletResponse response, ST template) throws IOException {
 			fillHeader(template);
 			List<ZoneModel> zones = new ArrayList<ZoneModel>();
-			for (ZmiData<AttributesMap> zone : keeper.getAttributes()
-					.getContent()) {
-				List<String> attrs = new ArrayList<String>();
-				for (Entry<Attribute, Value> entry : zone.getContent()) {
-					String plotLink = "";
-					Value val = entry.getValue();
-					if ( converters.containsKey(val.getType().getPrimaryType()) ) {
-						// Dirty:
-						String encodedPath = URLEncoder.encode(zone.getPath().toString(), "UTF-8");
-						String encodedAttr = URLEncoder.encode(entry.getKey().getName(), "UTF-8");
-						String link = "../plot?path=" + encodedPath + "&attribute=" + encodedAttr;
-						plotLink = " <a href='" + link + "'>plot</a>";
+			try {
+				for (ZmiData<AttributesMap> zone : connect().getRootZmi().getContent()) {
+					List<String> attrs = new ArrayList<String>();
+					for (Entry<Attribute, Value> entry : zone.getContent()) {
+						String plotLink = "";
+						Value val = entry.getValue();
+						if ( converters.containsKey(val.getType().getPrimaryType()) ) {
+							// Dirty:
+							String encodedPath = URLEncoder.encode(zone.getPath().toString(), "UTF-8");
+							String encodedAttr = URLEncoder.encode(entry.getKey().getName(), "UTF-8");
+							String link = "../plot?path=" + encodedPath + "&attribute=" + encodedAttr;
+							plotLink = " <a href='" + link + "'>plot</a>";
+						}
+						attrs.add(entry.getKey() + " : "
+								+ entry.getValue().getType() + " = "
+								+ entry.getValue() + plotLink);
+						
 					}
-					attrs.add(entry.getKey() + " : "
-							+ entry.getValue().getType() + " = "
-							+ entry.getValue() + plotLink);
-					
+					zones.add(new ZoneModel(
+							zone.getPath().getName().equals("") ? "/" : zone
+									.getPath().getName(), attrs));
 				}
-				zones.add(new ZoneModel(
-						zone.getPath().getName().equals("") ? "/" : zone
-								.getPath().getName(), attrs));
+			} catch (RmiConnectionException e) {
+				throw new IOException(e);
 			}
 
 			template.add("zones", zones);
@@ -157,7 +161,6 @@ public class WebClient {
 							ValueQuery q = res.getQuery();
 							stub.installQuery(q);
 							queries = stub.getQueries();
-							updateData(stub);
 							break;
 					case CONFLICT:
 						message = "Could not install query. It conflicts with query " + res.getQuery().description();
@@ -263,7 +266,7 @@ public class WebClient {
 				throws IOException, ServletException {
 			arg1.setHandled(true);
 			response.setContentType("application/json");
-			ZmisAttributes attrs = keeper.getAttributes();
+			ZmisAttributes attrs = connect().getRootZmi();
 			PathName path = new PathName(request.getParameter("path"));
 			String attribute = request.getParameter("attribute");
 			AttributesMap zmiAttrs;
@@ -284,37 +287,13 @@ public class WebClient {
 			response.getOutputStream().print(output);
 		}
 	};
-
-	// TODO: remove updater
-	private final Runnable keeperUpdater = new Runnable() {
-		
-		@Override
-		public void run() {
-			while ( true ) {
-				try {
-					Thread.sleep(refreshPeriodMs);
-					CloudatlasAgentRmiServer stub = connect();
-					updateData(stub);
-				} catch (Exception e) {
-					System.err.println(e.getMessage());
-				}
-			}
-		}
-	};
-	
-	private void updateData(CloudatlasAgentRmiServer stub) throws RemoteException {
-		keeper.setAttributes(stub.getRootZmi());
-		keeper.setConfig(stub.getConfig());
-		keeper.setQueries(stub.getQueries());
-	}
 	
 
-	public WebClient(String rmiHost, int rmiPort, int port, int refreshPeriodMs,
+	public WebClient(String rmiHost, int rmiPort, int port,
 			int plotLenghtMs, int plotRefreshPeriodMs, QuerySignerAddress signer) {
 		super();
 		this.rmiHost = rmiHost;
 		this.rmiPort = rmiPort;
-		this.refreshPeriodMs = refreshPeriodMs;
 		this.plotLenghtMs = plotLenghtMs;
 		this.plotRefreshPeriodMs = plotRefreshPeriodMs;
 		this.jettyServer = new Server(port);
@@ -363,9 +342,7 @@ public class WebClient {
 		jettyServer.setHandler(handlers);
 
 		CloudatlasAgentRmiServer stub = connect();
-		keeper = new NodeDataKeeper(stub.getRootZmi(), stub.getConfig(), stub.getQueries());
-		keeperUpdaterThread = new Thread(keeperUpdater);
-		keeperUpdaterThread.start();
+		config = stub.getConfig();
 	}
 
 	public void run() throws Exception {
@@ -407,7 +384,7 @@ public class WebClient {
 		}
 	}
 
-	private static class RmiConnectionException extends Exception {
+	private static class RmiConnectionException extends IOException {
 
 		/**
 		 * 

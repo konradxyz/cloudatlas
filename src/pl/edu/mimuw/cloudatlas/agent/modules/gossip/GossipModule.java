@@ -19,7 +19,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSelectionStrategy;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSelectionStrategy.ContactResult;
-import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.RoundRobinContactSelectionStrategy;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate.Type;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateAnswer;
@@ -128,6 +127,8 @@ public class GossipModule extends Module {
 					new ScheduleAlarmMessage(0, 1, config
 							.getGossipDataRefreshTimeMs(), getAddress(),
 							REFRESH_DATA));
+			
+			sendMessage(socketModuleAddress, SocketModule.INIT, new Message());
 		}
 	};
 
@@ -404,7 +405,7 @@ public class GossipModule extends Module {
 		socketModuleAddress = generator.getUniqueAddress();
 		return Arrays.asList((Module) new SocketModule(socketModuleAddress,
 				config.getPort(), config.getMaxMessageSizeBytes(),
-				getAddress(), NETWORK_MESSAGE_RECEIVED));
+				getAddress(), NETWORK_MESSAGE_RECEIVED, timerModuleAddress));
 	}
 
 }

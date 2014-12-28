@@ -49,8 +49,7 @@ public final class NodeClient implements Runnable {
 		return res;
 	}
 
-	// TODO: dnsnames, averaging - check lab06.
-	// Right now we send average load from last 1 minute, as reported by uptime.
+
 	public Map<String, Value> getAttributes() throws IOException,
 			NumberFormatException, InterruptedException {
 		Map<String, Value> result = new HashMap<String, Value>();

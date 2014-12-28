@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import javax.xml.bind.DatatypeConverter;
 
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
@@ -189,7 +188,7 @@ public class QueryKeeperModule extends Module {
 				}
 				return true;
 			} catch (Exception e) {
-				e.printStackTrace();
+				System.err.println(e.getMessage());
 				return false;
 			}			
 		}
