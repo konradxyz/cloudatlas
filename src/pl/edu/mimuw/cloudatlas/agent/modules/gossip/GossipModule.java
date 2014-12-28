@@ -57,48 +57,48 @@ public class GossipModule extends Module {
 
 	private Address socketModuleAddress;
 	private final Address timerModuleAddress;
-	
+
 	// Node data we keep for immediate sending to other nodes.
 	private ZmisAttributes cachedAttributes;
 	private List<ValueQuery> cachedQueries;
-	
-	
+
 	// Datagram handlers:
-	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers =
-			new HashMap<GossipCommunicate.Type, GossipModule.HandleCommunicate<?>>();
-	
+	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers = new HashMap<GossipCommunicate.Type, GossipModule.HandleCommunicate<?>>();
+
 	private ContactSelectionStrategy selectionStrategy = new RoundRobinContactSelectionStrategy();
 
 	public GossipModule(Address address, CloudatlasAgentConfig config,
-			Address zmiKeeperAddress, Address queryKeeperAddress, Address timerModuleAddress) {
+			Address zmiKeeperAddress, Address queryKeeperAddress,
+			Address timerModuleAddress) {
 		super(address);
 		this.config = config;
 		this.zmiKeeperAddress = zmiKeeperAddress;
-		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT, freshnessInitCommunicateHandler);
-		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER, freshnessAnswerCommunicateHandler);
+		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT,
+				freshnessInitCommunicateHandler);
+		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER,
+				freshnessAnswerCommunicateHandler);
 		datagramHandlers.put(Type.ZMI, zmiCommunicateHandler);
 		datagramHandlers.put(Type.QUERIES_INIT, queriesCommunicateInitHandler);
-		datagramHandlers.put(Type.QUERIES_ANSWER, queriesCommunicateAnswerHandler);
+		datagramHandlers.put(Type.QUERIES_ANSWER,
+				queriesCommunicateAnswerHandler);
 		this.timerModuleAddress = timerModuleAddress;
 		this.queryKeeperAddress = queryKeeperAddress;
-		if ( config.getFallbackAddress() != null )
+		if (config.getFallbackAddress() != null)
 			fallbackContacts.add(config.getFallbackAddress());
 	}
-	
+
 	public static final int INITIALIZE_MODULE = 1;
 	public static final int START_GOSSIP = 2;
 	public static final int REFRESH_DATA = 3;
-	
+
 	public static final int ZMI_RECEIVED = 4;
 	public static final int QUERIES_RECEIVED = 5;
-	
-	
+
 	private static final int NETWORK_MESSAGE_RECEIVED = 6;
-	
+
 	public static final int SET_FALLBACK_CONTACTS = 7;
 	public static final int GET_FALLBACK_CONTACTS = 8;
-	
-	
+
 	private ZmisAttributes getCachedAttributes() throws HandlerException {
 		if (cachedAttributes == null) {
 			throw new HandlerException("Gossip module not yet initialized");
@@ -118,8 +118,9 @@ public class GossipModule extends Module {
 		@Override
 		public void handleMessage(Message message) throws HandlerException {
 			sendMessage(timerModuleAddress, TimerModule.SCHEDULE_MESSAGE,
-					new ScheduleAlarmMessage(100, 0, config.getGossipPeriodMs(),
-							getAddress(), START_GOSSIP));
+					new ScheduleAlarmMessage(100, 0,
+							config.getGossipPeriodMs(), getAddress(),
+							START_GOSSIP));
 			sendMessage(
 					timerModuleAddress,
 					TimerModule.SCHEDULE_MESSAGE,
@@ -128,35 +129,38 @@ public class GossipModule extends Module {
 							REFRESH_DATA));
 		}
 	};
-	
+
 	private final MessageHandler<Message> refreshDataHandler = new MessageHandler<Message>() {
 
 		@Override
 		public void handleMessage(Message message) throws HandlerException {
-			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), ZMI_RECEIVED));
-			sendMessage(queryKeeperAddress, QueryKeeperModule.GET_QUERIES, new GetMessage(getAddress(), QUERIES_RECEIVED));
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
+					new GetMessage(getAddress(), ZMI_RECEIVED));
+			sendMessage(queryKeeperAddress, QueryKeeperModule.GET_QUERIES,
+					new GetMessage(getAddress(), QUERIES_RECEIVED));
 		}
 	};
-	
+
 	private final MessageHandler<SimpleMessage<Map<String, ValueQuery>>> queriesReceivedHandler = new MessageHandler<SimpleMessage<Map<String, ValueQuery>>>() {
 
 		@Override
 		public void handleMessage(SimpleMessage<Map<String, ValueQuery>> message)
 				throws HandlerException {
-			cachedQueries = new ArrayList<ValueQuery>(message.getContent().values());
-			
+			cachedQueries = new ArrayList<ValueQuery>(message.getContent()
+					.values());
+
 		}
 	};
-	
+
 	private final MessageHandler<SimpleMessage<ZmisAttributes>> zmiReceivedHandler = new MessageHandler<SimpleMessage<ZmisAttributes>>() {
 
 		@Override
 		public void handleMessage(SimpleMessage<ZmisAttributes> message)
 				throws HandlerException {
-			cachedAttributes = message.getContent();	
+			cachedAttributes = message.getContent();
 		}
 	};
-	
+
 	private MessageHandler<Message> startGossipHandler = new MessageHandler<Message>() {
 
 		@Override
@@ -165,21 +169,23 @@ public class GossipModule extends Module {
 			ContactResult contact = selectionStrategy.selectContact(zmis);
 			InetAddress target = null;
 			int level = 1;
-			if ( contact == null ) {
+			if (contact == null) {
 				if (fallbackContacts.isEmpty()) {
-					throw new HandlerException("GossipModule: empty fallback contacts");
+					throw new HandlerException(
+							"GossipModule: empty fallback contacts");
 				}
-				target = fallbackContacts.get(random
-						.nextInt(fallbackContacts.size()));
+				target = fallbackContacts.get(random.nextInt(fallbackContacts
+						.size()));
 				level = zmis.getLevels().size() - 1;
 			} else {
 				target = contact.getContact().getAddress();
 				level = contact.getLevel();
 			}
-			sendNetworkMessage(new QueriesCommunicateInit(getCachedQueries(), level), target);
+			sendNetworkMessage(new QueriesCommunicateInit(getCachedQueries(),
+					level), target);
 		}
 	};
-	
+
 	private MessageHandler<GetMessage> getFallbackContactsHandler = new MessageHandler<GetMessage>() {
 
 		@Override
@@ -188,23 +194,20 @@ public class GossipModule extends Module {
 					message.getResponseMessageType(),
 					new SimpleMessage<List<InetAddress>>(
 							new ArrayList<InetAddress>(fallbackContacts)));
-			
+
 		}
 	};
-	
-	private MessageHandler<SimpleMessage<List<InetAddress>>> setFallbackContactsHandler = 
-			new MessageHandler<SimpleMessage<List<InetAddress>>>() {
 
-				@Override
-				public void handleMessage(
-						SimpleMessage<List<InetAddress>> message)
-						throws HandlerException {
-					fallbackContacts.clear();
-					fallbackContacts.addAll(message.getContent());
-				}
-		
+	private MessageHandler<SimpleMessage<List<InetAddress>>> setFallbackContactsHandler = new MessageHandler<SimpleMessage<List<InetAddress>>>() {
+
+		@Override
+		public void handleMessage(SimpleMessage<List<InetAddress>> message)
+				throws HandlerException {
+			fallbackContacts.clear();
+			fallbackContacts.addAll(message.getContent());
+		}
+
 	};
-
 
 	private MessageHandler<ReceivedDatagramMessage> receivedNetworkMessageHandler = new MessageHandler<ReceivedDatagramMessage>() {
 
@@ -212,7 +215,7 @@ public class GossipModule extends Module {
 		public void handleMessage(ReceivedDatagramMessage message)
 				throws HandlerException {
 			GossipCommunicate communicate = communicateSerializer
-					.deserialize(message.getContent()); 
+					.deserialize(message.getContent());
 			System.err.println("Sent " + message.getSentTimestampMs());
 			System.err.println("Received " + message.getReceivedTimestampMs());
 			System.err.println(communicate);
@@ -223,133 +226,153 @@ public class GossipModule extends Module {
 		}
 	};
 
-
-	
-	
 	private abstract class HandleCommunicate<T extends GossipCommunicate> {
-		public abstract void handle(T communicate, InetAddress source, Long sent, Long received) throws HandlerException;
+		public abstract void handle(T communicate, InetAddress source,
+				Long sent, Long received) throws HandlerException;
+
 		@SuppressWarnings("unchecked")
-		public void handleUntyped(GossipCommunicate communicate, InetAddress source, Long sent, Long received) throws HandlerException {
+		public void handleUntyped(GossipCommunicate communicate,
+				InetAddress source, Long sent, Long received)
+				throws HandlerException {
 			T comm = (T) communicate;
 			comm.hashCode();
 			handle(comm, source, sent, received);
 		}
 	}
-	
+
 	private final HandleCommunicate<QueriesCommunicateInit> queriesCommunicateInitHandler = new HandleCommunicate<QueriesCommunicateInit>() {
 
 		@Override
 		public void handle(QueriesCommunicateInit communicate,
-				InetAddress source, Long sent, Long received) throws HandlerException {
+				InetAddress source, Long sent, Long received)
+				throws HandlerException {
 			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
 					new InstallQueryMessage(communicate.getQueries()));
 
-			sendNetworkMessage(new QueriesCommunicateAnswer(
-					getCachedQueries(), communicate.getGossipLevel()), source);
+			sendNetworkMessage(new QueriesCommunicateAnswer(getCachedQueries(),
+					communicate.getGossipLevel()), source);
 		}
 	};
-	
-	
+
 	private final HandleCommunicate<QueriesCommunicateAnswer> queriesCommunicateAnswerHandler = new HandleCommunicate<QueriesCommunicateAnswer>() {
 
 		@Override
 		public void handle(QueriesCommunicateAnswer communicate,
-				InetAddress source, Long sent, Long received) throws HandlerException {
+				InetAddress source, Long sent, Long received)
+				throws HandlerException {
 			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
 					new InstallQueryMessage(communicate.getQueries()));
-			
-			
+
 			ZmisAttributes attrs = getCachedAttributes();
-			ZmisFreshness freshness = generateFreshness(attrs,
-					Math.min(communicate.getGossipLevel(), attrs
-							.getLevels().size() - 1));
-			sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness, new TravelTime(sent, received)), source);
+			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
+					communicate.getGossipLevel(), attrs.getLevels().size() - 1));
+			sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness,
+					new TravelTime(sent, received)), source);
 		}
 	};
-	
-	
+
 	private HandleCommunicate<ZmisFreshnessInitCommunicate> freshnessInitCommunicateHandler = new HandleCommunicate<ZmisFreshnessInitCommunicate>() {
 
 		@Override
-		public void handle(ZmisFreshnessInitCommunicate communicate, InetAddress source, Long sent, Long received) throws HandlerException {
+		public void handle(ZmisFreshnessInitCommunicate communicate,
+				InetAddress source, Long sent, Long received)
+				throws HandlerException {
 			ZmisAttributes attrs = getCachedAttributes();
 			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
 					communicate.getContent().getLevels().size() - 1, attrs
 							.getLevels().size() - 1));
-			sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(freshness, new TravelTime(sent, received)), source);
-		
-			sendZmis(attrs, communicate.getContent(), source);
+			sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(freshness,
+					new TravelTime(sent, received)), source);
+
+			sendZmis(attrs, communicate.getContent(), source,
+					communicate.getTime(), new TravelTime(sent, received));
 		}
 	};
 
 	private HandleCommunicate<ZmisFreshnessAnswerCommunicate> freshnessAnswerCommunicateHandler = new HandleCommunicate<ZmisFreshnessAnswerCommunicate>() {
 
 		@Override
-		public void handle(ZmisFreshnessAnswerCommunicate communicate, InetAddress source, Long sent, Long received) throws HandlerException {
-			sendZmis(getCachedAttributes(), communicate.getContent(), source);
+		public void handle(ZmisFreshnessAnswerCommunicate communicate,
+				InetAddress source, Long sent, Long received)
+				throws HandlerException {
+			sendZmis(getCachedAttributes(), communicate.getContent(), source,
+					communicate.getTime(), new TravelTime(sent, received));
 		}
 	};
-	
+
 	private HandleCommunicate<ZmiCommunicate> zmiCommunicateHandler = new HandleCommunicate<ZmiCommunicate>() {
 
 		@Override
-		public void handle(ZmiCommunicate communicate, InetAddress source, Long sent, Long received) {
+		public void handle(ZmiCommunicate communicate, InetAddress source,
+				Long sent, Long received) {
 			sendMessage(zmiKeeperAddress, ZmiKeeperModule.UPDATE_REMOTE_ZMI,
 					new UpdateRemoteZmiMessage(communicate.getPathName(),
 							communicate.getAttributes()));
 		}
 	};
-	
-	private void sendZmis(ZmisAttributes zmis, ZmisFreshness otherFreshness, InetAddress target) {
-		List<ZmiData<AttributesMap>> toSend = filterNewer(
-				zmis.getContent(), otherFreshness);
+
+	private void sendZmis(ZmisAttributes zmis, ZmisFreshness otherFreshness,
+			InetAddress target, TravelTime fromThisToTarget,
+			TravelTime fromTargetToThis) {
+		Long rtd = fromTargetToThis.getReceived() - fromThisToTarget.getSent() - (fromThisToTarget.getReceived() - fromTargetToThis.getSent());
+		// We want to ensure that thisTimestamp + offset = targetTimestamp
+		Long offset = fromThisToTarget.getReceived() - rtd/2 - fromThisToTarget.getSent();
+		List<ZmiData<AttributesMap>> toSend = filterNewer(zmis.getContent(),
+				otherFreshness, offset);
 		PathName targetPath = otherFreshness.getPath();
 		for (ZmiData<AttributesMap> single : toSend) {
-			if ( !single.getPath().isPrefixOf(targetPath)) {
-				sendNetworkMessage(new ZmiCommunicate(single.getPath(),
-					single.getContent()), target);
+			if (!single.getPath().isPrefixOf(targetPath)) {
+				sendNetworkMessage(
+						new ZmiCommunicate(single.getPath(),
+								single.getContent()), target);
 			}
 		}
 	}
-	
+
 	private ZmisFreshness generateFreshness(ZmisAttributes zmis, int level) {
 		List<ZmiLevel<Long>> resList = new ArrayList<ZmiLevel<Long>>();
-		for ( ZmiLevel<AttributesMap> l : zmis.getLevels().subList(0,  level + 1) ){
+		for (ZmiLevel<AttributesMap> l : zmis.getLevels().subList(0, level + 1)) {
 			Map<String, Long> timestamps = new HashMap<String, Long>();
-			for ( Entry<String, AttributesMap> e : l.getZones().entrySet()) {
-				try { 
-					timestamps.put(e.getKey(), ((ValueTime)e.getValue().get("timestamp")).getValue());
+			for (Entry<String, AttributesMap> e : l.getZones().entrySet()) {
+				try {
+					timestamps.put(e.getKey(),
+							((ValueTime) e.getValue().get("timestamp"))
+									.getValue());
 				} catch (Exception exc) {
 					// Silently skipping.
 				}
 			}
-			
-			ZmiLevel<Long> freshnessLevel = new ZmiLevel<Long>(l.getOurZoneName(), timestamps);
+
+			ZmiLevel<Long> freshnessLevel = new ZmiLevel<Long>(
+					l.getOurZoneName(), timestamps);
 			resList.add(freshnessLevel);
 		}
 		return new ZmisFreshness(resList);
 	}
 
 	private static List<ZmiData<AttributesMap>> filterNewer(
-			List<ZmiData<AttributesMap>> myZmis, ZmisFreshness otherFreshness) {
+			List<ZmiData<AttributesMap>> myZmis, ZmisFreshness otherFreshness, Long offset) {
 		List<ZmiData<AttributesMap>> result = new ArrayList<ZmiData<AttributesMap>>();
 		PathName otherPathName = otherFreshness.getPath();
 		for (ZmiData<AttributesMap> myAttrs : myZmis) {
 			try {
-				if ( !myAttrs.getPath().levelUp().isPrefixOf(otherPathName) ) {
+				if (!myAttrs.getPath().levelUp().isPrefixOf(otherPathName)) {
 					continue;
 				}
 				Long myTimestamp = ((ValueTime) myAttrs.getContent().get(
 						"timestamp")).getValue();
+				Long myTimestampAccordingToOther = myTimestamp + offset;
 				Long otherTimestamp = -1l;
 				try {
 					otherTimestamp = otherFreshness.get(myAttrs.getPath());
-				} catch ( UnknownZoneException e) {
-					otherTimestamp = -1l;
+				} catch (UnknownZoneException e) {
+					otherTimestamp = myTimestampAccordingToOther - 1;
 				}
-				if (myTimestamp > otherTimestamp) {
+				if (myTimestampAccordingToOther > otherTimestamp) {
+					AttributesMap attrs = myAttrs.getContent().clone();
+					attrs.addOrChange("timestamp", new ValueTime(myTimestampAccordingToOther));
 					result.add(new ZmiData<AttributesMap>(myAttrs.getPath(),
-							myAttrs.getContent().clone()));
+							attrs));
 				}
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
@@ -358,46 +381,31 @@ public class GossipModule extends Module {
 		return result;
 	}
 
-	private void sendNetworkMessage(GossipCommunicate message, InetAddress target) {
+	private void sendNetworkMessage(GossipCommunicate message,
+			InetAddress target) {
 		byte[] o = communicateSerializer.serialize(message);
-		sendMessage(
-				socketModuleAddress,
-				SocketModule.SEND_MESSAGE,
-				new SendDatagramMessage(o, target, config
-						.getPort()));
+		sendMessage(socketModuleAddress, SocketModule.SEND_MESSAGE,
+				new SendDatagramMessage(o, target, config.getPort()));
 	}
-	
+
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { 
-					INITIALIZE_MODULE,
-					START_GOSSIP,
-					REFRESH_DATA,
-					ZMI_RECEIVED,
-					QUERIES_RECEIVED,
-					NETWORK_MESSAGE_RECEIVED,
-					SET_FALLBACK_CONTACTS,
-					GET_FALLBACK_CONTACTS},
-				new MessageHandler<?>[] {
-					initializeHandler,
-					startGossipHandler,
-					refreshDataHandler,
-					zmiReceivedHandler,
-					queriesReceivedHandler,
-					receivedNetworkMessageHandler,
-					setFallbackContactsHandler,
-					getFallbackContactsHandler
-		});
+		return getHandlers(new Integer[] { INITIALIZE_MODULE, START_GOSSIP,
+				REFRESH_DATA, ZMI_RECEIVED, QUERIES_RECEIVED,
+				NETWORK_MESSAGE_RECEIVED, SET_FALLBACK_CONTACTS,
+				GET_FALLBACK_CONTACTS }, new MessageHandler<?>[] {
+				initializeHandler, startGossipHandler, refreshDataHandler,
+				zmiReceivedHandler, queriesReceivedHandler,
+				receivedNetworkMessageHandler, setFallbackContactsHandler,
+				getFallbackContactsHandler });
 	}
 
 	@Override
 	public List<Module> getSubModules(AddressGenerator generator) {
 		socketModuleAddress = generator.getUniqueAddress();
-		return Arrays.asList((Module) new SocketModule(socketModuleAddress, 
-				config.getPort(), 
-				config.getMaxMessageSizeBytes(), 
-				getAddress(),
-				NETWORK_MESSAGE_RECEIVED));
+		return Arrays.asList((Module) new SocketModule(socketModuleAddress,
+				config.getPort(), config.getMaxMessageSizeBytes(),
+				getAddress(), NETWORK_MESSAGE_RECEIVED));
 	}
 
 }
