@@ -1,12 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.main;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +21,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.PrinterModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.ReaderModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.GossipModule;
-import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
-import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.QueryKeeperModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.RecalculateZmisMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.ZmiRecalculatedMessage;
@@ -35,17 +29,13 @@ import pl.edu.mimuw.cloudatlas.agent.modules.timer.AlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
-import pl.edu.mimuw.cloudatlas.agent.modules.zmi.SetAttributeMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateLocalZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
-import pl.edu.mimuw.cloudatlas.common.model.Attribute;
-import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 
 public class MainModule extends Module {
 	private Address shutdownAddress;
 	private Address printerAddress;
-	private Address socketAddress;
 	private Address zmiKeeperAddress;
 	private Address timerAddress;
 	private Address queryKeeperAddress;
@@ -69,55 +59,6 @@ public class MainModule extends Module {
 			}
 			if ( message.getContent().equals("dump")) {
 				sendMessage(queryKeeperAddress, QueryKeeperModule.DUMP, new Message());
-			}
-			String content = message.getContent();			
-			if ( content.startsWith("send") ) {
-				try {
-					InetAddress target = InetAddress.getByName("localhost");
-					if ( content.startsWith("sendto ") ) {
-						content = content.substring("sendto ".length());
-						String ip = content.split(" ")[0];
-						target = InetAddress.getByName(ip);
-						content  = content.substring(ip.length() + 1);
-					} 
-					else {
-						content = content.substring("send ".length());
-					}
-					content = content + "\n";
-					sendMessage(socketAddress, SocketModule.SEND_MESSAGE,
-							new SendDatagramMessage(content.getBytes(), target, 5432));
-				} catch (UnknownHostException e) {
-					throw new HandlerException(e);
-				}
-				
-			}
-
-			if ( content.startsWith("set") ) {
-				String attrs[] = content.split(" ");
-				sendMessage(zmiKeeperAddress, ZmiKeeperModule.SET_ATTRIBUTE,
-						new SetAttributeMessage(new Attribute(attrs[1]),
-								new ValueString(attrs[2])));
-				return;
-			}
-			if (content.startsWith("calc"))
-				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
-						new GetMessage(getAddress(),
-								ZMI_RECEIVED_FOR_RECALCULATION));
-			if (content.startsWith("gossip"))
-				sendMessage(gossipAddress, GossipModule.START_GOSSIP,  new Message());
-			if (content.startsWith("fallback")) {
-				String addr = content.substring("fallback ".length());
-				try {
-					Inet4Address address = (Inet4Address) InetAddress
-							.getByName(addr);
-					sendMessage(
-							gossipAddress,
-							GossipModule.SET_FALLBACK_CONTACTS,
-							new SimpleMessage<List<Inet4Address>>(Arrays
-									.asList(address)));
-				} catch (UnknownHostException e) {
-					throw new HandlerException(e);
-				}
 			}
 		}
 	};

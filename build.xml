@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- WARNING: Eclipse auto-generated file.
-              Any modifications will be overwritten.
-              To include a user specific buildfile here, simply create one in the same
-              directory with the processing instruction <?eclipse.ant.import?>
-              as the first entry and export the buildfile again. --><project basedir="." default="build" name="cloudatlas">
+  <project basedir="." default="build" name="cloudatlas">
     <property environment="env"/>
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.7"/>
@@ -24,11 +20,13 @@
         <pathelement location="lib/ini4j-0.5.2.jar"/>
         <pathelement location="lib/jetty-all.jar"/>
         <pathelement location="lib/servlet-api.jar"/>
+        <pathelement location="lib/ST-4.0.8.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
         <copy includeemptydirs="false" todir="bin">
             <fileset dir="src">
+                <exclude name="**/*.launch"/>
                 <exclude name="**/*.java"/>
             </fileset>
         </copy>
@@ -59,15 +57,5 @@
     <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
-    </target>
-    <target name="Main (1)">
-        <java classname="pl.edu.mimuw.cloudatlas.nodeclient.Main" failonerror="true" fork="yes">
-            <classpath refid="cloudatlas.classpath"/>
-        </java>
-    </target>
-    <target name="Main">
-        <java classname="pl.edu.mimuw.cloudatlas.agent.modules.framework.example.Main" failonerror="true" fork="yes">
-            <classpath refid="cloudatlas.classpath"/>
-        </java>
     </target>
 </project>

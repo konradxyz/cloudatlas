@@ -6,6 +6,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,10 +52,12 @@ public class IniUtils {
 		return DatatypeConverter.parseHexBinary(readString(file, group, param));
 	}
 	
-	public static Inet4Address readAddressFromIni(Ini file, String group, String interfaceParam) throws IniException {
-		String interfaceName = readString(file, group, interfaceParam);
-		Inet4Address result = null;
+	public static InetAddress readAddressFromIni(Ini file, String group,
+			String interfaceParam, String addressParam) throws IniException {
+		
 		try {
+			String interfaceName = readString(file, group, interfaceParam);
+			Inet4Address result = null;
 			List<InetAddress> addresses = Collections.list(NetworkInterface
 					.getByName(interfaceName).getInetAddresses());
 			for (InetAddress address : addresses) {
@@ -63,14 +66,23 @@ public class IniUtils {
 				} catch (ClassCastException e) {
 				}
 			}
+			if ( result == null ) {
+				System.err.println("Could not retrieve IPv4 address associated with interface " + interfaceName);
+			}
+			return result;
 		} catch (NullPointerException e) {
-			System.err.println("Unknown interface '" + interfaceName + "'");
+			System.err.println("Unknown interface in ini");
 		} catch (SocketException e1) {
 			System.err.println(e1.getMessage());
+		} catch (IniException e) {
+			try {
+				return InetAddress.getByName(readString(file, group, addressParam));
+			} catch (UnknownHostException e1) {
+				System.err.println(e1.getMessage());
+			}		
 		}
-		if ( result == null )
-			System.err.println("Could not retrieve IPv4 address associated with interface " + interfaceName);
-		return result;
+		return null;
+		
 	}
 	
 	public static class IniException extends Exception {

@@ -1,4 +1,4 @@
 Compile:
-run ant
+ant
 Example usage:
 ./interpreter < example.in

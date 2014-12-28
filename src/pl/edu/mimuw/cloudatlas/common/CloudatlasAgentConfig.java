@@ -1,7 +1,6 @@
 package pl.edu.mimuw.cloudatlas.common;
 
 import java.io.Serializable;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -24,7 +23,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 	 */
 	private static final long serialVersionUID = 8557446129359783603L;
 	private final PathName pathName;
-	private final Inet4Address address;
+	private final InetAddress address;
 	
 	// Gossip:
 	private int maxMessageSizeBytes;
@@ -47,7 +46,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 	// Gossip module data refresh time:
 	private final int gossipDataRefreshTimeMs;
 
-	public CloudatlasAgentConfig(PathName pathName, Inet4Address address,
+	public CloudatlasAgentConfig(PathName pathName, InetAddress address,
 			int port, int maxMessageSizeBytes, InetAddress fallbackAddress,
 			int gossipPeriodMs, int rmiPort, PublicKey signerKey, int zoneExpirationMs, 
 			int zoneCleanupPeriodMs, int gossipDataRefreshTimeMs, LevelSelectionStrategyType strategy) {
@@ -83,7 +82,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 			String pathName = file.get("agent", "zone_path_name");
 			int port = Integer.parseInt(file.get("gossip", "port"));
 			int maxMessageSizeBytes = Integer.parseInt(file.get("gossip", "max_message_size_bytes"));
-			Inet4Address result = IniUtils.readAddressFromIni(file, "agent", "external_interface");
+			InetAddress result = IniUtils.readAddressFromIni(file, "agent", "external_interface", "external_address");
 			if (result == null) {
 				System.err
 						.println("Could not retrieve current node IP address. Check your ini file.");
@@ -117,7 +116,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 		}
 	}
 
-	public Inet4Address getAddress() {
+	public InetAddress getAddress() {
 		return address;
 	}
 

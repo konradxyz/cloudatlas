@@ -32,7 +32,7 @@ public class Main {
 			return;
 		int port = IniUtils.readInt(config, "signer", "port");
 		InetAddress host = IniUtils.readAddressFromIni(config, "signer",
-				"external_interface");
+				"external_interface", "external_address");
 		if (host == null)
 			return;
 		byte[] key = IniUtils.readByteArrayFromHex(config, "signer",
