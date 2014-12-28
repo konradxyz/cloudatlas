@@ -59,10 +59,46 @@ public class SingleMachineZmiData<T> implements Cloneable, Serializable {
 	public SingleMachineZmiData(List<ZmiLevel<T>> levels) {
 		this.levels = levels;
 	}
+	
+	private ZmiLevel<T> getSiblingLevel(PathName pathName) throws UnknownZoneException {
+		List<String> components = pathName.getComponents();
+		int level = 1;
+		for (; level < components.size(); ++level) {
+			if (!components.get(level - 1)
+					.equals(levels.get(level).ourZoneName)) {
+				throw new UnknownZoneException(pathName);
+			}
+		}
+		return levels.get(components.size());
+	}
+	
+	private static String lowestZoneName(PathName pathName) {
+		String name = "";
+		if ( !pathName.getComponents().isEmpty() )
+			name = pathName.getComponents().get(pathName.getComponents().size() - 1);
+		return name;
+	}
 
 	public T getOrInsert(PathName pathName, T defaultValue)
 			throws UnknownZoneException {
-		List<String> components = pathName.getComponents();
+		ZmiLevel<T> level = getSiblingLevel(pathName);
+		String name = lowestZoneName(pathName);
+		try {
+			T result = level.siblingZones.get(name);
+			if (result == null) {
+				if (defaultValue != null) {
+					level.siblingZones.put(name, defaultValue);
+					return defaultValue;
+				}
+				throw new UnknownZoneException(pathName);
+			}
+			return result;
+		} catch (Exception e) {
+			throw new UnknownZoneException(pathName);
+		}
+		
+		
+/*		List<String> components = pathName.getComponents();
 		if (components.isEmpty()) {
 			T res = levels.get(0).siblingZones.get("");
 			if (res == null) {
@@ -92,7 +128,7 @@ public class SingleMachineZmiData<T> implements Cloneable, Serializable {
 			return result;
 		} catch (Exception e) {
 			throw new UnknownZoneException(pathName);
-		}
+		}*/
 	}
 
 	public T get(PathName pathName) throws UnknownZoneException {
@@ -138,6 +174,12 @@ public class SingleMachineZmiData<T> implements Cloneable, Serializable {
 			components.add(level.getOurZoneName());
 		}
 		return new PathName(components.subList(1, components.size()));
+	}
+	
+	public void remove(PathName path) throws UnknownZoneException {
+		ZmiLevel<T> level =  getSiblingLevel(path);
+		String name = lowestZoneName(path);
+		level.siblingZones.remove(name);		
 	}
 
 	public static class UnknownZoneException extends Exception {

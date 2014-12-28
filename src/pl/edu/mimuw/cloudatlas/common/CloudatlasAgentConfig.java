@@ -33,10 +33,14 @@ public final class CloudatlasAgentConfig implements Serializable {
 	
 	// Signer:
 	private final PublicKey signerKey;
+	
+	// Zone expiration:
+	private final int zoneExpirationMs;
+	private final int zoneCleanupPeriodMs;
 
 	public CloudatlasAgentConfig(PathName pathName, Inet4Address address,
 			int port, int maxMessageSizeBytes, InetAddress fallbackAddress,
-			int gossipPeriodMs, int rmiPort, PublicKey signerKey) {
+			int gossipPeriodMs, int rmiPort, PublicKey signerKey, int zoneExpirationMs, int zoneCleanupPeriodMs) {
 		super();
 		this.pathName = pathName;
 		this.address = address;
@@ -46,6 +50,8 @@ public final class CloudatlasAgentConfig implements Serializable {
 		this.gossipPeriodMs = gossipPeriodMs;
 		this.rmiPort = rmiPort;
 		this.signerKey = signerKey;
+		this.zoneExpirationMs = zoneExpirationMs;
+		this.zoneCleanupPeriodMs = zoneCleanupPeriodMs;
 	}
 
 	public static CloudatlasAgentConfig fromIni(Ini file) {
@@ -75,7 +81,9 @@ public final class CloudatlasAgentConfig implements Serializable {
 			PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(key));
 			System.err.println(((RSAKey)publicKey).getModulus());
 			return new CloudatlasAgentConfig(new PathName(pathName), result,
-					port, maxMessageSizeBytes, fallbackAddress, gossipPeriod, rmiPort, publicKey);
+					port, maxMessageSizeBytes, fallbackAddress, gossipPeriod, rmiPort, publicKey,
+					IniUtils.readInt(file, "gossip", "zone_expiration_ms"),
+					IniUtils.readInt(file, "gossip", "zone_cleanup_period_ms"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Could not parse config file, cause: '"
@@ -114,5 +122,13 @@ public final class CloudatlasAgentConfig implements Serializable {
 
 	public PublicKey getSignerKey() {
 		return signerKey;
+	}
+
+	public int getZoneCleanupPeriodMs() {
+		return zoneCleanupPeriodMs;
+	}
+
+	public int getZoneExpirationMs() {
+		return zoneExpirationMs;
 	}
 }

@@ -9,8 +9,11 @@ import java.util.Map;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
+import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
+import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
@@ -20,19 +23,23 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
+import pl.edu.mimuw.cloudatlas.common.utils.Utils;
 
 public final class ZmiKeeperModule extends Module {
 	private ZmisAttributes zmi;
 	private AttributesMap currentMachineAttributes;
 	private final CloudatlasAgentConfig config;
+	private final Address timerAddress;
 
-	public ZmiKeeperModule(Address address, CloudatlasAgentConfig config) {
+	public ZmiKeeperModule(Address address, CloudatlasAgentConfig config, Address timerAddress) {
 		super(address);
 		assert (!config.getPathName().getComponents().isEmpty());
 		this.config = config;
+		this.timerAddress = timerAddress;
 		List<ZmiLevel<AttributesMap>> levels = new ArrayList<ZmiLevel<AttributesMap>>();
 		levels.add(fromName(""));
 		for (String zoneName : config.getPathName().getComponents()) {
@@ -67,13 +74,49 @@ public final class ZmiKeeperModule extends Module {
 
 	private void refreshCurrentZmiTimestamp() {
 		currentMachineAttributes.addOrChange("timestamp",
-				new ValueTime(Calendar.getInstance().getTimeInMillis()));
+				new ValueTime(Utils.getNowMs()));
 	}
 
 	public static final int SET_ATTRIBUTE = 1;
 	public static final int GET_ROOT_ZMI = 2;
 	public static final int UPDATE_LOCAL_ZMI = 3;
 	public static final int UPDATE_REMOTE_ZMI = 4;
+	public static final int INIT = 5;
+	public static final int CLEANUP = 6;
+	
+	private final MessageHandler<Message> initHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			sendMessage(
+					timerAddress,
+					TimerModule.SCHEDULE_MESSAGE,
+					new ScheduleAlarmMessage(0, 0, config
+							.getZoneCleanupPeriodMs(), getAddress(), CLEANUP));
+			
+		}
+	};
+	
+	private final MessageHandler<Message> cleanupHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			List<ZmiData<AttributesMap>> contents = zmi.getContent();
+			for ( ZmiData<AttributesMap> attrs : contents ) {
+					if ( !isLocalPath(attrs.getPath()) ) {
+						if (((ValueTime) attrs.getContent().get("timestamp")).getValue() < Utils.getNowMs() - config.getZoneExpirationMs()) {
+							try {
+								System.err.println("Removing: " + attrs.getPath());
+								zmi.remove(attrs.getPath());
+							} catch (UnknownZoneException e) {
+								throw new HandlerException(e);
+							}
+						}
+					}
+			}
+			
+		}
+	};
 
 	private final MessageHandler<SetAttributeMessage> sendMessageHandler = new MessageHandler<SetAttributeMessage>() {
 
@@ -160,8 +203,8 @@ public final class ZmiKeeperModule extends Module {
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { SET_ATTRIBUTE, GET_ROOT_ZMI,
+		return getHandlers(new Integer[] { INIT, CLEANUP, SET_ATTRIBUTE, GET_ROOT_ZMI,
 				UPDATE_LOCAL_ZMI, UPDATE_REMOTE_ZMI }, new MessageHandler<?>[] {
-				sendMessageHandler, getRootHandler, updateLocalZmiHandler, updateRemoteZmiHandler});
+				initHandler, cleanupHandler, sendMessageHandler, getRootHandler, updateLocalZmiHandler, updateRemoteZmiHandler});
 	}
 }

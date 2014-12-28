@@ -168,6 +168,7 @@ public class MainModule extends Module {
 			sendMessage(gossipAddress, GossipModule.INITIALIZE_MODULE,
 					new Message());
 			sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE, new ScheduleAlarmMessage(0, 0, 1000, getAddress(), ALARM_RECEIVED));
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.INIT, new Message());
 
 		}
 	};
@@ -202,14 +203,15 @@ public class MainModule extends Module {
 				getAddress());
 		modules.add(reader);
 
-		ZmiKeeperModule zmiKeeper = new ZmiKeeperModule(generator.getUniqueAddress(), 
-				config);
-		zmiKeeperAddress = zmiKeeper.getAddress();
-		modules.add(zmiKeeper);
-
 		TimerModule timeModule = new TimerModule(generator.getUniqueAddress());
 		timerAddress = timeModule.getAddress();
 		modules.add(timeModule);
+		
+		ZmiKeeperModule zmiKeeper = new ZmiKeeperModule(generator.getUniqueAddress(), 
+				config, timerAddress);
+		zmiKeeperAddress = zmiKeeper.getAddress();
+		modules.add(zmiKeeper);
+
 		
 
 		QueryKeeperModule queryKeeper;
