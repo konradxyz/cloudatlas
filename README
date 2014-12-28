@@ -1,4 +1,8 @@
 Compile:
 ant
-Example usage:
-./interpreter < example.in
+
+There are four programs:
+agent.sh - cloudatlas agent
+nodeclient.sh - supplies agent with data concerning single node
+webclient.sh - web interface for agent
+querysigner.sh - signs queries
