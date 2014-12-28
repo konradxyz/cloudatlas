@@ -4,21 +4,22 @@ import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 
-public class QueriesCommunicate extends GossipCommunicate {
+public abstract class QueriesCommunicate extends GossipCommunicate {
 	private final List<ValueQuery> queries;
+	private final int gossipLevel;
 
-	@Override
-	public Type getType() {
-		return Type.QUERIES;
-	}
-
-	public QueriesCommunicate(List<ValueQuery> queries) {
+	public QueriesCommunicate(List<ValueQuery> queries, int gossipLevel) {
 		super();
 		this.queries = queries;
+		this.gossipLevel = gossipLevel;
 	}
 
 	public List<ValueQuery> getQueries() {
 		return queries;
+	}
+
+	public int getGossipLevel() {
+		return gossipLevel;
 	}
 
 }

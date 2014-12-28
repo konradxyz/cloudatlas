@@ -5,8 +5,8 @@ import pl.edu.mimuw.cloudatlas.agent.modules.gossip.ZmisFreshness;
 // It stores timestampMsec data.
 public class ZmisFreshnessInitCommunicate extends ZmisFreshnessCommunicate {
 
-	public ZmisFreshnessInitCommunicate(ZmisFreshness content) {
-		super(content);
+	public ZmisFreshnessInitCommunicate(ZmisFreshness content, TravelTime time) {
+		super(content, time);
 	}
 
 	@Override

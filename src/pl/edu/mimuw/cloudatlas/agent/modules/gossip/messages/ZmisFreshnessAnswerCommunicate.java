@@ -4,8 +4,8 @@ import pl.edu.mimuw.cloudatlas.agent.modules.gossip.ZmisFreshness;
 
 public class ZmisFreshnessAnswerCommunicate extends ZmisFreshnessCommunicate {
 
-	public ZmisFreshnessAnswerCommunicate(ZmisFreshness content) {
-		super(content);
+	public ZmisFreshnessAnswerCommunicate(ZmisFreshness content, TravelTime time) {
+		super(content, time);
 	}
 
 	@Override

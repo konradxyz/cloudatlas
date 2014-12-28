@@ -22,7 +22,9 @@ import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSele
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.RoundRobinContactSelectionStrategy;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate.Type;
-import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicate;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateAnswer;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateInit;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.TravelTime;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessAnswerCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessInitCommunicate;
@@ -33,7 +35,6 @@ import pl.edu.mimuw.cloudatlas.agent.modules.query.InstallQueryMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.QueryKeeperModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
-import pl.edu.mimuw.cloudatlas.agent.modules.zmi.RootZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateRemoteZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
@@ -57,16 +58,10 @@ public class GossipModule extends Module {
 	private Address socketModuleAddress;
 	private final Address timerModuleAddress;
 	
-	// Waiting for freshness info:
-	// Here we store messages connected with gossiping initialized different machine.
-	// We are going to send our freshness info.
-	private Map<InetAddress, ZmisFreshness> freshnessInitRequests = new HashMap<InetAddress, ZmisFreshness>();
-	// And here we have all messages connected with gossiping initialized by current machine.
-	// It indicates that we have already sent our freshness info. We do not have to send it second time.
-	private Map<InetAddress, ZmisFreshness> freshnessAnswerRequests = new HashMap<InetAddress, ZmisFreshness>();
-	private boolean waitingForZmiForGossip = false;
-
-	private List<InetAddress> waitingForQueries = new ArrayList<InetAddress>();
+	// Node data we keep for immediate sending to other nodes.
+	private ZmisAttributes cachedAttributes;
+	private List<ValueQuery> cachedQueries;
+	
 	
 	// Datagram handlers:
 	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers =
@@ -82,110 +77,106 @@ public class GossipModule extends Module {
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_INIT, freshnessInitCommunicateHandler);
 		datagramHandlers.put(Type.ZMIS_FRESHNESS_ANSWER, freshnessAnswerCommunicateHandler);
 		datagramHandlers.put(Type.ZMI, zmiCommunicateHandler);
-		datagramHandlers.put(Type.QUERIES, queriesCommunicateHandler);
+		datagramHandlers.put(Type.QUERIES_INIT, queriesCommunicateInitHandler);
+		datagramHandlers.put(Type.QUERIES_ANSWER, queriesCommunicateAnswerHandler);
 		this.timerModuleAddress = timerModuleAddress;
 		this.queryKeeperAddress = queryKeeperAddress;
 		if ( config.getFallbackAddress() != null )
 			fallbackContacts.add(config.getFallbackAddress());
 	}
-
-	private static final int MESSAGE_RECEIVED = 1;
+	
+	public static final int INITIALIZE_MODULE = 1;
 	public static final int START_GOSSIP = 2;
-	private static final int RECEIVED_ZMI = 3;
-	public static final int SET_FALLBACK_CONTACTS = 4;
-	private static final int INITIALIZE_GOSSIP = 5;
-	public static final int INITIALIZE_MODULE = 6;
-	public static final int GET_FALLBACK_CONTACTS = 7;
-	private static final int QUERIES_RECEIVED = 8;
+	public static final int REFRESH_DATA = 3;
+	
+	public static final int ZMI_RECEIVED = 4;
+	public static final int QUERIES_RECEIVED = 5;
 	
 	
-	private abstract class HandleCommunicate<T extends GossipCommunicate> {
-		public abstract void handle(T communicate, InetAddress source);
-		@SuppressWarnings("unchecked")
-		public void handleUntyped(GossipCommunicate communicate, InetAddress source) {
-			T comm = (T) communicate;
-			comm.hashCode();
-			handle(comm, source);
+	private static final int NETWORK_MESSAGE_RECEIVED = 6;
+	
+	public static final int SET_FALLBACK_CONTACTS = 7;
+	public static final int GET_FALLBACK_CONTACTS = 8;
+	
+	
+	private ZmisAttributes getCachedAttributes() throws HandlerException {
+		if (cachedAttributes == null) {
+			throw new HandlerException("Gossip module not yet initialized");
 		}
+		return cachedAttributes;
 	}
-	
-	private HandleCommunicate<ZmisFreshnessInitCommunicate> freshnessInitCommunicateHandler = new HandleCommunicate<ZmisFreshnessInitCommunicate>() {
+
+	private List<ValueQuery> getCachedQueries() throws HandlerException {
+		if (cachedQueries == null) {
+			throw new HandlerException("Gossip module not yet initialized");
+		}
+		return cachedQueries;
+	}
+
+	private final MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
 
 		@Override
-		public void handle(ZmisFreshnessInitCommunicate communicate, InetAddress source) {
-			freshnessInitRequests.put(source, communicate.getContent());
-			waitingForQueries.add(source);
-			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), RECEIVED_ZMI));
+		public void handleMessage(Message message) throws HandlerException {
+			sendMessage(timerModuleAddress, TimerModule.SCHEDULE_MESSAGE,
+					new ScheduleAlarmMessage(100, 0, config.getGossipPeriodMs(),
+							getAddress(), START_GOSSIP));
+			sendMessage(
+					timerModuleAddress,
+					TimerModule.SCHEDULE_MESSAGE,
+					new ScheduleAlarmMessage(0, 1, config
+							.getGossipDataRefreshTimeMs(), getAddress(),
+							REFRESH_DATA));
+		}
+	};
+	
+	private final MessageHandler<Message> refreshDataHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), ZMI_RECEIVED));
 			sendMessage(queryKeeperAddress, QueryKeeperModule.GET_QUERIES, new GetMessage(getAddress(), QUERIES_RECEIVED));
 		}
 	};
-
-	private HandleCommunicate<ZmisFreshnessAnswerCommunicate> freshnessAnswerCommunicateHandler = new HandleCommunicate<ZmisFreshnessAnswerCommunicate>() {
-
-		@Override
-		public void handle(ZmisFreshnessAnswerCommunicate communicate, InetAddress source) {
-			freshnessAnswerRequests.put(source, communicate.getContent());
-			waitingForQueries.add(source);
-			sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI, new GetMessage(getAddress(), RECEIVED_ZMI));
-			sendMessage(queryKeeperAddress, QueryKeeperModule.GET_QUERIES, new GetMessage(getAddress(), QUERIES_RECEIVED));
-		}
-	};
 	
-	private HandleCommunicate<ZmiCommunicate> zmiCommunicateHandler = new HandleCommunicate<ZmiCommunicate>() {
+	private final MessageHandler<SimpleMessage<Map<String, ValueQuery>>> queriesReceivedHandler = new MessageHandler<SimpleMessage<Map<String, ValueQuery>>>() {
 
 		@Override
-		public void handle(ZmiCommunicate communicate, InetAddress source) {
-			sendMessage(zmiKeeperAddress, ZmiKeeperModule.UPDATE_REMOTE_ZMI,
-					new UpdateRemoteZmiMessage(communicate.getPathName(),
-							communicate.getAttributes()));
-		}
-	};
-	
-	private HandleCommunicate<QueriesCommunicate> queriesCommunicateHandler = new HandleCommunicate<QueriesCommunicate>() {
-
-		@Override
-		public void handle(QueriesCommunicate communicate, InetAddress source) {
-			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
-					new InstallQueryMessage(communicate.getQueries()));
+		public void handleMessage(SimpleMessage<Map<String, ValueQuery>> message)
+				throws HandlerException {
+			cachedQueries = new ArrayList<ValueQuery>(message.getContent().values());
 			
 		}
 	};
 	
-	private MessageHandler<ReceivedDatagramMessage> receivedMessageHandler = new MessageHandler<ReceivedDatagramMessage>() {
+	private final MessageHandler<SimpleMessage<ZmisAttributes>> zmiReceivedHandler = new MessageHandler<SimpleMessage<ZmisAttributes>>() {
 
 		@Override
-		public void handleMessage(ReceivedDatagramMessage message)
+		public void handleMessage(SimpleMessage<ZmisAttributes> message)
 				throws HandlerException {
-			GossipCommunicate communicate = communicateSerializer
-					.deserialize(message.getContent()); 
-			Type tp = communicate.getType();
-			datagramHandlers.get(tp).handleUntyped(communicate, message.getSource());
+			cachedAttributes = message.getContent();	
 		}
 	};
-
+	
 	private MessageHandler<Message> startGossipHandler = new MessageHandler<Message>() {
 
 		@Override
 		public void handleMessage(Message message) throws HandlerException {
-			sendMessage(
-					zmiKeeperAddress,
-					ZmiKeeperModule.GET_ROOT_ZMI,
-					new GetMessage(getAddress(),  RECEIVED_ZMI));
-			waitingForZmiForGossip = true;
-		}
-	};
-	
-	private MessageHandler<RootZmiMessage> receivedZmi = new MessageHandler<RootZmiMessage>() {
-
-		@Override
-		public void handleMessage(RootZmiMessage message)
-				throws HandlerException {
-			sendMessage(getAddress(), INITIALIZE_GOSSIP, 
-					new SimpleMessage<ZmisAttributes>(message.getContent().clone()));
-			sendZmisAndOptionallyFreshness(freshnessInitRequests, message.getContent(), true);
-			freshnessInitRequests.clear();
-			sendZmisAndOptionallyFreshness(freshnessAnswerRequests, message.getContent(), false);
-			freshnessAnswerRequests.clear();
+			ZmisAttributes zmis = getCachedAttributes();
+			ContactResult contact = selectionStrategy.selectContact(zmis);
+			InetAddress target = null;
+			int level = 1;
+			if ( contact == null ) {
+				if (fallbackContacts.isEmpty()) {
+					throw new HandlerException("GossipModule: empty fallback contacts");
+				}
+				target = fallbackContacts.get(random
+						.nextInt(fallbackContacts.size()));
+				level = zmis.getLevels().size() - 1;
+			} else {
+				target = contact.getContact().getAddress();
+				level = contact.getLevel();
+			}
+			sendNetworkMessage(new QueriesCommunicateInit(getCachedQueries(), level), target);
 		}
 	};
 	
@@ -214,50 +205,113 @@ public class GossipModule extends Module {
 		
 	};
 
-	private MessageHandler<SimpleMessage<Map<String, ValueQuery>>> queriesReceivedHandler = new MessageHandler<SimpleMessage<Map<String, ValueQuery>>>() {
+
+	private MessageHandler<ReceivedDatagramMessage> receivedNetworkMessageHandler = new MessageHandler<ReceivedDatagramMessage>() {
 
 		@Override
-		public void handleMessage(SimpleMessage<Map<String, ValueQuery>> message)
+		public void handleMessage(ReceivedDatagramMessage message)
 				throws HandlerException {
-			List<ValueQuery> queries = new ArrayList<ValueQuery>(message
-					.getContent().values());
-			for (InetAddress addr : waitingForQueries) {
-				sendNetworkMessage(new QueriesCommunicate(queries), addr);
-			}
-			waitingForQueries.clear();
+			GossipCommunicate communicate = communicateSerializer
+					.deserialize(message.getContent()); 
+			System.err.println("Sent " + message.getSentTimestampMs());
+			System.err.println("Received " + message.getReceivedTimestampMs());
+			System.err.println(communicate);
+			Type tp = communicate.getType();
+			datagramHandlers.get(tp).handleUntyped(communicate,
+					message.getSource(), message.getSentTimestampMs(),
+					message.getReceivedTimestampMs());
 		}
 	};
 
-	private void sendZmisAndOptionallyFreshness(
-			Map<InetAddress, ZmisFreshness> freshnessRequests,
-			ZmisAttributes attrs, boolean sendFreshness) {
 
-		for (Entry<InetAddress, ZmisFreshness> e : freshnessRequests.entrySet()) {
-			try {
-				if (sendFreshness) {
-					ZmisFreshness freshness = generateFreshness(attrs,
-							Math.min(e.getValue().getLevels().size() - 1, attrs
-									.getLevels().size() - 1));
-					sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(
-							freshness), e.getKey());
-				}
-				List<ZmiData<AttributesMap>> toSend = filterNewer(
-						attrs.getContent(), e.getValue());
-				PathName targetPath = e.getValue().getPath();
-				for (ZmiData<AttributesMap> single : toSend) {
-					if ( !single.getPath().isPrefixOf(targetPath)) {
-						sendNetworkMessage(new ZmiCommunicate(single.getPath(),
-							single.getContent()), e.getKey());
-					}
-				}
-			} catch (Exception exc) {
-				exc.printStackTrace();
-			}
-
+	
+	
+	private abstract class HandleCommunicate<T extends GossipCommunicate> {
+		public abstract void handle(T communicate, InetAddress source, Long sent, Long received) throws HandlerException;
+		@SuppressWarnings("unchecked")
+		public void handleUntyped(GossipCommunicate communicate, InetAddress source, Long sent, Long received) throws HandlerException {
+			T comm = (T) communicate;
+			comm.hashCode();
+			handle(comm, source, sent, received);
 		}
-
 	}
+	
+	private final HandleCommunicate<QueriesCommunicateInit> queriesCommunicateInitHandler = new HandleCommunicate<QueriesCommunicateInit>() {
 
+		@Override
+		public void handle(QueriesCommunicateInit communicate,
+				InetAddress source, Long sent, Long received) throws HandlerException {
+			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
+					new InstallQueryMessage(communicate.getQueries()));
+
+			sendNetworkMessage(new QueriesCommunicateAnswer(
+					getCachedQueries(), communicate.getGossipLevel()), source);
+		}
+	};
+	
+	
+	private final HandleCommunicate<QueriesCommunicateAnswer> queriesCommunicateAnswerHandler = new HandleCommunicate<QueriesCommunicateAnswer>() {
+
+		@Override
+		public void handle(QueriesCommunicateAnswer communicate,
+				InetAddress source, Long sent, Long received) throws HandlerException {
+			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
+					new InstallQueryMessage(communicate.getQueries()));
+			
+			
+			ZmisAttributes attrs = getCachedAttributes();
+			ZmisFreshness freshness = generateFreshness(attrs,
+					Math.min(communicate.getGossipLevel(), attrs
+							.getLevels().size() - 1));
+			sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness, new TravelTime(sent, received)), source);
+		}
+	};
+	
+	
+	private HandleCommunicate<ZmisFreshnessInitCommunicate> freshnessInitCommunicateHandler = new HandleCommunicate<ZmisFreshnessInitCommunicate>() {
+
+		@Override
+		public void handle(ZmisFreshnessInitCommunicate communicate, InetAddress source, Long sent, Long received) throws HandlerException {
+			ZmisAttributes attrs = getCachedAttributes();
+			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
+					communicate.getContent().getLevels().size() - 1, attrs
+							.getLevels().size() - 1));
+			sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(freshness, new TravelTime(sent, received)), source);
+		
+			sendZmis(attrs, communicate.getContent(), source);
+		}
+	};
+
+	private HandleCommunicate<ZmisFreshnessAnswerCommunicate> freshnessAnswerCommunicateHandler = new HandleCommunicate<ZmisFreshnessAnswerCommunicate>() {
+
+		@Override
+		public void handle(ZmisFreshnessAnswerCommunicate communicate, InetAddress source, Long sent, Long received) throws HandlerException {
+			sendZmis(getCachedAttributes(), communicate.getContent(), source);
+		}
+	};
+	
+	private HandleCommunicate<ZmiCommunicate> zmiCommunicateHandler = new HandleCommunicate<ZmiCommunicate>() {
+
+		@Override
+		public void handle(ZmiCommunicate communicate, InetAddress source, Long sent, Long received) {
+			sendMessage(zmiKeeperAddress, ZmiKeeperModule.UPDATE_REMOTE_ZMI,
+					new UpdateRemoteZmiMessage(communicate.getPathName(),
+							communicate.getAttributes()));
+		}
+	};
+	
+	private void sendZmis(ZmisAttributes zmis, ZmisFreshness otherFreshness, InetAddress target) {
+		List<ZmiData<AttributesMap>> toSend = filterNewer(
+				zmis.getContent(), otherFreshness);
+		PathName targetPath = otherFreshness.getPath();
+		for (ZmiData<AttributesMap> single : toSend) {
+			if ( !single.getPath().isPrefixOf(targetPath)) {
+				sendNetworkMessage(new ZmiCommunicate(single.getPath(),
+					single.getContent()), target);
+			}
+		}
+	}
+	
 	private ZmisFreshness generateFreshness(ZmisAttributes zmis, int level) {
 		List<ZmiLevel<Long>> resList = new ArrayList<ZmiLevel<Long>>();
 		for ( ZmiLevel<AttributesMap> l : zmis.getLevels().subList(0,  level + 1) ){
@@ -275,29 +329,6 @@ public class GossipModule extends Module {
 		}
 		return new ZmisFreshness(resList);
 	}
-	
-	private MessageHandler<SimpleMessage<ZmisAttributes>> initializeGossipHandler = 
-			new MessageHandler<SimpleMessage<ZmisAttributes>>() {
-
-		@Override
-		public void handleMessage(SimpleMessage<ZmisAttributes> message)
-				throws HandlerException {
-			if (waitingForZmiForGossip) {
-				waitingForZmiForGossip = false;
-				initializeGossip(message.getContent());
-			}
-		}
-	};
-	
-	private MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
-		
-		@Override
-		public void handleMessage(Message message) throws HandlerException {
-			sendMessage(timerModuleAddress, TimerModule.SCHEDULE_MESSAGE, 
-					new ScheduleAlarmMessage(0, 0, config.getGossipPeriodMs(), 
-							getAddress(), START_GOSSIP));
-		}
-	};
 
 	private static List<ZmiData<AttributesMap>> filterNewer(
 			List<ZmiData<AttributesMap>> myZmis, ZmisFreshness otherFreshness) {
@@ -327,25 +358,6 @@ public class GossipModule extends Module {
 		return result;
 	}
 
-	private void initializeGossip(ZmisAttributes zmis) throws HandlerException {
-		ContactResult contact = selectionStrategy.selectContact(zmis);
-		InetAddress target = null;
-		int level = 1;
-		if ( contact == null ) {
-			if (fallbackContacts.isEmpty()) {
-				throw new HandlerException("GossipModule: empty fallback contacts");
-			}
-			target = fallbackContacts.get(random
-					.nextInt(fallbackContacts.size()));
-			level = zmis.getLevels().size() - 1;
-		} else {
-			target = contact.getContact().getAddress();
-			level = contact.getLevel();
-		}
-		ZmisFreshness freshness = generateFreshness(zmis, level);
-		sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness), target);
-	}
-
 	private void sendNetworkMessage(GossipCommunicate message, InetAddress target) {
 		byte[] o = communicateSerializer.serialize(message);
 		sendMessage(
@@ -354,27 +366,28 @@ public class GossipModule extends Module {
 				new SendDatagramMessage(o, target, config
 						.getPort()));
 	}
-
+	
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
 		return getHandlers(new Integer[] { 
-					MESSAGE_RECEIVED, 
-					START_GOSSIP,
-					RECEIVED_ZMI, 
-					SET_FALLBACK_CONTACTS,
-					INITIALIZE_GOSSIP,
 					INITIALIZE_MODULE,
-					GET_FALLBACK_CONTACTS,
-					QUERIES_RECEIVED},
-				new MessageHandler<?>[] { 
-					receivedMessageHandler,
-					startGossipHandler, 
-					receivedZmi,
-					setFallbackContactsHandler,
-					initializeGossipHandler,
+					START_GOSSIP,
+					REFRESH_DATA,
+					ZMI_RECEIVED,
+					QUERIES_RECEIVED,
+					NETWORK_MESSAGE_RECEIVED,
+					SET_FALLBACK_CONTACTS,
+					GET_FALLBACK_CONTACTS},
+				new MessageHandler<?>[] {
 					initializeHandler,
-					getFallbackContactsHandler,
-					queriesReceivedHandler});
+					startGossipHandler,
+					refreshDataHandler,
+					zmiReceivedHandler,
+					queriesReceivedHandler,
+					receivedNetworkMessageHandler,
+					setFallbackContactsHandler,
+					getFallbackContactsHandler
+		});
 	}
 
 	@Override
@@ -384,7 +397,7 @@ public class GossipModule extends Module {
 				config.getPort(), 
 				config.getMaxMessageSizeBytes(), 
 				getAddress(),
-				MESSAGE_RECEIVED));
+				NETWORK_MESSAGE_RECEIVED));
 	}
 
 }

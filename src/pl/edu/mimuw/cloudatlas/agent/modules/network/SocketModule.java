@@ -10,6 +10,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
+import pl.edu.mimuw.cloudatlas.common.utils.Utils;
 
 public final class SocketModule extends Module {
 	private final int port;
@@ -32,8 +34,8 @@ public final class SocketModule extends Module {
 	// in toSendQueue. In order to terminate senderThread you need to put
 	// finishMessage in this queue.
 	// It is ugly solution but it will work for now.
-	private final DatagramPacket finishMessage = new DatagramPacket(new byte[1], 1);
-	private BlockingQueue<DatagramPacket> toSendQueue = new LinkedBlockingQueue<DatagramPacket>();
+	private final SendDatagramMessage finishMessage = new SendDatagramMessage(null, null,0);
+	private BlockingQueue<SendDatagramMessage> toSendQueue = new LinkedBlockingQueue<SendDatagramMessage>();
 	private Thread senderThread;
 
 	// receiverThread reads message from socket and sends it to
@@ -59,31 +61,7 @@ public final class SocketModule extends Module {
 
 		@Override
 		public void handleMessage(SendDatagramMessage message) throws HandlerException {
-			int packetsCount = (int) Math
-					.ceil((double) message.getContent().length
-							/ (double) maxMessageSize);
-			try {
-				for (int i = 0; i < packetsCount; ++i) {
-					ByteArrayOutputStream bstream = new ByteArrayOutputStream(
-							HEADER_SIZE + maxMessageSize);
-					DataOutputStream stream = new DataOutputStream(bstream);
-					stream.writeInt(nextMessageId);
-					stream.writeInt(i);
-					stream.writeInt(packetsCount);
-					int offset = i * maxMessageSize;
-					int length = maxMessageSize;
-					if (offset + length > message.getContent().length)
-						length = message.getContent().length - offset;
-					stream.write(message.getContent(), offset, length);
-					stream.close();
-					byte[] data = bstream.toByteArray();
-					toSendQueue.add(new DatagramPacket(data, data.length,
-							message.getTarget(), message.getPort()));
-				}
-			} catch (IOException cause) {
-				throw new HandlerException(cause);
-			}
-			nextMessageId++;
+			toSendQueue.add(message);
 		}
 	};
 
@@ -94,18 +72,48 @@ public final class SocketModule extends Module {
 			boolean finished = false;
 			while (!finished) {
 				try {
-					DatagramPacket msg = toSendQueue.take();
-					finished = msg == finishMessage;
-					if (!finished) {
-						socket.send(msg);
+					int messageId = nextMessageId;
+					nextMessageId++;
+					SendDatagramMessage msg = toSendQueue.take();
+					if ( msg == finishMessage )
+						return;
+					ByteArrayOutputStream prepareStreamByte = new ByteArrayOutputStream();
+					DataOutputStream prepareStream = new DataOutputStream(prepareStreamByte);
+					prepareStream.writeLong(Utils.getNowMs());
+					prepareStream.write(msg.getContent());
+					byte[] toSend = prepareStreamByte.toByteArray();
+					
+					
+					int packetsCount = (int) Math
+							.ceil((double) toSend.length
+									/ (double) maxMessageSize);
+					
+					
+					for (int i = 0; i < packetsCount; ++i) {
+						ByteArrayOutputStream bstream = new ByteArrayOutputStream(
+								HEADER_SIZE + maxMessageSize);
+						DataOutputStream stream = new DataOutputStream(bstream);
+						stream.writeInt(messageId);
+						stream.writeInt(i);
+						stream.writeInt(packetsCount);
+						int offset = i * maxMessageSize;
+						int length = maxMessageSize;
+						if (offset + length > toSend.length)
+							length = toSend.length - offset;
+						stream.write(toSend, offset, length);
+						stream.close();
+						byte[] data = bstream.toByteArray();
+						socket.send(new DatagramPacket(data, data.length,
+								msg.getTarget(), msg.getPort()));
 					}
+					
 				} catch (InterruptedException | IOException e) {
 					// Note that even if we do not receive IOException here
 					// we can't assume that our msg was received - it is UDP
 					// after all. We expect that higher level protocol
 					// will take care of ACKs and eventual retransmissions.
 					// As such, we do not notify anyone about failure.
-					e.printStackTrace();
+					System.err.println(e.getMessage());
 				}
 			}
 		}
@@ -156,6 +164,23 @@ public final class SocketModule extends Module {
 		private InetAddress from;
 		private Integer machineMessageId;
 	}
+	
+	private static class PartialMessage {
+		public PartialMessage(int partsCount) {
+			super();
+			this.parts = new ArrayList<byte[]>(Collections.nCopies(
+					partsCount, (byte[]) null));
+			this.receivedTimestampMs = Utils.getNowMs();
+		}
+		public List<byte[]> getParts() {
+			return parts;
+		}
+		public Long getReceivedTimestampMs() {
+			return receivedTimestampMs;
+		}
+		private List<byte[]> parts;
+		private Long receivedTimestampMs;
+	}
 
 	private final Runnable receiver = new Runnable() {
 
@@ -164,7 +189,7 @@ public final class SocketModule extends Module {
 			byte[] content = new byte[maxMessageSize + HEADER_SIZE + 1];
 			DatagramPacket packet = new DatagramPacket(content, maxMessageSize
 					+ HEADER_SIZE + 1);
-			Map<MessageId, List<byte[]>> incomingMessages = new HashMap<MessageId, List<byte[]>>();
+			Map<MessageId, PartialMessage> incomingMessages = new HashMap<MessageId, PartialMessage>();
 			boolean finished = false;
 			while (!finished) {
 				try {
@@ -186,11 +211,10 @@ public final class SocketModule extends Module {
 						if (!incomingMessages.containsKey(key)) {
 							incomingMessages.put(
 									key,
-									new ArrayList<byte[]>(Collections.nCopies(
-											packetCount, (byte[]) null)));
+									new PartialMessage(packetCount));
 						}
-						if (incomingMessages.get(key).size() > packetId) {
-							incomingMessages.get(key).set(packetId,
+						if (incomingMessages.get(key).getParts().size() > packetId) {
+							incomingMessages.get(key).getParts().set(packetId,
 									unwrappedContent);
 						}
 
@@ -199,21 +223,29 @@ public final class SocketModule extends Module {
 						// We are ok with the first problem. Second one should
 						// be fixed.
 						int i = 0;
-						while (i < incomingMessages.get(key).size()
-								&& incomingMessages.get(key).get(i) != null)
+						while (i < incomingMessages.get(key).getParts().size()
+								&& incomingMessages.get(key).getParts().get(i) != null)
 							i++;
-						if (i >= incomingMessages.get(key).size()) {
+						if (i >= incomingMessages.get(key).getParts().size()) {
 							ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-							for (int j = 0; j < incomingMessages.get(key)
+							for (int j = 0; j < incomingMessages.get(key).getParts()
 									.size(); ++j) {
-								outputStream.write(incomingMessages.get(key)
+								outputStream.write(incomingMessages.get(key).getParts()
 										.get(j));
 							}
-							sendMessage(
-									gatewayModuleAddress,
+							byte[] msg = outputStream.toByteArray();
+							byte[] sentTimestampBytes = Arrays.copyOfRange(msg, 0,  8);
+							byte[] realMsg = Arrays.copyOfRange(msg, 8, msg.length);
+							
+							ByteArrayInputStream inputStream = new ByteArrayInputStream(sentTimestampBytes);
+							DataInputStream dataInputStream = new DataInputStream(inputStream);
+							Long sent = dataInputStream.readLong();
+							sendMessage(gatewayModuleAddress,
 									gatewayModuleMessageType,
-									new ReceivedDatagramMessage(outputStream
-											.toByteArray(), key.from));
+									new ReceivedDatagramMessage(realMsg,
+											key.from, sent, incomingMessages
+													.get(key)
+													.getReceivedTimestampMs()));
 							incomingMessages.remove(key);
 						}
 					} else {

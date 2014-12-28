@@ -37,10 +37,14 @@ public final class CloudatlasAgentConfig implements Serializable {
 	// Zone expiration:
 	private final int zoneExpirationMs;
 	private final int zoneCleanupPeriodMs;
+	
+	// Gossip module data refresh time:
+	private final int gossipDataRefreshTimeMs;
 
 	public CloudatlasAgentConfig(PathName pathName, Inet4Address address,
 			int port, int maxMessageSizeBytes, InetAddress fallbackAddress,
-			int gossipPeriodMs, int rmiPort, PublicKey signerKey, int zoneExpirationMs, int zoneCleanupPeriodMs) {
+			int gossipPeriodMs, int rmiPort, PublicKey signerKey, int zoneExpirationMs, 
+			int zoneCleanupPeriodMs, int gossipDataRefreshTimeMs) {
 		super();
 		this.pathName = pathName;
 		this.address = address;
@@ -52,6 +56,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 		this.signerKey = signerKey;
 		this.zoneExpirationMs = zoneExpirationMs;
 		this.zoneCleanupPeriodMs = zoneCleanupPeriodMs;
+		this.gossipDataRefreshTimeMs = gossipDataRefreshTimeMs;
 	}
 
 	public static CloudatlasAgentConfig fromIni(Ini file) {
@@ -83,7 +88,8 @@ public final class CloudatlasAgentConfig implements Serializable {
 			return new CloudatlasAgentConfig(new PathName(pathName), result,
 					port, maxMessageSizeBytes, fallbackAddress, gossipPeriod, rmiPort, publicKey,
 					IniUtils.readInt(file, "gossip", "zone_expiration_ms"),
-					IniUtils.readInt(file, "gossip", "zone_cleanup_period_ms"));
+					IniUtils.readInt(file, "gossip", "zone_cleanup_period_ms"),
+					IniUtils.readInt(file, "gossip", "data_refresh_period_ms"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Could not parse config file, cause: '"
@@ -130,5 +136,9 @@ public final class CloudatlasAgentConfig implements Serializable {
 
 	public int getZoneExpirationMs() {
 		return zoneExpirationMs;
+	}
+
+	public int getGossipDataRefreshTimeMs() {
+		return gossipDataRefreshTimeMs;
 	}
 }
