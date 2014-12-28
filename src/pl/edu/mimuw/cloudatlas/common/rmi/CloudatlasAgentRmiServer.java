@@ -20,5 +20,4 @@ public interface CloudatlasAgentRmiServer extends Remote {
 	public void installQuery(ValueQuery query) throws RemoteException;
 	public List<InetAddress> getFallbackAddresses() throws RemoteException;
 	public void setFallbackAddresses(List<InetAddress> addrs) throws RemoteException;
-	public static final int DEFAULT_PORT = 33333;
 }

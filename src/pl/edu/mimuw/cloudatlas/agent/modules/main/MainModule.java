@@ -3,11 +3,15 @@ package pl.edu.mimuw.cloudatlas.agent.modules.main;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.crypto.NoSuchPaddingException;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
@@ -21,10 +25,8 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.PrinterModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.example.ReaderModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.GossipModule;
-import pl.edu.mimuw.cloudatlas.agent.modules.network.ReceivedDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SendDatagramMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.network.SocketModule;
-import pl.edu.mimuw.cloudatlas.agent.modules.query.InstallQueryMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.QueryKeeperModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.RecalculateZmisMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.ZmiRecalculatedMessage;
@@ -38,9 +40,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateLocalZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
-import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
-import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
 
 public class MainModule extends Module {
 	private Address shutdownAddress;
@@ -53,14 +53,11 @@ public class MainModule extends Module {
 
 	private final CloudatlasAgentConfig config;
 
-	private static final int RECEIVED_DATAGRAM = 1;
-	protected static final Integer ZMI_RECEIVED = 2;
 	protected static final Integer ALARM_RECEIVED = 3;
 
 	protected static final Integer RECALCULATED_ZMI = 4;
 	protected static final Integer ZMI_RECEIVED_FOR_RECALCULATION = 5;
 	public static final Integer INITIALIZE = 6;
-	protected static final int ALARM = 7;
 
 	private final MessageHandler<SimpleMessage<String>> readHandler = new MessageHandler<SimpleMessage<String>>() {
 	
@@ -69,6 +66,9 @@ public class MainModule extends Module {
 			sendMessage(printerAddress, PrinterModule.PRINT_LINE, message);
 			if ( message.getContent().equals("quit") ) {
 				sendMessage(shutdownAddress, ShutdownModule.INITIALIZE_SHUTDOWN, new Message());
+			}
+			if ( message.getContent().equals("dump")) {
+				sendMessage(queryKeeperAddress, QueryKeeperModule.DUMP, new Message());
 			}
 			String content = message.getContent();			
 			if ( content.startsWith("send") ) {
@@ -99,32 +99,10 @@ public class MainModule extends Module {
 								new ValueString(attrs[2])));
 				return;
 			}
-			if (content.startsWith("show")) {
-				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
-						new GetMessage(getAddress(), ZMI_RECEIVED));
-			}
-
-			if ( content.startsWith("alarm ") ) {
-				content = content.substring("alarm ".length());
-				int i = 0;
-				int period= Integer.parseInt(content.split(" ")[i++]);
-				int delay = Integer.parseInt(content.split(" ")[i++]);
-				int requestId= Integer.parseInt(content.split(" ")[i++]);
-				sendMessage(timerAddress, TimerModule.SCHEDULE_MESSAGE,
-						new ScheduleAlarmMessage(delay, requestId, period, getAddress(), ALARM_RECEIVED));
-			}
 			if (content.startsWith("calc"))
 				sendMessage(zmiKeeperAddress, ZmiKeeperModule.GET_ROOT_ZMI,
 						new GetMessage(getAddress(),
 								ZMI_RECEIVED_FOR_RECALCULATION));
-			if (content.startsWith("install")) {
-				String program = content.substring("install ".length());
-				String attrName = program.split(":")[0];
-				String query = program.substring(attrName.length() + 1);
-				sendMessage(queryKeeperAddress,
-						QueryKeeperModule.INSTALL_QUERY,
-						new InstallQueryMessage(new ValueQuery(attrName, query)));
-			}
 			if (content.startsWith("gossip"))
 				sendMessage(gossipAddress, GossipModule.START_GOSSIP,  new Message());
 			if (content.startsWith("fallback")) {
@@ -143,17 +121,6 @@ public class MainModule extends Module {
 			}
 		}
 	};
-
-	private final MessageHandler<ReceivedDatagramMessage> receiveHandler = new MessageHandler<ReceivedDatagramMessage>() {
-
-		@Override
-		public void handleMessage(ReceivedDatagramMessage message)
-				throws HandlerException {
-			String toPrint = new String(message.getContent());
-			sendMessage(printerAddress, PrinterModule.PRINT_LINE,
-					new SimpleMessage<String>("received via network:" + toPrint + "\n"));
-		}
-	};
 	
 	private final MessageHandler<AlarmMessage> alarmHandler = new MessageHandler<AlarmMessage>() {
 
@@ -164,19 +131,6 @@ public class MainModule extends Module {
 					new GetMessage(getAddress(),
 							ZMI_RECEIVED_FOR_RECALCULATION));
 		}
-	};
-
-	private final MessageHandler<RootZmiMessage> rootZmiHandler = new MessageHandler<RootZmiMessage>() {
-
-		@Override
-		public void handleMessage(RootZmiMessage message)
-				throws HandlerException {
-			// Well - we should not print in here....
-			// But who cares? We are going to delete this code.
-			// TODO: remove.
-			message.getContent().print(System.err);
-		}
-
 	};
 
 	private final MessageHandler<RootZmiMessage> rootZmiHandlerForRecalc = new MessageHandler<RootZmiMessage>() {
@@ -196,8 +150,6 @@ public class MainModule extends Module {
 		@Override
 		public void handleMessage(ZmiRecalculatedMessage message)
 				throws HandlerException {
-			System.out.println(message.getPathName());
-			message.getMap().printAttributes(System.out);
 			sendMessage(
 					zmiKeeperAddress,
 					ZmiKeeperModule.UPDATE_LOCAL_ZMI,
@@ -208,6 +160,7 @@ public class MainModule extends Module {
 	};
 
 	// TODO: add config
+	// TODO: removing zones
 	private final MessageHandler<Message> initializeHandler = new MessageHandler<Message>() {
 
 		@Override
@@ -230,8 +183,6 @@ public class MainModule extends Module {
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
 		Map<Integer, MessageHandler<?>> handlers = new HashMap<Integer, MessageHandler<?>>();
 		handlers.put(ReaderModule.LINE_READ, readHandler);
-		handlers.put(RECEIVED_DATAGRAM, receiveHandler);
-		handlers.put(ZMI_RECEIVED, rootZmiHandler);
 		handlers.put(ALARM_RECEIVED, alarmHandler);
 		handlers.put(ZMI_RECEIVED_FOR_RECALCULATION, rootZmiHandlerForRecalc);
 		handlers.put(RECALCULATED_ZMI, recalcZmiHandler);
@@ -250,12 +201,7 @@ public class MainModule extends Module {
 		ReaderModule reader = new ReaderModule(generator.getUniqueAddress(), 
 				getAddress());
 		modules.add(reader);
-	
-		SocketModule socket = new SocketModule(generator.getUniqueAddress(),
-				5432, 1000, getAddress(), RECEIVED_DATAGRAM);
-		modules.add(socket);
-		socketAddress = socket.getAddress();
-		
+
 		ZmiKeeperModule zmiKeeper = new ZmiKeeperModule(generator.getUniqueAddress(), 
 				config);
 		zmiKeeperAddress = zmiKeeper.getAddress();
@@ -266,8 +212,14 @@ public class MainModule extends Module {
 		modules.add(timeModule);
 		
 
-		QueryKeeperModule queryKeeper = new QueryKeeperModule(
-				generator.getUniqueAddress(), config.getPathName());
+		QueryKeeperModule queryKeeper;
+		try {
+			queryKeeper = new QueryKeeperModule(
+					generator.getUniqueAddress(), config);
+		} catch (InvalidKeyException | NoSuchAlgorithmException
+				| NoSuchPaddingException e) {
+			throw new RuntimeException(e);
+		}
 		queryKeeperAddress = queryKeeper.getAddress();
 		modules.add(queryKeeper);
 
@@ -279,7 +231,7 @@ public class MainModule extends Module {
 
 		
 		RmiModule rmiModule = new RmiModule(generator.getUniqueAddress(),
-				zmiKeeperAddress, queryKeeperAddress, gossipAddress, CloudatlasAgentRmiServer.DEFAULT_PORT, config);
+				zmiKeeperAddress, queryKeeperAddress, gossipAddress, config);
 		modules.add(rmiModule);
 
 		

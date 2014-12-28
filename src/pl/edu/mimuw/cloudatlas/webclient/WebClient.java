@@ -32,16 +32,17 @@ import org.eclipse.jetty.util.ajax.JSON;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupDir;
 
-import pl.edu.mimuw.cloudatlas.common.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
-import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.Type.PrimaryType;
 import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueSimple;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasAgentRmiServer;
+import pl.edu.mimuw.cloudatlas.common.rmi.CloudatlasQuerySigner;
+import pl.edu.mimuw.cloudatlas.common.rmi.InstallQueryResult;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
@@ -59,6 +60,9 @@ public class WebClient {
 	private final int plotRefreshPeriodMs;
 	
 	private final Map<PrimaryType, ValueToNumberStringConverter<?>> converters = new HashMap<PrimaryType, ValueToNumberStringConverter<?>>();
+	
+	// Signer:
+	private final QuerySignerAddress signer;
 
 	// Node data:
 	private NodeDataKeeper keeper;
@@ -134,40 +138,67 @@ public class WebClient {
 		public void handlePage(HttpServletRequest request,
 				HttpServletResponse response, ST st) throws IOException {
 			fillHeader(st);
+			CloudatlasAgentRmiServer stub;
+			try {
+				stub = connect();
+			} catch (RmiConnectionException e1) {
+				throw new IOException(e1);
+			}
+			Map<String, ValueQuery> queries = stub.getQueries();
 			String message = "&nbsp;";
 			if ( "1".equals(request.getParameter("install"))) {
 				try {
-					System.out.println(request.getParameter("query"));
-					MainInterpreter.parseProgram(request.getParameter("query"));
-					ValueQuery q = new ValueQuery(request.getParameter("name"), request.getParameter("query"));
-					CloudatlasAgentRmiServer stub = connect();
-					stub.installQuery(q);
-					updateData(stub);
-					message = "Query installed.";
+					String name = request.getParameter("name");
+					String query = request.getParameter("query");
+					CloudatlasQuerySigner signer = connectSigner();
+					InstallQueryResult res = signer.installQuery(name, query);
+					switch (res.getStatus() ) {
+						case OK:
+							ValueQuery q = res.getQuery();
+							stub.installQuery(q);
+							queries = stub.getQueries();
+							updateData(stub);
+							break;
+					case CONFLICT:
+						message = "Could not install query. It conflicts with query " + res.getQuery().description();
+						break;
+					case INVALID_QUERY:
+						message = "Invalid query: " + name + ": " + query;
+						break;
+					default:
+						message = "Internal error.";
+					}
 				} catch (Exception e) {
+					System.err.println(e.getMessage());
 					message = "Could not install query";
 				}
 			}
 			
 			if ("1".equals(request.getParameter("remove"))) {
 				try {
-					ValueQuery q = new ValueQuery(request.getParameter("name"),
-							null);
-					CloudatlasAgentRmiServer stub = connect();
-					stub.installQuery(q);
-					updateData(stub);
-					message = "Query uninstalled.";
+					ValueQuery q = queries.get(request.getParameter("name"));
+					CloudatlasQuerySigner signer = connectSigner();
+					ValueQuery uninstallQuery = signer.uninstallQuery(q);
+					if ( uninstallQuery != null ) {
+						stub.installQuery(uninstallQuery);
+						queries = stub.getQueries();
+						message = "Query uninstalled.";
+					} else {
+						message = "Could not uninstall query. It is possible that this query was uninstalled but this modification has not propagated to all nodes yet.";
+					}
 				} catch (Exception e) {
-					message = "Could not uninstall query";
+					e.printStackTrace();
+					message = "Could not uninstall query, cause: " + e.getMessage();
 				}
 			}
 			
 			
 			st.add("message", message);
-			Map<String, ValueQuery> queries = keeper.getQueries();
 			List<QueryModel> queriesModel = new ArrayList<QueryModel>();
 			for ( ValueQuery v : queries.values() ){
-				queriesModel.add(new QueryModel(v.getName() + ": " + v.getValue(), v.getName()));
+				if ( v.getValue() != null ) {
+					queriesModel.add(new QueryModel(v.description(), v.getName()));
+				}
 			}
 			st.add("queries", queriesModel);
 			response.getOutputStream().print(st.render());
@@ -279,7 +310,7 @@ public class WebClient {
 	
 
 	public WebClient(String rmiHost, int rmiPort, int port, int refreshPeriodMs,
-			int plotLenghtMs, int plotRefreshPeriodMs) {
+			int plotLenghtMs, int plotRefreshPeriodMs, QuerySignerAddress signer) {
 		super();
 		this.rmiHost = rmiHost;
 		this.rmiPort = rmiPort;
@@ -293,6 +324,7 @@ public class WebClient {
 		converters.put(PrimaryType.INT, longConverter);
 		converters.put(PrimaryType.DURATION, longConverter);
 		converters.put(PrimaryType.TIME, longConverter);
+		this.signer = signer;
 	}
 
 	public void initialize() throws RemoteException, RmiConnectionException {
@@ -348,6 +380,23 @@ public class WebClient {
 			CloudatlasAgentRmiServer stub;
 			try {
 				stub = (CloudatlasAgentRmiServer) registry.lookup("cloudatlas");
+			} catch (NotBoundException e) {
+				e.printStackTrace();
+				throw new ServletException(e);
+			}
+			return stub;
+		} catch (Exception e) {
+			throw new RmiConnectionException(e);
+		}
+	}
+
+	private CloudatlasQuerySigner connectSigner() throws RmiConnectionException {
+		try {
+			Registry registry = LocateRegistry.getRegistry(signer.getAddress().getHostAddress(), signer.getPort());
+			CloudatlasQuerySigner stub;
+			try {
+				stub = (CloudatlasQuerySigner) registry
+						.lookup("cloudatlas_signer");
 			} catch (NotBoundException e) {
 				e.printStackTrace();
 				throw new ServletException(e);

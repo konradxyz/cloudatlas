@@ -42,8 +42,7 @@ public final class ZmiKeeperModule extends Module {
 		try {
 			currentMachineAttributes = zmi.get(config.getPathName());
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
-			throw new InternalError();
+			throw new RuntimeException(e);
 		}
 		currentMachineAttributes.add("cardinality", new ValueInt(1l));
 		currentMachineAttributes.add("level", new ValueInt((long) config

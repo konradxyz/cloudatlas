@@ -103,7 +103,6 @@ public class GossipModule extends Module {
 		public abstract void handle(T communicate, InetAddress source);
 		@SuppressWarnings("unchecked")
 		public void handleUntyped(GossipCommunicate communicate, InetAddress source) {
-			System.out.println(communicate.toString());
 			T comm = (T) communicate;
 			comm.hashCode();
 			handle(comm, source);
@@ -168,7 +167,6 @@ public class GossipModule extends Module {
 
 		@Override
 		public void handleMessage(Message message) throws HandlerException {
-			System.out.println("start gossip, requesting current zmi");
 			sendMessage(
 					zmiKeeperAddress,
 					ZmiKeeperModule.GET_ROOT_ZMI,
@@ -334,7 +332,6 @@ public class GossipModule extends Module {
 		InetAddress target = null;
 		int level = 1;
 		if ( contact == null ) {
-			System.err.println("Using fallback contacts");
 			if (fallbackContacts.isEmpty()) {
 				throw new HandlerException("GossipModule: empty fallback contacts");
 			}
@@ -345,7 +342,6 @@ public class GossipModule extends Module {
 			target = contact.getContact().getAddress();
 			level = contact.getLevel();
 		}
-		System.err.println("Gossip on level " +  level + " with " + target);
 		ZmisFreshness freshness = generateFreshness(zmis, level);
 		sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness), target);
 	}

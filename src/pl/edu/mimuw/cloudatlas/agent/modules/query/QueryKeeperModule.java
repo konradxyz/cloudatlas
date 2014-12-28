@@ -1,20 +1,29 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.xml.bind.DatatypeConverter;
+
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
+import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
+import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.common.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.common.interpreter.QueryResult;
@@ -27,18 +36,26 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.model.ZMI;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
+import pl.edu.mimuw.cloudatlas.common.utils.SecurityUtils;
 
 public class QueryKeeperModule extends Module {
-	private PathName machineName;
+	private final PathName machineName;
+	private final Cipher verifyCipher;
 
-	public QueryKeeperModule(Address address, PathName machineName) {
+	public QueryKeeperModule(Address address, CloudatlasAgentConfig config)
+			throws NoSuchAlgorithmException, NoSuchPaddingException,
+			InvalidKeyException {
 		super(address);
-		this.machineName = machineName;
+		this.machineName = config.getPathName();
+		this.verifyCipher = Cipher
+				.getInstance(SecurityUtils.ENCRYPTION_ALGORITHM);
+		this.verifyCipher.init(Cipher.DECRYPT_MODE, config.getSignerKey());
 	}
 
 	public final static Integer RECALCULATE_ZMI = 1;
 	public final static Integer INSTALL_QUERY = 2;
 	public final static Integer GET_QUERIES = 3;
+	public final static Integer DUMP = 4;
 
 	private final List<Program> predefinedQueries = new ArrayList<Program>();
 	
@@ -67,22 +84,38 @@ public class QueryKeeperModule extends Module {
 				throws HandlerException {
 			for (ValueQuery q : message.getContent()) {
 				try {
-					if (!q.getName().startsWith("&") || q.getName().equals("&")) {
-						throw new HandlerException("Unallowed query name '"
-								+ q.getName() + "'");
-					}
-
-					// TODO: check query correctness.
-					if (q.getValue() != null) {
-						Program parsedProgram = MainInterpreter.parseProgram(q
-								.getValue());
-						queries.put(q.getName(), new QueryWrapper(
-								parsedProgram, q));
+					byte[] descr = q.toBytes();
+					byte[] hash = SecurityUtils.computeHash(descr);
+					byte[] decryptedSignature = verifyCipher.doFinal(q.getSignature());
+					if ( Arrays.equals(hash, decryptedSignature)){
+						QueryWrapper newWrapper;
+						if (q.getValue() != null) {
+							Program parsedProgram = MainInterpreter
+									.parseProgram(q.getValue());
+							newWrapper = new QueryWrapper(parsedProgram, q);
+						} else {
+							newWrapper = new QueryWrapper(null, q);
+						}
+						
+						if (!queries.containsKey(q.getName())) {
+							queries.put(q.getName(), newWrapper);
+						} else {
+							QueryWrapper old = queries.get(q.getName());
+							ValueQuery oldQuery = old.getValue();
+							if ( oldQuery.getUniqueId() < q.getUniqueId() ) {
+								queries.put(q.getName(), newWrapper);
+							} else {
+								if ( oldQuery.getUniqueId().equals(q.getUniqueId()) && q.getValue() == null ) {
+									queries.put(q.getName(), newWrapper);
+								}
+							}
+						}
 					} else {
-						queries.remove(q.getName());
+						System.err.println("Wrong query signature " + q.description());
 					}
 				} catch (Exception e) {
-					// throw new HandlerException(e);
+					System.err.println(e.getMessage());
+					e.printStackTrace();
 				}
 			}
 		}
@@ -134,9 +167,11 @@ public class QueryKeeperModule extends Module {
 				runQuery(parent, program, newMap);
 			}
 			for (Entry<String, QueryWrapper> entry : queries.entrySet()) {
-				if (runQuery(parent, entry.getValue().getParsedQuery(), newMap)) {
-					newMap.addOrChange(entry.getKey(), entry.getValue()
+				if ( entry.getValue().getParsedQuery() != null ) {
+					if (runQuery(parent, entry.getValue().getParsedQuery(), newMap)) {
+						newMap.addOrChange(entry.getKey(), entry.getValue()
 							.getValue());
+					}
 				}
 			}
 			newMap.addOrChange("timestamp", new ValueTime(Calendar
@@ -171,11 +206,20 @@ public class QueryKeeperModule extends Module {
 			sendMessage(message.getResponseTarget(), message.getResponseMessageType(), new SimpleMessage<>(result));
 		}
 	};
+	
+	private final MessageHandler<Message> dumpHandler = new MessageHandler<Message>() {
+
+		@Override
+		public void handleMessage(Message message) throws HandlerException {
+			System.err.println(queries);
+			
+		}
+	};
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY, GET_QUERIES },
-				new MessageHandler<?>[] { recalculateHandler, installQueryHandler, getQueriesHandler});
+		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY, GET_QUERIES, DUMP },
+				new MessageHandler<?>[] { recalculateHandler, installQueryHandler, getQueriesHandler, dumpHandler});
 	}
 
 	@Override

@@ -43,11 +43,11 @@ public final class RmiModule extends Module {
 	private final RmiGetter<List<InetAddress>> fallbackContactsGetter;
 	
 	
-	public RmiModule(Address address, Address zmiKeeper, Address queryKeeper, Address gossipModule, int port, CloudatlasAgentConfig config) {
+	public RmiModule(Address address, Address zmiKeeper, Address queryKeeper, Address gossipModule, CloudatlasAgentConfig config) {
 		super(address);
 		this.zmiKeeper = zmiKeeper;
 		this.queryKeeper = queryKeeper;
-		this.port = port;
+		this.port = config.getRmiPort();
 		this.config = config;
 		this.gossipModule = gossipModule;
 		this.zmisGetter = new RmiGetter<ZmisAttributes>(RMI_GET_ROOT_ZMI, zmiKeeper, ZmiKeeperModule.GET_ROOT_ZMI, ROOT_ZMI);

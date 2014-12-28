@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.webclient;
 
+import java.net.InetAddress;
+
 import org.ini4j.Ini;
 
 import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
@@ -15,8 +17,12 @@ public class Main {
 		//Plot
 		final int plotLenghtMs = Integer.parseInt(config.get("plot", "length_ms"));
 		final int plotRefreshPeriodMs = Integer.parseInt(config.get("plot", "refresh_period_ms")); 
+		
+		final InetAddress signerAddr = InetAddress.getByName(config.get("querysigner", "host"));
+		final int signerPort = Integer.parseInt(config.get("querysigner", "port"));
 
-		WebClient client = new WebClient(rmiHost, rmiPort, port, refreshPeriodMs, plotLenghtMs, plotRefreshPeriodMs);
+		WebClient client = new WebClient(rmiHost, rmiPort, port, refreshPeriodMs, plotLenghtMs, plotRefreshPeriodMs,
+				new QuerySignerAddress(signerAddr, signerPort));
 		client.initialize();
 		client.run();
 	}
