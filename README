@@ -1,4 +1,5 @@
 Compile:
+download libs
 ant
 
 There are four programs:
