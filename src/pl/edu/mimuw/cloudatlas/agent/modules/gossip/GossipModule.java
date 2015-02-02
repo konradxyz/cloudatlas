@@ -1,6 +1,13 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.gossip;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,6 +16,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import pl.edu.mimuw.cloudatlas.CA.ZoneAuthenticationData;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.AddressGenerator;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
@@ -21,9 +34,11 @@ import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSele
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.contactselection.ContactSelectionStrategy.ContactResult;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate.Type;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateAnswer;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateInit;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.TravelTime;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.WithCertificateCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessAnswerCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmisFreshnessInitCommunicate;
@@ -36,15 +51,21 @@ import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.UpdateRemoteZmiMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
+import pl.edu.mimuw.cloudatlas.common.Certificate;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.ValueKey;
 import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.common.serialization.KryoUtils;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.UnknownZoneException;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmiData;
 import pl.edu.mimuw.cloudatlas.common.single_machine_model.ZmisAttributes;
+import pl.edu.mimuw.cloudatlas.common.utils.SecurityUtils;
+import pl.edu.mimuw.cloudatlas.common.utils.Utils;
+import sun.security.action.GetLongAction;
 
 public class GossipModule extends Module {
 	private final CloudatlasAgentConfig config;
@@ -171,7 +192,12 @@ public class GossipModule extends Module {
 			ContactResult contact = selectionStrategy.selectContact(zmis);
 			InetAddress target = null;
 			int level = 1;
+			PrivateKey key = null;
+			Certificate certificate = null;
 			if (contact == null) {
+				// TODO: fallback contacts should follow some different logic right now.
+				// THERE is no clear information about keys that should be used to sign msg.
+				// As such we should add new message type that will not be signed.
 				if (fallbackContacts.isEmpty()) {
 					throw new HandlerException(
 							"GossipModule: empty fallback contacts");
@@ -181,11 +207,13 @@ public class GossipModule extends Module {
 				level = zmis.getLevels().size() - 1;
 			} else {
 				target = contact.getContact().getAddress();
-				level = contact.getLevel();
+				level = contact.getLevel(); // level to target level
+				key = config.getZoneCertificationData().get(level - 1).getZmiAuthenticationKey();
+				certificate = config.getZoneCertificationData().get(level - 1).getCertificate();
 			}
 			System.err.println("Gossip on level " + level + " with " + target);
 			sendNetworkMessage(new QueriesCommunicateInit(getCachedQueries(),
-					level), target);
+					level, certificate), target, key);
 		}
 	};
 
@@ -222,35 +250,88 @@ public class GossipModule extends Module {
 			Type tp = communicate.getType();
 			datagramHandlers.get(tp).handleUntyped(communicate,
 					message.getSource(), message.getSentTimestampMs(),
-					message.getReceivedTimestampMs());
+					message.getReceivedTimestampMs(), message.getSignature());
 		}
 	};
 
 	private abstract class HandleCommunicate<T extends GossipCommunicate> {
 		public abstract void handle(T communicate, InetAddress source,
-				Long sent, Long received) throws HandlerException;
+				Long sent, Long received, byte[] signature) throws HandlerException;
 
 		@SuppressWarnings("unchecked")
 		public void handleUntyped(GossipCommunicate communicate,
-				InetAddress source, Long sent, Long received)
+				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException {
 			T comm = (T) communicate;
 			comm.hashCode();
-			handle(comm, source, sent, received);
+			handle(comm, source, sent, received, signature);
 		}
 	}
 
+	public byte[] communicateTimestamp(Long timestamp, GossipCommunicate communicate) throws IOException{
+		byte[] o = communicateSerializer.serialize(communicate);
+		ByteArrayOutputStream prepareStreamByte = new ByteArrayOutputStream();
+		DataOutputStream prepareStream = new DataOutputStream(prepareStreamByte);
+		prepareStream.writeLong(timestamp);
+		prepareStream.write(o);
+		byte[] communicateTimestamp = prepareStreamByte.toByteArray();
+		return communicateTimestamp;
+	}
+	
+	public Boolean isValidCommunicateTimestamp(Long timestamp, GossipCommunicate communicate, byte[] signature, PublicKey publicKey) throws InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException{
+		byte[] communicateTimestamp = communicateTimestamp(timestamp, communicate);
+		return SecurityUtils.ifEqualMessages(communicateTimestamp, publicKey, signature);
+	}
+	
+	public Boolean isValidMessage(WithCertificateCommunicate communicate, Long sent,byte[] signature) throws HandlerException {
+		ValueKey valueKey = (ValueKey) communicate.getCertificate().getAttributesMap().get("publicKey");
+		PublicKey publicKey = valueKey.getValue();
+		try {
+			if (!isValidCommunicateTimestamp(sent, communicate, signature, publicKey)) {
+				System.err.println("Hashed message not equal to signature");
+				return false;
+			}
+		} catch (InvalidKeyException | IllegalBlockSizeException
+				| BadPaddingException | NoSuchAlgorithmException
+				| NoSuchPaddingException | IOException e) {
+			e.printStackTrace();
+			throw new HandlerException(e);
+		}
+		
+		ZoneAuthenticationData zoneAuthenticationData = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1);
+		//TODO zmienić kolejność w zoneauthenticationdata
+		publicKey = zoneAuthenticationData.getSiblingAuthenticationKey();
+		byte[] serializedMessage = KryoUtils.serialize(communicate.getCertificate().getAttributesMap(), KryoUtils.getKryo());
+		try {
+			if (!SecurityUtils.ifEqualMessages(serializedMessage,publicKey, communicate.getCertificate().getSignature()))
+			{
+				System.err.println("Wrong public key");
+				return false;
+			}
+		} catch (InvalidKeyException | NoSuchAlgorithmException
+				| NoSuchPaddingException | IllegalBlockSizeException
+				| BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new HandlerException(e);
+		}
+		return true;
+	}
+	
 	private final HandleCommunicate<QueriesCommunicateInit> queriesCommunicateInitHandler = new HandleCommunicate<QueriesCommunicateInit>() {
 
 		@Override
 		public void handle(QueriesCommunicateInit communicate,
-				InetAddress source, Long sent, Long received)
-				throws HandlerException {
+				InetAddress source, Long sent, Long received, byte[] signature)
+				throws HandlerException { 
+			if (!isValidMessage(communicate, sent, signature)) {
+				return;
+			}
 			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
 					new InstallQueryMessage(communicate.getQueries()));
-
+			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1).getCertificate();
 			sendNetworkMessage(new QueriesCommunicateAnswer(getCachedQueries(),
-					communicate.getGossipLevel()), source);
+					communicate.getGossipLevel(), certificate), source);
 		}
 	};
 
@@ -258,16 +339,20 @@ public class GossipModule extends Module {
 
 		@Override
 		public void handle(QueriesCommunicateAnswer communicate,
-				InetAddress source, Long sent, Long received)
+				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException {
+			if (!isValidMessage(communicate, sent, signature)) {
+				return;
+			}
 			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
 					new InstallQueryMessage(communicate.getQueries()));
 
 			ZmisAttributes attrs = getCachedAttributes();
 			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
 					communicate.getGossipLevel(), attrs.getLevels().size() - 1));
+			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()-1).getCertificate();
 			sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness,
-					new TravelTime(sent, received)), source);
+					new TravelTime(sent, received), certificate, communicate.getGossipLevel()), source);
 		}
 	};
 
@@ -275,14 +360,18 @@ public class GossipModule extends Module {
 
 		@Override
 		public void handle(ZmisFreshnessInitCommunicate communicate,
-				InetAddress source, Long sent, Long received)
+				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException {
+			if (!isValidMessage(communicate, sent, signature)) {
+				return;
+			}
 			ZmisAttributes attrs = getCachedAttributes();
 			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
 					communicate.getContent().getLevels().size() - 1, attrs
 							.getLevels().size() - 1));
+			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()-1).getCertificate();
 			sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(freshness,
-					new TravelTime(sent, received)), source);
+					new TravelTime(sent, received), certificate, communicate.getGossipLevel()), source);
 
 			sendZmis(attrs, communicate.getContent(), source,
 					communicate.getTime(), new TravelTime(sent, received));
@@ -293,8 +382,11 @@ public class GossipModule extends Module {
 
 		@Override
 		public void handle(ZmisFreshnessAnswerCommunicate communicate,
-				InetAddress source, Long sent, Long received)
+				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException {
+			if (!isValidMessage(communicate, sent, signature)) {
+				return;
+			}
 			sendZmis(getCachedAttributes(), communicate.getContent(), source,
 					communicate.getTime(), new TravelTime(sent, received));
 		}
@@ -304,7 +396,7 @@ public class GossipModule extends Module {
 
 		@Override
 		public void handle(ZmiCommunicate communicate, InetAddress source,
-				Long sent, Long received) {
+				Long sent, Long received, byte[] signature) {
 			sendMessage(zmiKeeperAddress, ZmiKeeperModule.UPDATE_REMOTE_ZMI,
 					new UpdateRemoteZmiMessage(communicate.getPathName(),
 							communicate.getAttributes()));
@@ -381,11 +473,28 @@ public class GossipModule extends Module {
 		return result;
 	}
 
+	// Nie pierwszy
+	// To nie ma znaczenia
+	// Nie
+	// tO ZLE MIEJSCE
+	// NIE
+	// TAK
+	// JEST ZLE
+	private void sendNetworkMessage(GossipCommunicate message,
+			InetAddress target, PrivateKey key) {
+		byte[] o = communicateSerializer.serialize(message);
+		List<ZoneAuthenticationData> zoneCertificationData = config.getZoneCertificationData();
+		// Pracujesz nad kodem
+		// Masz wiedziec co sie w nim dzieje
+		// Jak nie wiesz to pytasz
+		// Ale sugeruje wczesniej zobaczyc jakie sa pola
+		sendMessage(socketModuleAddress, SocketModule.SEND_MESSAGE,
+				new SendDatagramMessage(o, target, config.getPort(), key));
+	}
+	
 	private void sendNetworkMessage(GossipCommunicate message,
 			InetAddress target) {
-		byte[] o = communicateSerializer.serialize(message);
-		sendMessage(socketModuleAddress, SocketModule.SEND_MESSAGE,
-				new SendDatagramMessage(o, target, config.getPort()));
+		sendNetworkMessage(message, target, null); //zeby sie kompilowalo.
 	}
 
 	@Override

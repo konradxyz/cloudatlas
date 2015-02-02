@@ -29,7 +29,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 
 /**
  * A zone management information. This object is a single node in a zone hierarchy. It stores zone attributes as well as

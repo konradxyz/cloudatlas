@@ -1,4 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent.serialization;
+package pl.edu.mimuw.cloudatlas.common.serialization;
 
 import java.io.IOException;
 import java.io.InputStream;

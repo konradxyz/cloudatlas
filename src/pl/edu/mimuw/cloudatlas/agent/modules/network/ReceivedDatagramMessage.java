@@ -8,13 +8,15 @@ public class ReceivedDatagramMessage extends SimpleMessage<byte[]> {
 	private final InetAddress source;
 	private final Long sentTimestampMs;
 	private final Long receivedTimestampMs;
-
+	private final byte[] signature;
+	
 	public ReceivedDatagramMessage(byte[] content, InetAddress source,
-			Long sentTimestampMs, Long receivedTimestampMs) {
+			Long sentTimestampMs, Long receivedTimestampMs, byte[] signature) {
 		super(content);
 		this.source = source;
 		this.sentTimestampMs = sentTimestampMs;
 		this.receivedTimestampMs = receivedTimestampMs;
+		this.signature = signature;
 	}
 
 	public InetAddress getSource() {
@@ -27,5 +29,9 @@ public class ReceivedDatagramMessage extends SimpleMessage<byte[]> {
 
 	public Long getReceivedTimestampMs() {
 		return receivedTimestampMs;
+	}
+	
+	public byte[] getSignature() {
+		return signature;
 	}
 }

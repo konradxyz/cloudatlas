@@ -65,7 +65,7 @@ public class CommunicateSerializerTest {
 		serialize(attrs);
 		singleTest(new ZmiCommunicate(PathName.ROOT, attrs));
 		
-		serialize(new QueriesCommunicateInit(new ArrayList<ValueQuery>(), 0));
+		serialize(new QueriesCommunicateInit(new ArrayList<ValueQuery>(), 0, null));
 		serialize(new ZmisFreshness(new ArrayList<ZmiLevel<Long>>()));
 		
 	}
