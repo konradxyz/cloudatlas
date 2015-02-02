@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.common;
 
+import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -15,7 +16,11 @@ import pl.edu.mimuw.cloudatlas.common.utils.SecurityUtils;
 
 import com.esotericsoftware.kryo.Kryo;
 
-public class Certificate {
+public class Certificate implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4583768064796235190L;
 	private AttributesMap attributesMap;
 	private byte[] signature;
 	public Certificate(AttributesMap attributesMap, PrivateKey privateKey, Kryo kryo) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {

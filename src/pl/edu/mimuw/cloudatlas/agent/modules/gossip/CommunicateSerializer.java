@@ -15,7 +15,7 @@ public class CommunicateSerializer {
 	}
 
 	public GossipCommunicate deserialize(byte[] input) {
-		return KryoUtils.deserialize(input, kryo, GossipCommunicate.class);
+		return KryoUtils.deserialize(input, kryo, GossipCommunicateWrapper.class).getCommunicate();
 	}
 
 	public byte[] serialize(GossipCommunicate communicate) {
