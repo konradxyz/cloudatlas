@@ -13,6 +13,32 @@ public class FallbackCommunicate extends WithCertificateCommunicate {
 	}
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((pathName == null) ? 0 : pathName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FallbackCommunicate other = (FallbackCommunicate) obj;
+		if (pathName == null) {
+			if (other.pathName != null)
+				return false;
+		} else if (!pathName.equals(other.pathName))
+			return false;
+		return true;
+	}
+
+	@Override
 	public Type getType() {
 		return Type.FALLBACK;
 	}

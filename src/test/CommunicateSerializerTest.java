@@ -20,6 +20,7 @@ import org.junit.Test;
 import pl.edu.mimuw.cloudatlas.CA.CAUtils;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.CommunicateSerializer;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.ZmisFreshness;
+import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.FallbackCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateInit;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
@@ -71,6 +72,7 @@ public class CommunicateSerializerTest {
 		map.add("key", new ValueKey(p.getPublic()));
 		Certificate c = new Certificate(new AttributesMap(), CAUtils.getKeyPair()
 				.getPrivate(), KryoUtils.getKryo());
+		singleTest(new FallbackCommunicate(c, 2, PathName.ROOT));
 		test(new Certificate(new AttributesMap(), CAUtils.getKeyPair()
 				.getPrivate(), KryoUtils.getKryo()), Certificate.class);
 		AttributesMap attrs = new AttributesMap();

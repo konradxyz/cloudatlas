@@ -297,7 +297,6 @@ public class GossipModule extends Module {
 		}
 		
 		ZoneAuthenticationData zoneAuthenticationData = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1);
-		//TODO zmienić kolejność w zoneauthenticationdata
 		publicKey = zoneAuthenticationData.getSiblingAuthenticationKey();
 		byte[] serializedMessage = KryoUtils.serialize(communicate.getCertificate().getAttributesMap(), KryoUtils.getKryo());
 		try {
@@ -356,10 +355,12 @@ public class GossipModule extends Module {
 		public void handle(FallbackCommunicate communicate,
 				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException {
+			System.err.println("fallback communicate received");
 			PathName pathName = communicate.getPathName();
 			PathName commonAncestor = pathName.commonAncestor(config.getPathName());
 			int level = commonAncestor.getComponents().size()+1;
 			sendQueryInit(level, source);
+			System.err.println("fallback communicate handled");
 		}
 
 	};

@@ -147,6 +147,7 @@ public final class SocketModule extends Module {
 						DataInputStream dataInputStream = new DataInputStream(
 								inputStream);
 						Long sent = dataInputStream.readLong();
+						System.err.println("rec" + signature.length + " " + realMsg.length);
 						sendMessage(gatewayModuleAddress,
 								gatewayModuleMessageType,
 								new ReceivedDatagramMessage(realMsg, key.from,
