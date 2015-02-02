@@ -9,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -40,7 +41,6 @@ public class CreateCertificate extends CommandReader {
 			while (!pathName.equals(PathName.ROOT)) {	
 				String publicKeyPath = CAUtils.baseDir + pathName.levelUp().toString()
 						+ "/" + CAUtils.publicKeyName;
-				System.out.println("siema");
 				System.out.println(publicKeyPath);
 				String privateKeyZonePath = CAUtils.baseDir + pathName.toString()
 						+ "/" + CAUtils.privateKeyZoneName;
@@ -55,6 +55,7 @@ public class CreateCertificate extends CommandReader {
 				authenticationList.add(new ZoneAuthenticationData(publiKey, privateKey, certificate));//wrong public key
 				pathName = pathName.levelUp();
 			}
+			Collections.reverse(authenticationList);
 			byte[] toFile = KryoUtils.serialize(authenticationList, kryo);
 			String zoneAuthenticationPath = CAUtils.baseDir + (new PathName(args[1])).toString()
 					+ "/" + zoneAuthenticationName;

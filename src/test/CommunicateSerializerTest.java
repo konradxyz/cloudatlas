@@ -49,7 +49,7 @@ public class CommunicateSerializerTest {
 		attrs.add("contact", new ValueContact(new PathName("/j/dasdas"), InetAddress.getLocalHost()));
 		attrs.add("query", new ValueQuery("&a", "b", 1l, new byte[1]));
 		attrs.add("int", new ValueInt(1l));
-		singleTest(new ZmiCommunicate(PathName.ROOT, attrs));
+		singleTest(new ZmiCommunicate(PathName.ROOT, attrs, null, 1));
 		
 		Kryo kryo = new Kryo();
 		Output o = new Output(1111);
@@ -63,7 +63,7 @@ public class CommunicateSerializerTest {
 		serialize(new Attribute("contact"));
 		
 		serialize(attrs);
-		singleTest(new ZmiCommunicate(PathName.ROOT, attrs));
+		singleTest(new ZmiCommunicate(PathName.ROOT, attrs, null, 1));
 		
 		serialize(new QueriesCommunicateInit(new ArrayList<ValueQuery>(), 0, null));
 		serialize(new ZmisFreshness(new ArrayList<ZmiLevel<Long>>()));
