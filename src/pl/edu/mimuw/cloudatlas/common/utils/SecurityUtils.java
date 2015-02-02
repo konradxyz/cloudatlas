@@ -16,7 +16,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class SecurityUtils {
-	private static final long HASH_LENGTH = 64;
+	private static final long HASH_LENGTH = 32;
+	private static final int SIGNATURE_LENGTH = 128;
 	
 	public static class SignatureMessage {
 		byte[] signature;
@@ -63,6 +64,9 @@ public class SecurityUtils {
 		signCipher.init(Cipher.ENCRYPT_MODE, privateKey);
 
 		byte[] signature = signCipher.doFinal(hash);
+		System.err.println("signature size " + signature.length);
+		System.err.println("hash size " + hash.length);
+
 		return signature;
 
 	}
@@ -85,8 +89,8 @@ public class SecurityUtils {
 	// lepiej ja nazwac - czyli stworzyc klase <- to
 	// nawet w signatureutils
 	public static SignatureMessage divideMessage(byte[] message) {
-		byte[] keyByte = Arrays.copyOfRange(message, 0, 64);
-		byte[] messageByte = Arrays.copyOfRange(message, 64, message.length);
+		byte[] keyByte = Arrays.copyOfRange(message, 0, SIGNATURE_LENGTH);
+		byte[] messageByte = Arrays.copyOfRange(message, SIGNATURE_LENGTH, message.length);
 		return new SignatureMessage(keyByte, messageByte);
 	}
 	// tutaj mozna wzrucoc kod do podzialy na sygnature i wiadomosc

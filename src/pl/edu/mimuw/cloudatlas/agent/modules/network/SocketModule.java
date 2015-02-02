@@ -202,7 +202,7 @@ public final class SocketModule extends Module {
 					toSend = SecurityUtils.prependSignature(toSend,
 							msg.getPrivateKey());
 							
-					
+					System.err.println("sending " + toSend.length);
 					int packetsCount = (int) Math
 							.ceil((double) toSend.length
 									/ (double) maxMessageSize);

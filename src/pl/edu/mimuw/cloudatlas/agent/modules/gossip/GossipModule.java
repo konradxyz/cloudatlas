@@ -243,6 +243,7 @@ public class GossipModule extends Module {
 		public void handleMessage(ReceivedDatagramMessage message)
 				throws HandlerException {
 			// TODO: opt: merge GossipCOmmunicate and WithCertificateCommunicate
+			System.err.println("received content " + message.getContent().length);
 			WithCertificateCommunicate communicate = (WithCertificateCommunicate) communicateSerializer
 					.deserialize(message.getContent());
 			Type tp = communicate.getType();
@@ -489,6 +490,7 @@ public class GossipModule extends Module {
 	private void sendNetworkMessage(GossipCommunicate message,
 			InetAddress target, PrivateKey key) {
 		byte[] o = communicateSerializer.serialize(message);
+		System.err.println("send content " + o.length);
 		sendMessage(socketModuleAddress, SocketModule.SEND_MESSAGE,
 				new SendDatagramMessage(o, target, config.getPort(), key));
 	}
