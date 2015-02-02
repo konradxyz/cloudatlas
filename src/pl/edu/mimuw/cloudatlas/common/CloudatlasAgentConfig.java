@@ -116,7 +116,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 			// Nie wiem jak pozbyc sie warninga
 			// Mozliwe ze sie nie da
 			// Mozna zrobic supress ale narazie zostawmy
-			List<ZoneAuthenticationData> zoneCertificationData = KryoUtils.deserialize(certificateText, KryoUtils.getKryo(), List.class);
+			List<ZoneAuthenticationData> zoneCertificationData = KryoUtils.deserialize(certificateText, KryoUtils.getKryo(), ArrayList.class);
 			return new CloudatlasAgentConfig(new PathName(pathName), result,
 					port, maxMessageSizeBytes, fallbackAddress, gossipPeriod, rmiPort, publicKey,
 					IniUtils.readInt(file, "gossip", "zone_expiration_ms"),

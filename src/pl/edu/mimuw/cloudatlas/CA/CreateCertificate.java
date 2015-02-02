@@ -41,7 +41,6 @@ public class CreateCertificate extends CommandReader {
 			while (!pathName.equals(PathName.ROOT)) {	
 				String publicKeyPath = CAUtils.baseDir + pathName.levelUp().toString()
 						+ "/" + CAUtils.publicKeyName;
-				System.out.println(publicKeyPath);
 				String privateKeyZonePath = CAUtils.baseDir + pathName.toString()
 						+ "/" + CAUtils.privateKeyZoneName;
 				PublicKey publiKey = CAUtils.readPublicKey(publicKeyPath);
@@ -49,8 +48,6 @@ public class CreateCertificate extends CommandReader {
 				String certificateZonePath = CAUtils.baseDir + pathName.toString()
 						+ "/" + CAUtils.certificateName;
 				byte[] certificateText = KryoUtils.readFile(certificateZonePath);
-				System.err.println(certificateText.length);
-				System.err.println(new String(certificateText));
 				Certificate certificate = KryoUtils.deserialize(certificateText, kryo, Certificate.class);
 				authenticationList.add(new ZoneAuthenticationData(publiKey, privateKey, certificate));//wrong public key
 				pathName = pathName.levelUp();
