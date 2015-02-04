@@ -23,7 +23,7 @@ import com.esotericsoftware.kryo.Kryo;
 
 public class CreateCertificate extends CommandReader {
 
-	String zoneAuthenticationName = "zoneAuthentiocation.txt";
+	String zoneAuthenticationName = "zoneAuthentication.txt";
 	@Override
 	public void perform(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException {
 		PathName pathName;
