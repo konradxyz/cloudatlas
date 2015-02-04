@@ -19,6 +19,7 @@ public class Main {
 	public static void createMap() {
 		readerMap.put("--create-zone", new CreateZone());
 		readerMap.put("--create-certificate", new CreateCertificate());
+		readerMap.put("--create-cc", new CreateClientCC());
 	}
 
 	public static void main(String[] args) throws NoSuchAlgorithmException,
