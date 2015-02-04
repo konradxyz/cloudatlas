@@ -13,6 +13,6 @@ import javax.crypto.NoSuchPaddingException;
 
 public abstract class CommandReader {
 
-	public abstract void perform(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException;
+	public abstract void perform(String caPath, String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException;
 
 }

@@ -27,6 +27,11 @@ public class Main {
 			IllegalBlockSizeException, BadPaddingException {
 		createMap();
 		System.err.println(Arrays.asList(args));
-		readerMap.get(args[0]).perform(args);
+		if (args[0].startsWith("--"))
+			readerMap.get(args[0]).perform("base", args);
+		else {
+			String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
+			readerMap.get(newArgs[0]).perform(args[0], newArgs);
+		}
 	}
 }

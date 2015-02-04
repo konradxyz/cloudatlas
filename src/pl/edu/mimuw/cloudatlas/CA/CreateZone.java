@@ -19,7 +19,7 @@ import pl.edu.mimuw.cloudatlas.common.model.PathName;
 public class CreateZone extends CommandReader {
 
 	@Override
-	public void perform(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException {
+	public void perform(String caPath, String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException {
 		PathName pathName;
 		try {
 			pathName = new PathName(args[1]);
@@ -28,20 +28,20 @@ public class CreateZone extends CommandReader {
 			return;
 		}
 		if (pathName.equals(PathName.ROOT)) {
-			if (!(new File(CAUtils.baseDir).exists())) {
-				System.err.println("Base dir doesn't exist: " + CAUtils.baseDir);
+			if (!(new File(caPath).exists())) {
+				System.err.println("Base dir doesn't exist: " + caPath);
 				return;
 			}
-			File publicKey = new File(CAUtils.baseDir + "/" + CAUtils.publicKeyName);
+			File publicKey = new File(caPath + "/" + CAUtils.publicKeyName);
 			if (publicKey.exists()) {
 				System.err.println("Public key of the zone " + pathName
 						+ " exists");
 				return;
 			}
-			CAUtils.generateKeys(CAUtils.baseDir + "/");
+			CAUtils.generateKeys(caPath + "/");
 		} else {
 			PathName levelUp = pathName.levelUp();
-			String privateKeyLevelUpPath = CAUtils.baseDir + levelUp.toString()
+			String privateKeyLevelUpPath = caPath + levelUp.toString()
 					+ "/" + CAUtils.privateKeyName;
 			// System.out.println(levelUp);
 			File privateKeyFile = new File(privateKeyLevelUpPath);
@@ -52,7 +52,7 @@ public class CreateZone extends CommandReader {
 						.println("This zone doesn't exist or this CA has no authorization to create subzones of this zone");
 				return;
 			}
-			File zoneDirectory = new File(CAUtils.baseDir + pathName.toString());
+			File zoneDirectory = new File(caPath + pathName.toString());
 			if (zoneDirectory.exists()) {
 				System.err.println("This zone " + pathName + " exists");
 				return;
@@ -61,7 +61,7 @@ public class CreateZone extends CommandReader {
 				System.err.println("Cannot create " + zoneDirectory);
 				return;
 			}
-			String path = CAUtils.baseDir + pathName.toString() + "/";
+			String path = caPath + pathName.toString() + "/";
 			CAUtils.generateKeys(path);
 			PublicKey pkz = CAUtils.generateKeysZone(path);
 			Date date = new Date();

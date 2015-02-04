@@ -243,10 +243,14 @@ public class GossipModule extends Module {
 		public void handleMessage(ReceivedDatagramMessage message)
 				throws HandlerException {
 			// TODO: opt: merge GossipCOmmunicate and WithCertificateCommunicate
-			System.err.println("received content " + message.getContent().length);
 			WithCertificateCommunicate communicate = (WithCertificateCommunicate) communicateSerializer
 					.deserialize(message.getContent());
 			Type tp = communicate.getType();
+			System.err.println("Received communicate " + tp);
+			System.err.println(message);
+			if ( !isValidMessage(communicate, message.getSentTimestampMs(), message.getContent(), message.getSignature())) {
+				return;
+			}
 			datagramHandlers.get(tp).handleUntyped(communicate,
 					message.getSource(), message.getSentTimestampMs(),
 					message.getReceivedTimestampMs(), message.getSignature());
@@ -266,15 +270,18 @@ public class GossipModule extends Module {
 			handle(comm, source, sent, received, signature);
 		}
 	}
-
-	public byte[] communicateTimestamp(Long timestamp, GossipCommunicate communicate) throws IOException{
-		byte[] o = communicateSerializer.serialize(communicate);
+	
+	private byte[] prependTimestamp(Long timestamp, byte[] content) throws IOException {
 		ByteArrayOutputStream prepareStreamByte = new ByteArrayOutputStream();
 		DataOutputStream prepareStream = new DataOutputStream(prepareStreamByte);
 		prepareStream.writeLong(timestamp);
-		prepareStream.write(o);
-		byte[] communicateTimestamp = prepareStreamByte.toByteArray();
-		return communicateTimestamp;
+		prepareStream.write(content);
+		return prepareStreamByte.toByteArray();
+	}
+
+	public byte[] communicateTimestamp(Long timestamp, GossipCommunicate communicate) throws IOException{
+		byte[] o = communicateSerializer.serialize(communicate);
+		return prependTimestamp(timestamp, o);
 	}
 	
 	public Boolean isValidCommunicateTimestamp(Long timestamp, GossipCommunicate communicate, byte[] signature, PublicKey publicKey) throws InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException{
@@ -282,26 +289,12 @@ public class GossipModule extends Module {
 		return SecurityUtils.ifEqualMessages(communicateTimestamp, publicKey, signature);
 	}
 	
-	public Boolean isValidMessage(WithCertificateCommunicate communicate, Long sent,byte[] signature) throws HandlerException {
-		ValueKey valueKey = (ValueKey) communicate.getCertificate().getAttributesMap().get("publicKey");
-		PublicKey publicKey = valueKey.getValue();
-		try {
-			if (!isValidCommunicateTimestamp(sent, communicate, signature, publicKey)) {
-				System.err.println("Hashed message not equal to signature");
-				return false;
-			}
-		} catch (InvalidKeyException | IllegalBlockSizeException
-				| BadPaddingException | NoSuchAlgorithmException
-				| NoSuchPaddingException | IOException e) {
-			e.printStackTrace();
-			throw new HandlerException(e);
-		}
-		
+	public Boolean isValidMessage(WithCertificateCommunicate communicate, Long sent, byte[] content, byte[] signature) throws HandlerException {
+		byte[] serializedCertificate = KryoUtils.serialize(communicate.getCertificate().getAttributesMap(), KryoUtils.getKryo());
 		ZoneAuthenticationData zoneAuthenticationData = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1);
-		publicKey = zoneAuthenticationData.getSiblingAuthenticationKey();
-		byte[] serializedMessage = KryoUtils.serialize(communicate.getCertificate().getAttributesMap(), KryoUtils.getKryo());
+		PublicKey siblingAuthPublicKey = zoneAuthenticationData.getSiblingAuthenticationKey();
 		try {
-			if (!SecurityUtils.ifEqualMessages(serializedMessage,publicKey, communicate.getCertificate().getSignature()))
+			if (!SecurityUtils.ifEqualMessages(serializedCertificate,siblingAuthPublicKey, communicate.getCertificate().getSignature()))
 			{
 				System.err.println("Wrong public key");
 				return false;
@@ -309,7 +302,22 @@ public class GossipModule extends Module {
 		} catch (InvalidKeyException | NoSuchAlgorithmException
 				| NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new HandlerException(e);
+		}
+	
+		ValueKey valueKey = (ValueKey) communicate.getCertificate().getAttributesMap().get("publicKey");
+		PublicKey publicKey = valueKey.getValue();
+		try {
+			byte[] toValidate = prependTimestamp(sent, content);
+			if (!SecurityUtils.ifEqualMessages(toValidate,publicKey, signature)) {
+				System.err.println("Hashed message not equal to signature");
+				return false;
+				
+			}
+		} catch (InvalidKeyException | IllegalBlockSizeException
+				| BadPaddingException | NoSuchAlgorithmException
+				| NoSuchPaddingException | IOException e) {
 			e.printStackTrace();
 			throw new HandlerException(e);
 		}
@@ -417,9 +425,9 @@ public class GossipModule extends Module {
 		List<ZmiData<AttributesMap>> toSend = filterNewer(zmis.getContent(),
 				otherFreshness, offset);
 		PathName targetPath = otherFreshness.getPath();
+		PrivateKey privateKey = config.getZoneCertificationData().get(gossipLevel- 1).getZmiAuthenticationKey();
 		for (ZmiData<AttributesMap> single : toSend) {
 			if (!single.getPath().isPrefixOf(targetPath)) {
-				PrivateKey privateKey = config.getZoneCertificationData().get(gossipLevel- 1).getZmiAuthenticationKey();
 				sendNetworkMessage(
 						new ZmiCommunicate(single.getPath(),
 								single.getContent(), config.getZoneCertificationData().get(gossipLevel-1).getCertificate(), gossipLevel), target, privateKey);

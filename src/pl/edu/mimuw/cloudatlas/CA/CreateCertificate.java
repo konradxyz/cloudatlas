@@ -23,9 +23,9 @@ import com.esotericsoftware.kryo.Kryo;
 
 public class CreateCertificate extends CommandReader {
 
-	String zoneAuthenticationName = "zoneAuthentication.txt";
+	String zoneAuthenticationName = "singletonZoneAuthentication";
 	@Override
-	public void perform(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException {
+	public void perform(String caPath, String[] args) throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, FileNotFoundException, IOException, NoSuchProviderException {
 		PathName pathName;
 		try {
 			pathName = new PathName(args[1]);
@@ -39,13 +39,13 @@ public class CreateCertificate extends CommandReader {
 			ArrayList<ZoneAuthenticationData> authenticationList = new ArrayList<ZoneAuthenticationData>();
 			Kryo kryo = KryoUtils.getKryo();
 			while (!pathName.equals(PathName.ROOT)) {	
-				String publicKeyPath = CAUtils.baseDir + pathName.levelUp().toString()
+				String publicKeyPath = caPath + pathName.levelUp().toString()
 						+ "/" + CAUtils.publicKeyName;
-				String privateKeyZonePath = CAUtils.baseDir + pathName.toString()
+				String privateKeyZonePath = caPath + pathName.toString()
 						+ "/" + CAUtils.privateKeyZoneName;
 				PublicKey publiKey = CAUtils.readPublicKey(publicKeyPath);
 				PrivateKey privateKey = CAUtils.readPrivateKey(privateKeyZonePath);
-				String certificateZonePath = CAUtils.baseDir + pathName.toString()
+				String certificateZonePath = caPath + pathName.toString()
 						+ "/" + CAUtils.certificateName;
 				byte[] certificateText = KryoUtils.readFile(certificateZonePath);
 				Certificate certificate = KryoUtils.deserialize(certificateText, kryo, Certificate.class);
@@ -54,7 +54,7 @@ public class CreateCertificate extends CommandReader {
 			}
 			Collections.reverse(authenticationList);
 			byte[] toFile = KryoUtils.serialize(authenticationList, kryo);
-			String zoneAuthenticationPath = CAUtils.baseDir + (new PathName(args[1])).toString()
+			String zoneAuthenticationPath = caPath + (new PathName(args[1])).toString()
 					+ "/" + zoneAuthenticationName;
 			CAUtils.createFile(zoneAuthenticationPath, toFile);
 		}

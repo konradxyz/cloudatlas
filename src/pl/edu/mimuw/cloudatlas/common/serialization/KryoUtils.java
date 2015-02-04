@@ -91,7 +91,7 @@ public class KryoUtils {
 	public static byte[] readFile(String pathString) throws IOException {
 		Path path = Paths.get(pathString);
 		byte[] data = Files.readAllBytes(path);
-		return Arrays.copyOf(data, data.length);
+		return data;
 	}
 	
 	public static String readFileString(String pathString) throws IOException {

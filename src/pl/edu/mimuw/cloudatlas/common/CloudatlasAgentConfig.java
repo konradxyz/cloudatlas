@@ -111,8 +111,15 @@ public final class CloudatlasAgentConfig implements Serializable {
 			byte[] key = IniUtils.readByteArrayFromHex(file, "signer", "public_key");
 			KeyFactory factory = KeyFactory.getInstance("RSA");
 			PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(key));
-			String certificateFile = file.get("certificate", "certificate_path");
-			byte[] certificateText = KryoUtils.readFile(certificateFile);
+			String certificateFile = IniUtils.readString(file, "certificate", "certificate_path");
+			byte[] certificateText = null;
+			try {
+				certificateText = KryoUtils.readFile(certificateFile);
+			}
+			catch (Exception e){
+				System.err.println("Could not find file " + certificateFile +" cause " + e.getMessage());
+				return null;
+			}
 			// Nie wiem jak pozbyc sie warninga
 			// Mozliwe ze sie nie da
 			// Mozna zrobic supress ale narazie zostawmy

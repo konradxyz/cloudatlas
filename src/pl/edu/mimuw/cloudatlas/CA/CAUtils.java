@@ -1,9 +1,7 @@
 package pl.edu.mimuw.cloudatlas.CA;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -35,7 +33,7 @@ import pl.edu.mimuw.cloudatlas.common.serialization.KryoUtils;
 import com.esotericsoftware.kryo.Kryo;
 
 public class CAUtils {
-	static String baseDir = "base";
+	public static final String DEFAULT_DIR = "base";
 	static String publicKeyName = "publicKey.txt";
 	static String privateKeyName = "privateKey.txt";
 	static String publicKeyZoneName = "publicKeyZone.txt";

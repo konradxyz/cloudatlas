@@ -15,6 +15,7 @@ tmp.out
 /bin/
 /bin/
 base
+fake_ca
 
 *.swp
 #Our pack:

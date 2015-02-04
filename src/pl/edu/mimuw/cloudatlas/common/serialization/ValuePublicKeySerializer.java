@@ -15,7 +15,6 @@ public class ValuePublicKeySerializer extends Serializer<ValueKey> {
 
 	@Override
 	public ValueKey read(Kryo kryo, Input input, Class<ValueKey> type) {
-		System.err.println("deserialize value key");
 		byte[] address = kryo.readObject(input, byte[].class);
 		try {
 			KeyFactory factory = KeyFactory.getInstance("RSA");
@@ -30,7 +29,6 @@ public class ValuePublicKeySerializer extends Serializer<ValueKey> {
 
 	@Override
 	public void write(Kryo kryo, Output output, ValueKey object) {
-		System.err.println("serialize value key");
 		kryo.writeObject(output, object.getValue().getEncoded());
 	}
 
