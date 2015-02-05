@@ -5,10 +5,15 @@ import java.net.InetAddress;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.ini4j.Ini;
 
+import pl.edu.mimuw.cloudatlas.CA.ZoneAuthenticationData;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.serialization.KryoUtils;
 import pl.edu.mimuw.cloudatlas.common.utils.IniUtils;
 
 public final class CloudatlasAgentConfig implements Serializable {
@@ -45,11 +50,14 @@ public final class CloudatlasAgentConfig implements Serializable {
 	
 	// Gossip module data refresh time:
 	private final int gossipDataRefreshTimeMs;
+	
+	private final List<ZoneAuthenticationData> zoneCertificationData;
 
 	public CloudatlasAgentConfig(PathName pathName, InetAddress address,
 			int port, int maxMessageSizeBytes, InetAddress fallbackAddress,
 			int gossipPeriodMs, int rmiPort, PublicKey signerKey, int zoneExpirationMs, 
-			int zoneCleanupPeriodMs, int gossipDataRefreshTimeMs, LevelSelectionStrategyType strategy) {
+			int zoneCleanupPeriodMs, int gossipDataRefreshTimeMs, LevelSelectionStrategyType strategy,
+			List<ZoneAuthenticationData> zoneCertificationData) {
 		super();
 		this.pathName = pathName;
 		this.address = address;
@@ -63,6 +71,7 @@ public final class CloudatlasAgentConfig implements Serializable {
 		this.zoneCleanupPeriodMs = zoneCleanupPeriodMs;
 		this.gossipDataRefreshTimeMs = gossipDataRefreshTimeMs;
 		this.strategy = strategy;
+		this.zoneCertificationData = Collections.unmodifiableList(zoneCertificationData);
 	}
 	
 	private static LevelSelectionStrategyType getLevelSelectionStrategyType(String descr) {
@@ -102,12 +111,26 @@ public final class CloudatlasAgentConfig implements Serializable {
 			byte[] key = IniUtils.readByteArrayFromHex(file, "signer", "public_key");
 			KeyFactory factory = KeyFactory.getInstance("RSA");
 			PublicKey publicKey = factory.generatePublic(new X509EncodedKeySpec(key));
+			String certificateFile = IniUtils.readString(file, "certificate", "certificate_path");
+			byte[] certificateText = null;
+			try {
+				certificateText = KryoUtils.readFile(certificateFile);
+			}
+			catch (Exception e){
+				System.err.println("Could not find file " + certificateFile +" cause " + e.getMessage());
+				return null;
+			}
+			// Nie wiem jak pozbyc sie warninga
+			// Mozliwe ze sie nie da
+			// Mozna zrobic supress ale narazie zostawmy
+			List<ZoneAuthenticationData> zoneCertificationData = KryoUtils.deserialize(certificateText, KryoUtils.getKryo(), ArrayList.class);
 			return new CloudatlasAgentConfig(new PathName(pathName), result,
 					port, maxMessageSizeBytes, fallbackAddress, gossipPeriod, rmiPort, publicKey,
 					IniUtils.readInt(file, "gossip", "zone_expiration_ms"),
 					IniUtils.readInt(file, "gossip", "zone_cleanup_period_ms"),
 					IniUtils.readInt(file, "gossip", "data_refresh_period_ms"),
-					getLevelSelectionStrategyType(IniUtils.readString(file, "gossip", "level_selection_strategy")));
+					getLevelSelectionStrategyType(IniUtils.readString(file, "gossip", "level_selection_strategy")),
+					zoneCertificationData);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Could not parse config file, cause: '"
@@ -162,5 +185,9 @@ public final class CloudatlasAgentConfig implements Serializable {
 
 	public LevelSelectionStrategyType getStrategy() {
 		return strategy;
+	}
+	
+	public List<ZoneAuthenticationData> getZoneCertificationData() {
+		return zoneCertificationData;
 	}
 }

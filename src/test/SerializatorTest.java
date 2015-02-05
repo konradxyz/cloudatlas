@@ -12,7 +12,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import org.junit.Test;
 
-import pl.edu.mimuw.cloudatlas.agent.serialization.Serializator;
+import pl.edu.mimuw.cloudatlas.common.serialization.Serializator;
 
 public abstract class SerializatorTest<T> {
 	public abstract List<T> getObjects();

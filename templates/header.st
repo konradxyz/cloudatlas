@@ -16,7 +16,6 @@ $address$
 </h2>
 <div>
 	<p><a href="../index"> Main page </a></p>
-	<p><a href="../queries">Queries</a></p>
 	<p><a href="../fallback_contacts">Fallback contacts</a></p>
 </div>
 >>

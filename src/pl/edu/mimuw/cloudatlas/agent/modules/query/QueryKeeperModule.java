@@ -2,8 +2,8 @@ package pl.edu.mimuw.cloudatlas.agent.modules.query;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +12,9 @@ import java.util.Map.Entry;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
+import javax.xml.bind.DatatypeConverter;
 
+import pl.edu.mimuw.cloudatlas.CA.ZoneAuthenticationData;
 import pl.edu.mimuw.cloudatlas.agent.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.GetMessage;
@@ -22,13 +24,17 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.SimpleMessage;
+import pl.edu.mimuw.cloudatlas.common.Certificate;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.common.interpreter.MainInterpreter;
 import pl.edu.mimuw.cloudatlas.common.interpreter.QueryResult;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
+import pl.edu.mimuw.cloudatlas.common.model.Value;
+import pl.edu.mimuw.cloudatlas.common.model.ValueCertificate;
 import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.common.model.ValueKey;
 import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
@@ -40,11 +46,13 @@ import pl.edu.mimuw.cloudatlas.common.utils.SecurityUtils;
 public class QueryKeeperModule extends Module {
 	private final PathName machineName;
 	private final Cipher verifyCipher;
+	private final CloudatlasAgentConfig config;
 
 	public QueryKeeperModule(Address address, CloudatlasAgentConfig config)
 			throws NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException {
 		super(address);
+		this.config = config;
 		this.machineName = config.getPathName();
 		this.verifyCipher = Cipher
 				.getInstance(SecurityUtils.ENCRYPTION_ALGORITHM);
@@ -55,22 +63,30 @@ public class QueryKeeperModule extends Module {
 	public final static Integer INSTALL_QUERY = 2;
 	public final static Integer GET_QUERIES = 3;
 	public final static Integer DUMP = 4;
+	public static final int ACCEPT_QUERY = 5;
 
 	private final List<Program> predefinedQueries = new ArrayList<Program>();
 	
 	private static class QueryWrapper {
 		private final Program parsedQuery;
+		private final Certificate queryCertificate;
 		private final ValueQuery value;
-		public QueryWrapper(Program parsedQuery, ValueQuery value) {
+	
+		public QueryWrapper(Program parsedQuery, Certificate value) {
 			super();
 			this.parsedQuery = parsedQuery;
-			this.value = value;
+			this.queryCertificate = value;
+			this.value = new ValueQuery(value);
 		}
 		public Program getParsedQuery() {
 			return parsedQuery;
 		}
 		public ValueQuery getValue() {
 			return value;
+		}
+		
+		public Certificate getQueryCertificate() {
+			return queryCertificate;
 		}
 	};
 
@@ -81,37 +97,97 @@ public class QueryKeeperModule extends Module {
 		@Override
 		public void handleMessage(InstallQueryMessage message)
 				throws HandlerException {
-			for (ValueQuery q : message.getContent()) {
+			System.out.println("INstalling query");
+			for (Certificate query : message.getContent()) {
 				try {
-					byte[] descr = q.toBytes();
-					byte[] hash = SecurityUtils.computeHash(descr);
-					byte[] decryptedSignature = verifyCipher.doFinal(q.getSignature());
-					if ( Arrays.equals(hash, decryptedSignature)){
-						QueryWrapper newWrapper;
-						if (q.getValue() != null) {
-							Program parsedProgram = MainInterpreter
-									.parseProgram(q.getValue());
-							newWrapper = new QueryWrapper(parsedProgram, q);
-						} else {
-							newWrapper = new QueryWrapper(null, q);
-						}
-						
-						if (!queries.containsKey(q.getName())) {
-							queries.put(q.getName(), newWrapper);
-						} else {
-							QueryWrapper old = queries.get(q.getName());
-							ValueQuery oldQuery = old.getValue();
-							if ( oldQuery.getUniqueId() < q.getUniqueId() ) {
-								queries.put(q.getName(), newWrapper);
-							} else {
-								if ( oldQuery.getUniqueId().equals(q.getUniqueId()) && q.getValue() == null ) {
-									queries.put(q.getName(), newWrapper);
-								}
-							}
-						}
-					} else {
-						System.err.println("Wrong query signature " + q.description());
+					AttributesMap attributesMap = query.getAttributesMap();
+					Certificate certificate = ((ValueCertificate) attributesMap
+							.get("certificate")).getValue();
+					String zoneName = ((ValueString) certificate.getAttributesMap().get("zoneName")).getValue();
+					PathName path = new PathName(zoneName);
+					PublicKey clientKey = 
+							config.getZoneCertificationData().get(path.getComponents().size()).getChildrenAuthenticationKey();
+					ZoneAuthenticationData auth = config.getZoneCertificationData().
+							get(path.getComponents().size());
+					System.out.println(auth.getCertificate().getAttributesMap());
+					System.err.println(DatatypeConverter.printHexBinary(clientKey.getEncoded()));
+					if (!certificate.isValid(clientKey)) {
+						System.err.println("CC is not valid, skipping");
+						continue;
 					}
+
+					PublicKey queryAuthKey = ((ValueKey) certificate
+							.getAttributesMap().get("publicKey")).getValue();
+					if (!query.isValid(queryAuthKey))
+						continue;
+
+					System.err.println("Query validated");
+					QueryWrapper wrapper = null;
+					Value valueString = query.getAttributesMap().getOrNull("query");
+					if (valueString==null){
+						wrapper = new QueryWrapper(null, query);
+					}
+					else {
+						String queryString = ((ValueString) valueString).getValue();
+						Program parsedProgram = MainInterpreter
+							.parseProgram(queryString);
+						wrapper = new QueryWrapper(parsedProgram, query);
+					}
+					String queryName = ((ValueString) query.getAttributesMap().get("name")).getValue();
+					Long time = ((ValueTime)query.getAttributesMap().get("timestamp")).getValue();
+					queries.put(queryName, wrapper);
+					if (queries.containsKey(queryName)) {
+						QueryWrapper old = queries.get(queryName);
+						Long oldTime = ((ValueTime) old.getQueryCertificate()
+								.getAttributesMap().get("timestamp"))
+								.getValue();
+						if ( time > oldTime ) {
+							queries.put(queryName, wrapper);
+						}
+					} else
+						queries.put(queryName, wrapper);
+				} catch (Exception e) {
+					System.err.println(e.getMessage());
+					e.printStackTrace();
+				}
+			}
+		}
+
+	};
+	
+	private final MessageHandler<InstallQueryMessage> acceptQueryHandler = new MessageHandler<InstallQueryMessage>() {
+
+		@Override
+		public void handleMessage(InstallQueryMessage message)
+				throws HandlerException {
+			System.out.println("INstalling query");
+			for (Certificate query : message.getContent()) {
+				try {				
+					QueryWrapper wrapper = null;
+					Value valueString = query.getAttributesMap().getOrNull("query");
+					if (valueString==null){
+						wrapper = new QueryWrapper(null, query);
+					}
+					else {
+						String queryString = ((ValueString) valueString).getValue();
+						Program parsedProgram = MainInterpreter
+							.parseProgram(queryString);
+						wrapper = new QueryWrapper(parsedProgram, query);
+					}
+					String queryName = ((ValueString) query.getAttributesMap().get("name")).getValue();
+					Long time = ((ValueTime)query.getAttributesMap().get("timestamp")).getValue();
+					queries.put(queryName, wrapper);
+					if (queries.containsKey(queryName)) {
+						QueryWrapper old = queries.get(queryName);
+						Long oldTime = ((ValueTime) old.getQueryCertificate()
+								.getAttributesMap().get("timestamp"))
+								.getValue();
+						if ( time > oldTime ) {
+							queries.put(queryName, wrapper);
+						}
+					} else
+						queries.put(queryName, wrapper);
+
 				} catch (Exception e) {
 					System.err.println(e.getMessage());
 					e.printStackTrace();
@@ -198,9 +274,9 @@ public class QueryKeeperModule extends Module {
 
 		@Override
 		public void handleMessage(GetMessage message) throws HandlerException {
-			Map<String, ValueQuery> result = new HashMap<String, ValueQuery>();
+			Map<String, Certificate> result = new HashMap<String, Certificate>();
 			for ( Entry<String, QueryWrapper> entry : queries.entrySet() ) {
-				result.put(entry.getKey(), entry.getValue().getValue());
+				result.put(entry.getKey(), entry.getValue().getQueryCertificate());
 			}
 			sendMessage(message.getResponseTarget(), message.getResponseMessageType(), new SimpleMessage<>(result));
 		}
@@ -217,8 +293,8 @@ public class QueryKeeperModule extends Module {
 
 	@Override
 	protected Map<Integer, MessageHandler<?>> generateHandlers() {
-		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY, GET_QUERIES, DUMP },
-				new MessageHandler<?>[] { recalculateHandler, installQueryHandler, getQueriesHandler, dumpHandler});
+		return getHandlers(new Integer[] { RECALCULATE_ZMI, INSTALL_QUERY, GET_QUERIES, DUMP , ACCEPT_QUERY},
+				new MessageHandler<?>[] { recalculateHandler, installQueryHandler, getQueriesHandler, dumpHandler, acceptQueryHandler});
 	}
 
 	@Override

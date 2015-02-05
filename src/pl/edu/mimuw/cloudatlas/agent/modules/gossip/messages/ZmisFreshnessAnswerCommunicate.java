@@ -1,11 +1,12 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages;
 
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.ZmisFreshness;
+import pl.edu.mimuw.cloudatlas.common.Certificate;
 
 public class ZmisFreshnessAnswerCommunicate extends ZmisFreshnessCommunicate {
 
-	public ZmisFreshnessAnswerCommunicate(ZmisFreshness content, TravelTime time) {
-		super(content, time);
+	public ZmisFreshnessAnswerCommunicate(ZmisFreshness content, TravelTime time, Certificate certificate, Integer gossipLevel) {
+		super(content, time, certificate, gossipLevel);
 	}
 
 	@Override

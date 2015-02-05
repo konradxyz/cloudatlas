@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import pl.edu.mimuw.cloudatlas.agent.serialization.Serializator;
-import pl.edu.mimuw.cloudatlas.agent.serialization.SerializatorAtributeMap;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
@@ -27,6 +25,8 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueNull;
 import pl.edu.mimuw.cloudatlas.common.model.ValueSet;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
+import pl.edu.mimuw.cloudatlas.common.serialization.Serializator;
+import pl.edu.mimuw.cloudatlas.common.serialization.SerializatorAtributeMap;
 
 public class SerializationAttributesMapTest extends SerializatorTest<AttributesMap> {
 

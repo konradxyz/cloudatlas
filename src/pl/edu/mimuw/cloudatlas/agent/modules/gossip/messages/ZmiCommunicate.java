@@ -1,9 +1,10 @@
 package pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages;
 
+import pl.edu.mimuw.cloudatlas.common.Certificate;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 
-public class ZmiCommunicate extends GossipCommunicate {
+public class ZmiCommunicate extends WithCertificateCommunicate {
 	private PathName pathName;
 	private AttributesMap attributes;
 
@@ -12,8 +13,8 @@ public class ZmiCommunicate extends GossipCommunicate {
 		return Type.ZMI;
 	}
 
-	public ZmiCommunicate(PathName pathName, AttributesMap attributes) {
-		super();
+	public ZmiCommunicate(PathName pathName, AttributesMap attributes, Certificate certificate, Integer gossipLevel) {
+		super(certificate, gossipLevel);
 		this.pathName = pathName;
 		this.attributes = attributes;
 	}

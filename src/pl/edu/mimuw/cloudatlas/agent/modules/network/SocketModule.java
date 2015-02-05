@@ -9,6 +9,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,6 +21,10 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Address;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.HandlerException;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.Message;
@@ -27,6 +33,8 @@ import pl.edu.mimuw.cloudatlas.agent.modules.framework.Module;
 import pl.edu.mimuw.cloudatlas.agent.modules.framework.ModuleInitializationException;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.ScheduleAlarmMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.timer.TimerModule;
+import pl.edu.mimuw.cloudatlas.common.utils.SecurityUtils;
+import pl.edu.mimuw.cloudatlas.common.utils.SecurityUtils.SignatureMessage;
 import pl.edu.mimuw.cloudatlas.common.utils.Utils;
 
 public final class SocketModule extends Module {
@@ -38,7 +46,7 @@ public final class SocketModule extends Module {
 	// Messages to be sent by senderThread through socket should be put
 	// in toSendQueue. In order to terminate senderThread you need to put
 	// finishMessage in this queue.
-	private final SendDatagramMessage finishMessage = new SendDatagramMessage(null, null,0);
+	private final SendDatagramMessage finishMessage = new SendDatagramMessage(null, null,0, null);
 	private BlockingQueue<SendDatagramMessage> toSendQueue = new LinkedBlockingQueue<SendDatagramMessage>();
 	private Thread senderThread;
 
@@ -128,10 +136,12 @@ public final class SocketModule extends Module {
 									.getParts().get(j));
 						}
 						byte[] msg = outputStream.toByteArray();
-						byte[] sentTimestampBytes = Arrays.copyOfRange(msg, 0,
+						SignatureMessage signatureMessage = SecurityUtils.divideMessage(msg);
+						byte[] signature = signatureMessage.getSignature();
+						byte[] messageNoSignature = signatureMessage.getMessage();
+						byte[] sentTimestampBytes = Arrays.copyOfRange(messageNoSignature, 0,
 								8);
-						byte[] realMsg = Arrays.copyOfRange(msg, 8, msg.length);
-
+						byte[] realMsg = Arrays.copyOfRange(messageNoSignature, 8, messageNoSignature.length);
 						ByteArrayInputStream inputStream = new ByteArrayInputStream(
 								sentTimestampBytes);
 						DataInputStream dataInputStream = new DataInputStream(
@@ -141,7 +151,7 @@ public final class SocketModule extends Module {
 								gatewayModuleMessageType,
 								new ReceivedDatagramMessage(realMsg, key.from,
 										sent, incomingMessages.get(key)
-												.getReceivedTimestampMs()));
+												.getReceivedTimestampMs(), signature));
 						incomingMessages.remove(key);
 					}
 				} else {
@@ -187,8 +197,11 @@ public final class SocketModule extends Module {
 					prepareStream.writeLong(Utils.getNowMs());
 					prepareStream.write(msg.getContent());
 					byte[] toSend = prepareStreamByte.toByteArray();
-					
-					
+					// Podpisywanie
+					toSend = SecurityUtils.prependSignature(toSend,
+							msg.getPrivateKey());
+							
+					System.err.println("sending " + toSend.length);
 					int packetsCount = (int) Math
 							.ceil((double) toSend.length
 									/ (double) maxMessageSize);
@@ -212,7 +225,7 @@ public final class SocketModule extends Module {
 								msg.getTarget(), msg.getPort()));
 					}
 					
-				} catch (InterruptedException | IOException e) {
+				} catch (InterruptedException | IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
 					// Note that even if we do not receive IOException here
 					// we can't assume that our msg was received - it is UDP
 					// after all. We expect that higher level protocol
