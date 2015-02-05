@@ -22,6 +22,7 @@ import pl.edu.mimuw.cloudatlas.agent.modules.query.InstallQueryMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.query.QueryKeeperModule;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.SetAttributeMessage;
 import pl.edu.mimuw.cloudatlas.agent.modules.zmi.ZmiKeeperModule;
+import pl.edu.mimuw.cloudatlas.common.Certificate;
 import pl.edu.mimuw.cloudatlas.common.CloudatlasAgentConfig;
 import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.Value;
@@ -93,9 +94,9 @@ public final class RmiModule extends Module {
 		}
 
 		@Override
-		public void installQuery(ValueQuery query)
+		public void installQuery(Certificate queryCertificate)
 				throws RemoteException {
-			sendMessage(queryKeeper, QueryKeeperModule.INSTALL_QUERY, new InstallQueryMessage(query));	
+			sendMessage(queryKeeper, QueryKeeperModule.INSTALL_QUERY, new InstallQueryMessage(queryCertificate));	
 		}
 
 		@Override

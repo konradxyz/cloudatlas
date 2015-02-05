@@ -38,19 +38,29 @@ public class CreateCertificate extends CommandReader {
 		} else {
 			ArrayList<ZoneAuthenticationData> authenticationList = new ArrayList<ZoneAuthenticationData>();
 			Kryo kryo = KryoUtils.getKryo();
-			while (!pathName.equals(PathName.ROOT)) {	
-				String publicKeyPath = caPath + pathName.levelUp().toString()
+			boolean done = false;
+			while (!done) {	
+				String childrenAuthKeyPath = caPath + pathName.toString()
 						+ "/" + CAUtils.publicKeyName;
-				String privateKeyZonePath = caPath + pathName.toString()
-						+ "/" + CAUtils.privateKeyZoneName;
-				PublicKey publiKey = CAUtils.readPublicKey(publicKeyPath);
-				PrivateKey privateKey = CAUtils.readPrivateKey(privateKeyZonePath);
-				String certificateZonePath = caPath + pathName.toString()
-						+ "/" + CAUtils.certificateName;
-				byte[] certificateText = KryoUtils.readFile(certificateZonePath);
-				Certificate certificate = KryoUtils.deserialize(certificateText, kryo, Certificate.class);
-				authenticationList.add(new ZoneAuthenticationData(publiKey, privateKey, certificate));//wrong public key
-				pathName = pathName.levelUp();
+				PublicKey childrenAuthKey = CAUtils.readPublicKey(childrenAuthKeyPath);
+				
+				PrivateKey zmiAuthKey = null;
+				
+				Certificate certificate = null;
+				if ( !pathName.equals(PathName.ROOT)) {
+					String zmiAuthKeyPath = caPath + pathName.toString() + "/" + CAUtils.privateKeyZoneName;
+					zmiAuthKey = CAUtils.readPrivateKey(zmiAuthKeyPath);
+					String certificateZonePath = caPath + pathName.toString()
+							+ "/" + CAUtils.certificateName;
+					byte[] certificateText = KryoUtils.readFile(certificateZonePath);
+					certificate = KryoUtils.deserialize(certificateText, kryo, Certificate.class);
+				}
+				
+				authenticationList.add(new ZoneAuthenticationData(childrenAuthKey, zmiAuthKey, certificate));
+				if ( pathName.equals(PathName.ROOT) )
+					done = true;
+				else
+					pathName = pathName.levelUp();
 			}
 			Collections.reverse(authenticationList);
 			byte[] toFile = KryoUtils.serialize(authenticationList, kryo);

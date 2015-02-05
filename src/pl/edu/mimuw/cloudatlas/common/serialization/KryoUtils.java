@@ -13,6 +13,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import pl.edu.mimuw.cloudatlas.CA.ClientAuthenticationData;
 import pl.edu.mimuw.cloudatlas.CA.ZoneAuthenticationData;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.ZmisFreshness;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
@@ -83,6 +84,8 @@ public class KryoUtils {
 		
 		kryo.register(Certificate.class);
 		kryo.register(ZoneAuthenticationData.class);
+		kryo.register(ClientAuthenticationData.class);
+		kryo.register(byte[].class);
 		kryo.addDefaultSerializer(ValueList.class, ValueListSerializer.class);
 		kryo.addDefaultSerializer(ValueSet.class, ValueSetSerializer.class);
 		return kryo;

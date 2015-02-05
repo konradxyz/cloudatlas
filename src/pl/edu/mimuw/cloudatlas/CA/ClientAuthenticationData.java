@@ -2,7 +2,6 @@ package pl.edu.mimuw.cloudatlas.CA;
 
 import java.io.Serializable;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 
 import pl.edu.mimuw.cloudatlas.common.Certificate;
 
@@ -11,25 +10,20 @@ public class ClientAuthenticationData implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = -6509250518652507275L;
-	PublicKey siblingAuthenticationKey;
-	PrivateKey zmiAuthenticationKey;
+	PrivateKey clientAuthenticationKey;
 	Certificate certificate;
 	
-	public ClientAuthenticationData(PublicKey siblingAuthenticationKey, PrivateKey zmiAuthenticationKey, Certificate certificate) {
-		this.siblingAuthenticationKey = siblingAuthenticationKey;
-		this.zmiAuthenticationKey = zmiAuthenticationKey;
+	public ClientAuthenticationData(PrivateKey clientAuthenticationKey, Certificate certificate) {
 		this.certificate = certificate;
+		this.clientAuthenticationKey = clientAuthenticationKey;
 	}
 	
-	public PrivateKey getZmiAuthenticationKey() {
-		return zmiAuthenticationKey;
+	public PrivateKey getClientAuthenticationKey() {
+		return clientAuthenticationKey;
 	}
 	
 	public Certificate getCertificate() {
 		return certificate;
 	}
 	
-	public PublicKey getSiblingAuthenticationKey() {
-		return siblingAuthenticationKey;
-	}
 }

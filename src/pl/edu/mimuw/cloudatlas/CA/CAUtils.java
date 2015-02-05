@@ -27,6 +27,7 @@ import javax.xml.bind.DatatypeConverter;
 import pl.edu.mimuw.cloudatlas.common.Certificate;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.ValueKey;
+import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.model.ValueTime;
 import pl.edu.mimuw.cloudatlas.common.serialization.KryoUtils;
 
@@ -39,6 +40,8 @@ public class CAUtils {
 	static String publicKeyZoneName = "publicKeyZone.txt";
 	static String privateKeyZoneName = "privateKeyZone.txt";
 	static String certificateName = "certificate.txt";
+	static String ccPath = "cc";
+	static String clientAuthenticationName = "clientAuthentication";
 	
 	public static void createFile(String path, String key)
 			throws FileNotFoundException, UnsupportedEncodingException {
@@ -109,7 +112,7 @@ public class CAUtils {
 	}
 
 	public static void generateCertificate(PrivateKey parentKey, PublicKey publicKey,
-			Date date, String path) throws NoSuchAlgorithmException,
+			Date date, String path, String zoneName) throws NoSuchAlgorithmException,
 			InvalidKeySpecException, InvalidKeyException,
 			NoSuchPaddingException, IllegalBlockSizeException,
 			BadPaddingException, IOException {
@@ -118,6 +121,7 @@ public class CAUtils {
 		attributesMap.add("publicKey", new ValueKey(publicKey));
 		System.out.println("time " + date.getTime());
 		attributesMap.add("time", new ValueTime(date.getTime()));
+		attributesMap.add("zone", new ValueString(zoneName));
 		Kryo kryo = KryoUtils.getKryo();
 		Certificate certificate = new Certificate(attributesMap, privateKey,
 				kryo);
@@ -125,5 +129,13 @@ public class CAUtils {
 		byte[] descr = KryoUtils.serialize(certificate, kryo);
 		System.err.println(descr.length);
 		createFile(path + certificateName, descr);
+	}
+	
+	public static String getCcPath() {
+		return ccPath;
+	}
+	
+	public static String getClientAuthenticationName() {
+		return clientAuthenticationName;
 	}
 }

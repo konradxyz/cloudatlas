@@ -158,7 +158,7 @@ public class WebClient {
 					switch (res.getStatus() ) {
 						case OK:
 							ValueQuery q = res.getQuery();
-							stub.installQuery(q);
+						//	stub.installQuery(q);
 							queries = stub.getQueries();
 							break;
 					case CONFLICT:
@@ -182,7 +182,7 @@ public class WebClient {
 					CloudatlasQuerySigner signer = connectSigner();
 					ValueQuery uninstallQuery = signer.uninstallQuery(q);
 					if ( uninstallQuery != null ) {
-						stub.installQuery(uninstallQuery);
+					//	stub.installQuery(uninstallQuery);
 						queries = stub.getQueries();
 						message = "Query uninstalled.";
 					} else {
@@ -383,7 +383,7 @@ public class WebClient {
 		}
 	}
 
-	private static class RmiConnectionException extends IOException {
+	public static class RmiConnectionException extends IOException {
 
 		/**
 		 * 

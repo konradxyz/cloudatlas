@@ -17,8 +17,7 @@ public class ValueKey extends ValueSimple<PublicKey> {
 
 	@Override
 	public Value convertTo(Type to) {
-		// TODO Auto-generated method stub
-		return null;
+		return new ValueString("key");
 	}
 
 	@Override

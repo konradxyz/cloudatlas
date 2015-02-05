@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 /**
  * Represents a map from <code>Attribute</code> to <code>Value</code>. It cannot contain duplicate keys.
@@ -39,7 +40,7 @@ public class AttributesMap implements Iterable<Entry<Attribute, Value>>, Cloneab
 	 * 
 	 */
 	private static final long serialVersionUID = 2564994521386875290L;
-	private Map<Attribute, Value> map = new HashMap<Attribute, Value>();
+	private Map<Attribute, Value> map = new TreeMap<Attribute, Value>();
 	
 	private void checkNulls(Attribute attribute, Value value) {
 		if(attribute == null)

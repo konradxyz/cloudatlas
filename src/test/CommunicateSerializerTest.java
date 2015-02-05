@@ -8,8 +8,6 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.util.ArrayList;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -19,22 +17,17 @@ import org.junit.Test;
 
 import pl.edu.mimuw.cloudatlas.CA.CAUtils;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.CommunicateSerializer;
-import pl.edu.mimuw.cloudatlas.agent.modules.gossip.ZmisFreshness;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.FallbackCommunicate;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.GossipCommunicate;
-import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.QueriesCommunicateInit;
 import pl.edu.mimuw.cloudatlas.agent.modules.gossip.messages.ZmiCommunicate;
 import pl.edu.mimuw.cloudatlas.common.Certificate;
-import pl.edu.mimuw.cloudatlas.common.model.Attribute;
 import pl.edu.mimuw.cloudatlas.common.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.common.model.PathName;
 import pl.edu.mimuw.cloudatlas.common.model.ValueContact;
 import pl.edu.mimuw.cloudatlas.common.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.common.model.ValueKey;
-import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 import pl.edu.mimuw.cloudatlas.common.model.ValueString;
 import pl.edu.mimuw.cloudatlas.common.serialization.KryoUtils;
-import pl.edu.mimuw.cloudatlas.common.single_machine_model.SingleMachineZmiData.ZmiLevel;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
@@ -78,7 +71,6 @@ public class CommunicateSerializerTest {
 		AttributesMap attrs = new AttributesMap();
 		attrs.add("name", new ValueString("pc1"));
 		attrs.add("contact", new ValueContact(new PathName("/j/dasdas"), InetAddress.getLocalHost()));
-		attrs.add("query", new ValueQuery("&a", "b", 1l, new byte[1]));
 		attrs.add("int", new ValueInt(1l));
 		singleTest(new ZmiCommunicate(PathName.ROOT, attrs, c, 1));
 		/*

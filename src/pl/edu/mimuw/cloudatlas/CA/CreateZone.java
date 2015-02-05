@@ -66,7 +66,7 @@ public class CreateZone extends CommandReader {
 			PublicKey pkz = CAUtils.generateKeysZone(path);
 			Date date = new Date();
 			CAUtils.generateCertificate(CAUtils.readPrivateKey(privateKeyLevelUpPath), pkz, date,
-					path);
+					path, pathName.toString());
 		}
 	}
 

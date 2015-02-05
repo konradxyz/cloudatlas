@@ -77,7 +77,7 @@ public class GossipModule extends Module {
 
 	// Node data we keep for immediate sending to other nodes.
 	private ZmisAttributes cachedAttributes;
-	private List<ValueQuery> cachedQueries;
+	private List<Certificate> cachedQueries;
 
 	// Datagram handlers:
 	private HashMap<GossipCommunicate.Type, HandleCommunicate<?>> datagramHandlers = new HashMap<GossipCommunicate.Type, GossipModule.HandleCommunicate<?>>();
@@ -126,7 +126,7 @@ public class GossipModule extends Module {
 		return cachedAttributes;
 	}
 
-	private List<ValueQuery> getCachedQueries() throws HandlerException {
+	private List<Certificate> getCachedQueries() throws HandlerException {
 		if (cachedQueries == null) {
 			throw new HandlerException("Gossip module not yet initialized");
 		}
@@ -163,12 +163,12 @@ public class GossipModule extends Module {
 		}
 	};
 
-	private final MessageHandler<SimpleMessage<Map<String, ValueQuery>>> queriesReceivedHandler = new MessageHandler<SimpleMessage<Map<String, ValueQuery>>>() {
+	private final MessageHandler<SimpleMessage<Map<String, Certificate>>> queriesReceivedHandler = new MessageHandler<SimpleMessage<Map<String, Certificate>>>() {
 
 		@Override
-		public void handleMessage(SimpleMessage<Map<String, ValueQuery>> message)
+		public void handleMessage(SimpleMessage<Map<String, Certificate>> message)
 				throws HandlerException {
-			cachedQueries = new ArrayList<ValueQuery>(message.getContent()
+			cachedQueries = new ArrayList<Certificate>(message.getContent()
 					.values());
 
 		}
@@ -184,8 +184,8 @@ public class GossipModule extends Module {
 	};
 
 	public void sendQueryInit(int level, InetAddress target) throws HandlerException{
-		PrivateKey key = config.getZoneCertificationData().get(level - 1).getZmiAuthenticationKey();
-		Certificate certificate = config.getZoneCertificationData().get(level - 1).getCertificate();
+		PrivateKey key = config.getZoneCertificationData().get(level).getZmiAuthenticationKey();
+		Certificate certificate = config.getZoneCertificationData().get(level).getCertificate();
 		System.err.println("Gossip on level " + level + " with " + target);
 		sendNetworkMessage(new QueriesCommunicateInit(getCachedQueries(),
 				level, certificate), target, key);
@@ -204,8 +204,8 @@ public class GossipModule extends Module {
 				}
 				InetAddress target = fallbackContacts.get(random.nextInt(fallbackContacts
 						.size()));
-				Certificate certificate = config.getZoneCertificationData().get(0).getCertificate();
-				PrivateKey key= config.getZoneCertificationData().get(0).getZmiAuthenticationKey();
+				Certificate certificate = config.getZoneCertificationData().get(1).getCertificate();
+				PrivateKey key= config.getZoneCertificationData().get(1).getZmiAuthenticationKey();
 				sendNetworkMessage(new FallbackCommunicate(certificate, 1, config.getPathName()), target, key);
 			} else {
 				int level = contact.getLevel();
@@ -292,7 +292,7 @@ public class GossipModule extends Module {
 	public Boolean isValidMessage(WithCertificateCommunicate communicate, Long sent, byte[] content, byte[] signature) throws HandlerException {
 		byte[] serializedCertificate = KryoUtils.serialize(communicate.getCertificate().getAttributesMap(), KryoUtils.getKryo());
 		ZoneAuthenticationData zoneAuthenticationData = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1);
-		PublicKey siblingAuthPublicKey = zoneAuthenticationData.getSiblingAuthenticationKey();
+		PublicKey siblingAuthPublicKey = zoneAuthenticationData.getChildrenAuthenticationKey();
 		try {
 			if (!SecurityUtils.ifEqualMessages(serializedCertificate,siblingAuthPublicKey, communicate.getCertificate().getSignature()))
 			{
@@ -330,10 +330,10 @@ public class GossipModule extends Module {
 		public void handle(QueriesCommunicateInit communicate,
 				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException { 
-			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
+			sendMessage(queryKeeperAddress, QueryKeeperModule.ACCEPT_QUERY,
 					new InstallQueryMessage(communicate.getQueries()));
-			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1).getCertificate();
-			PrivateKey privateKey = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1).getZmiAuthenticationKey();
+			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()).getCertificate();
+			PrivateKey privateKey = config.getZoneCertificationData().get(communicate.getGossipLevel()).getZmiAuthenticationKey();
 			sendNetworkMessage(new QueriesCommunicateAnswer(getCachedQueries(),
 					communicate.getGossipLevel(), certificate), source, privateKey);
 		}
@@ -345,14 +345,14 @@ public class GossipModule extends Module {
 		public void handle(QueriesCommunicateAnswer communicate,
 				InetAddress source, Long sent, Long received, byte[] signature)
 				throws HandlerException {
-			sendMessage(queryKeeperAddress, QueryKeeperModule.INSTALL_QUERY,
+			sendMessage(queryKeeperAddress, QueryKeeperModule.ACCEPT_QUERY,
 					new InstallQueryMessage(communicate.getQueries()));
 
 			ZmisAttributes attrs = getCachedAttributes();
 			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
 					communicate.getGossipLevel(), attrs.getLevels().size() - 1));
-			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()-1).getCertificate();
-			PrivateKey privateKey = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1).getZmiAuthenticationKey();
+			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()).getCertificate();
+			PrivateKey privateKey = config.getZoneCertificationData().get(communicate.getGossipLevel()).getZmiAuthenticationKey();
 			sendNetworkMessage(new ZmisFreshnessInitCommunicate(freshness,
 					new TravelTime(sent, received), certificate, communicate.getGossipLevel()), source, privateKey);
 		}
@@ -384,8 +384,8 @@ public class GossipModule extends Module {
 			ZmisFreshness freshness = generateFreshness(attrs, Math.min(
 					communicate.getContent().getLevels().size() - 1, attrs
 							.getLevels().size() - 1));
-			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()-1).getCertificate();
-			PrivateKey privateKey = config.getZoneCertificationData().get(communicate.getGossipLevel()- 1).getZmiAuthenticationKey();
+			Certificate certificate = config.getZoneCertificationData().get(communicate.getGossipLevel()).getCertificate();
+			PrivateKey privateKey = config.getZoneCertificationData().get(communicate.getGossipLevel()).getZmiAuthenticationKey();
 			sendNetworkMessage(new ZmisFreshnessAnswerCommunicate(freshness,
 					new TravelTime(sent, received), certificate, communicate.getGossipLevel()), source, privateKey);
 
@@ -425,12 +425,12 @@ public class GossipModule extends Module {
 		List<ZmiData<AttributesMap>> toSend = filterNewer(zmis.getContent(),
 				otherFreshness, offset);
 		PathName targetPath = otherFreshness.getPath();
-		PrivateKey privateKey = config.getZoneCertificationData().get(gossipLevel- 1).getZmiAuthenticationKey();
+		PrivateKey privateKey = config.getZoneCertificationData().get(gossipLevel).getZmiAuthenticationKey();
 		for (ZmiData<AttributesMap> single : toSend) {
 			if (!single.getPath().isPrefixOf(targetPath)) {
 				sendNetworkMessage(
 						new ZmiCommunicate(single.getPath(),
-								single.getContent(), config.getZoneCertificationData().get(gossipLevel-1).getCertificate(), gossipLevel), target, privateKey);
+								single.getContent(), config.getZoneCertificationData().get(gossipLevel).getCertificate(), gossipLevel), target, privateKey);
 				
 			}
 		}
@@ -488,13 +488,6 @@ public class GossipModule extends Module {
 		return result;
 	}
 
-	// Nie pierwszy
-	// To nie ma znaczenia
-	// Nie
-	// tO ZLE MIEJSCE
-	// NIE
-	// TAK
-	// JEST ZLE
 	private void sendNetworkMessage(GossipCommunicate message,
 			InetAddress target, PrivateKey key) {
 		byte[] o = communicateSerializer.serialize(message);

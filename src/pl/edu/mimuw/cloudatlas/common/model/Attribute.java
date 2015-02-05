@@ -34,7 +34,7 @@ import java.io.Serializable;
  * <p>
  * This class is immutable.
  */
-public class Attribute implements Serializable {
+public class Attribute implements Serializable, Comparable<Attribute> {
 	/**
 	 * 
 	 */
@@ -109,5 +109,10 @@ public class Attribute implements Serializable {
 	@Override
 	public String toString() {
 		return name;
+	}
+
+	@Override
+	public int compareTo(Attribute o) {
+		return name.compareTo(o.name);
 	}
 }

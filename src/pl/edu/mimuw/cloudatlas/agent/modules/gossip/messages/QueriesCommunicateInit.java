@@ -7,7 +7,7 @@ import pl.edu.mimuw.cloudatlas.common.model.ValueQuery;
 
 public class QueriesCommunicateInit extends QueriesCommunicate {
 
-	public QueriesCommunicateInit(List<ValueQuery> queries, int gossipLevel, Certificate certificate) {
+	public QueriesCommunicateInit(List<Certificate> queries, int gossipLevel, Certificate certificate) {
 		super(queries, gossipLevel, certificate);
 	}
 
